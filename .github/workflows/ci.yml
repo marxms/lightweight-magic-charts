@@ -1,9 +1,13 @@
 # The gate, run on the same commands a contributor runs locally.
 #
-# WHY THESE FOUR AND NOT A GENERIC "lint, test, build": this library's guarantees are enforced BY the
+# WHY THESE AND NOT A GENERIC "lint, test, build": this library's guarantees are enforced BY the
 # suite — the language gate, the derived-reference gate, the size budget and the boundary checks all
 # live in `npm test`. A CI that ran something else would be weaker than the local gate, and a gate
 # that can be weaker than the developer's own run is not a gate.
+#
+# ACTIONS ARE PINNED BY COMMIT, not by tag. A tag is a moving pointer its owner can repoint, and
+# `release.yml` reuses these same actions in the job that holds the npm token — so a repointed tag
+# there is a supply-chain compromise, not an inconvenience. The version is in the comment.
 name: CI
 
 on:
@@ -21,12 +25,28 @@ concurrency:
 jobs:
   gate:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 15
+    strategy:
+      # NOT fail-fast. The reason is measured: `10 ** -4` is 0.0001 on one Node and
+      # 0.00009999999999999999 on another, and that defect reached master because one version was
+      # the only version. Cancelling the siblings the moment one fails would hide exactly that.
+      fail-fast: false
+      matrix:
+        # Every Node still supported upstream on 2026-08-16: 22 (Jod, LTS to 2027-04), 24 (Krypton,
+        # LTS to 2028-04), 26 (current, LTS from 2026-10). Node 20 is deliberately absent — it went
+        # end-of-life on 2026-04-30, and gating on an unsupported runtime tests nobody's install.
+        node: [22, 24, 26]
 
-      - uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          node-version: 20
+          # This job never writes to the repository, so it has no use for a credential in the
+          # workspace. Only the publish job asks for one, and only to record its tag.
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ matrix.node }}
           cache: npm
 
       - run: npm ci

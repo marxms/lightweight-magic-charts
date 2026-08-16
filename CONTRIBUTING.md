@@ -14,6 +14,11 @@ This package is its own repository and has no runtime dependencies. One install,
 npm ci        # or `npm install` if you are changing the manifest
 ```
 
+**Node 22 or newer**, which is what `engines` declares and what CI runs: 22, 24 and 26, the three
+still supported upstream. That range is not decoration — `10 ** -4` is `0.0001` on one Node and
+`0.00009999999999999999` on another, and the defect reached master because a single version was the
+only version. If your local Node is outside the range, the suite may pass here and fail there.
+
 Every command below is run from the repository root. There is no workspace flag: this package used
 to live inside a monorepo and was extracted, so if you find a `-w libs/…` anywhere in this tree, it
 is a leftover and a bug.

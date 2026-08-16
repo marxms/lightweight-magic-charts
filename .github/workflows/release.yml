@@ -27,11 +27,14 @@ jobs:
   # a human to approve a run that has nothing to publish teaches them to approve without looking.
   decide:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       publish: ${{ steps.registry.outputs.publish }}
       version: ${{ steps.registry.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Ask the registry whether this version already exists
         id: registry
@@ -52,20 +55,25 @@ jobs:
     needs: decide
     if: needs.decide.outputs.publish == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: npm
     permissions:
-      contents: write # the tag written AFTER a successful publish, below
+      contents: write # the tag and the release, written AFTER a successful publish
       id-token: write # npm provenance
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # NO DEPENDENCY CACHE HERE, deliberately, and this is npm's own guidance for release builds.
       # A cache is a store keyed by a lockfile hash, filled by an earlier run. On the gate that is a
       # speed-up worth having; on the one irreversible step in this repository it means the tarball
       # can be assembled from artefacts resolved by a different run. `ci.yml` keeps its cache.
-      - uses: actions/setup-node@v4
+      #
+      # ONE VERSION, NOT THE MATRIX. `ci.yml` proves the package across every supported Node; this
+      # job builds the artefact once, on the LTS in the middle of that range.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 20
+          node-version: 24
+          package-manager-cache: false
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
@@ -91,18 +99,21 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # THE TAG IS A RECORD, NOT A TRIGGER, and the order is the whole point: it is written only
-      # after the publish returned, so `v0.1.0` existing means that version shipped. A tag written
-      # before, or by a workflow that then failed, is a marker pointing at a release that never
-      # happened — which is worse than no marker, because people trust it.
+      # THE TAG AND THE RELEASE ARE RECORDS, NOT TRIGGERS, and the order is the whole point: both are
+      # written only after the publish returned, so `v0.1.0` existing means that version shipped. A
+      # tag written first, by a run that then fails, points at a release that never happened — worse
+      # than no tag, because people trust it.
       #
-      # IT CANNOT BE THE TRIGGER even if we wanted it to be. GitHub does not start workflow runs from
-      # events raised with the default GITHUB_TOKEN, precisely to stop workflows recursing; only
-      # workflow_dispatch and repository_dispatch are exempt. So a `on: push: tags` release driven by
+      # THE TAG CANNOT BE THE TRIGGER even if we wanted it to be. GitHub does not start workflow runs
+      # from events raised with the default GITHUB_TOKEN, precisely to stop workflows recursing; only
+      # workflow_dispatch and repository_dispatch are exempt. So an `on: push: tags` release driven by
       # a tag this job creates would never run, and would look configured while doing nothing.
-      - name: Record the release as a tag
+      - name: Record the release as a tag and a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${{ needs.decide.outputs.version }}"
           git tag "$TAG"
           git push origin "$TAG"
-          echo "tagged $TAG at $GITHUB_SHA"
+          gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          echo "tagged and released $TAG at $GITHUB_SHA"
