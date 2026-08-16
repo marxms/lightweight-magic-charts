@@ -52,3 +52,24 @@ price or the side in the tag has them.
 The alerts themselves are plain values and the transitions are `observePrice`, so everything worth
 testing about this feature is testable without a chart. What is left in `PriceAlertLines` — one
 price line per alert, plus the drag — is bookkeeping.
+
+### Dragging a level off the pane removes it
+
+Until this existed there was no way to get rid of an alert at all, and that is not an exaggeration of
+a rough edge. `usePriceAlerts` exposed `addLevel` and `onLevels`; the layer wired
+`beginDrag`/`dragTo`/`endDrag`; the container's `Delete` reaches the DRAWING selection and never this
+one. A visitor could add a level and move it, and that was the whole vocabulary.
+
+It was reported as "the alert line cannot be selected to delete", which was exactly right about the
+symptom and understated the cause: neither selection nor removal existed.
+
+**Why a drag and not a selection.** Adding one would mean a selected-alert state, a way to show it, a
+way to clear it, and a second claim on the `Delete` key that the drawing layer already owns. The
+gesture reuses the machinery that is already there and is the convention a chart user arrives with.
+
+**Why a margin.** `DISCARD_MARGIN_PX` is 8. A release one pixel past the edge is a slip, not an
+intention, and the destructive reading of an ambiguous gesture is the wrong default.
+
+**Why the line changes colour first.** `dragTo` takes `discarding` and paints the fired colour while
+the pointer is out of bounds. A destructive gesture with no feedback until it commits is a trap; this
+way the commit is the second thing that happens, not the first.

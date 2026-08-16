@@ -164,8 +164,11 @@ export class PriceAlertLines {
     return true;
   }
 
-  /** Moves the dragged line and RE-ARMS it: a level moved somewhere new has not been crossed yet. */
-  dragTo(y: number): number | null {
+  /**
+   * Moves the dragged line and RE-ARMS it: a level moved somewhere new has not been crossed yet.
+   * `discarding` paints it in the fired colour so the gesture below is visible before it commits.
+   */
+  dragTo(y: number, discarding = false): number | null {
     if (this.dragging === null) return null;
     const price = this.series.coordinateToPrice(y);
     if (price === null || !Number.isFinite(price)) return null;
@@ -173,14 +176,23 @@ export class PriceAlertLines {
     this.alerts = this.alerts.map((alert) =>
       alert.id === id ? armAlert(alert, price) : alert,
     );
-    this.handles.get(id)?.applyOptions({ price, color: this.style.draggingColor });
+    const color = discarding ? this.style.firedColor : this.style.draggingColor;
+    this.handles.get(id)?.applyOptions({ price, color });
     return price;
   }
 
-  endDrag(): void {
+  /**
+   * `discard` REMOVES the dragged level rather than settling it.
+   * See docs/explanation/alerts.md#dragging-a-level-off-the-pane-removes-it
+   */
+  endDrag(discard = false): void {
     const id = this.dragging;
     this.dragging = null;
     if (id === null) return;
+    if (discard) {
+      this.remove(id);
+      return;
+    }
     this.restyle(id);
   }
 
