@@ -40,25 +40,9 @@ jobs:
         run: npm test
 
       # The published tarball is part of the contract: `files` promises paths, and a promise that
-      # resolves to nothing is a broken install for whoever consumes it.
+      # resolves to nothing is a broken install for whoever consumes it. The check lives in a script
+      # so the release workflow and a contributor can run the SAME one — see the script's docblock.
       - name: Pack, and prove every promised path exists
         run: |
           npm pack --dry-run
-          node -e "
-            const p = require('./package.json');
-            const fs = require('fs');
-            const missing = (p.files ?? []).filter((f) => !fs.existsSync(f));
-            if (missing.length > 0) {
-              console.error('files[] promises paths that do not exist:', missing.join(', '));
-              process.exit(1);
-            }
-            for (const [name, map] of Object.entries(p.exports ?? {})) {
-              for (const target of Object.values(typeof map === 'string' ? { default: map } : map)) {
-                if (typeof target === 'string' && !fs.existsSync(target)) {
-                  console.error('exports ' + name + ' points at a missing file:', target);
-                  process.exit(1);
-                }
-              }
-            }
-            console.log('files[] and exports both resolve');
-          "
+          node scripts/verify-package-paths.mjs

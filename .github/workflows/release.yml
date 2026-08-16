@@ -20,10 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # NO DEPENDENCY CACHE HERE, deliberately, and this is npm's own guidance for release builds.
+      # A cache is a store keyed by a lockfile hash, filled by an earlier run. On the gate that is a
+      # speed-up worth having; on the one irreversible step in this repository it means the tarball
+      # can be assembled from artefacts resolved by a different run. `ci.yml` keeps its cache.
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
@@ -45,6 +48,14 @@ jobs:
 
       - name: Suite
         run: npm test
+
+      # THE LAST THING BEFORE THE IRREVERSIBLE ONE. `ci.yml` runs this too, but it triggers on pull
+      # requests and on pushes to master — never on a tag. Without it here, the only run that
+      # actually publishes is the only run that never checked what it is about to ship.
+      - name: Prove every promised path exists
+        run: |
+          npm pack --dry-run
+          node scripts/verify-package-paths.mjs
 
       # `--provenance` publishes a signed attestation linking the tarball to this workflow run, so a
       # consumer can verify the package came from this repository and not from someone's laptop.

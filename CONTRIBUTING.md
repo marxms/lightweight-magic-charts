@@ -70,7 +70,8 @@ There is no gate script. The gates **are** the suite, so the whole verdict is tw
 ```sh
 npm run build   # the size budget and the derived reference measure the BUILT entry
 npm test        # every gate below, plus the behavioural suites
-node scripts/size-gate.mjs   # the size probe again, through its real CLI
+node scripts/size-gate.mjs             # the size probe again, through its real CLI
+node scripts/verify-package-paths.mjs  # every path files[] and exports promise resolves
 ```
 
 Run in that order. A suite run against a stale `dist/` asserts against an artefact nobody is
@@ -82,9 +83,13 @@ probe **through its CLI** — the exit code and the printed report — because t
 depends on; running it by hand is how you read the table when a budget moves. Measured 2026-08-16:
 `size-gate: OK — 16 measurements under the budget`, exit 0.
 
-`.github/workflows/ci.yml` runs exactly these, plus a pack check that every path promised in
-`files[]` and every target in `exports` resolves to something that exists. Nothing in CI is stronger
-than what you can run locally, and nothing local is weaker than CI. That is the point.
+The fourth command is the one a library owes the people installing it: `files[]` and `exports` are
+promises made to someone not in the room, and a target that resolves to nothing is an install that
+succeeds and then throws on first import. It lives in a script rather than inside a workflow
+precisely so this list can contain it — nothing in CI is stronger than what you can run locally, and
+nothing local is weaker than CI. `.github/workflows/ci.yml` runs these on every pull request, and
+`release.yml` runs them again on the tag, because the run that publishes is the run that most needs
+to have checked.
 
 ### The check that runs a browser, and why it is not wired in
 
