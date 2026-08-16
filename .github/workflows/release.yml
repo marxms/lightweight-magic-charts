@@ -1,6 +1,6 @@
 # Publication, driven by a TAG and gated by the same suite.
 #
-# The tag is the trigger rather than a push to main because publishing is irreversible: a version on
+# The tag is the trigger rather than a push to master because publishing is irreversible: a version on
 # npm cannot be replaced, only deprecated. Requiring an explicit `vX.Y.Z` makes the release an act,
 # not a side effect of merging.
 name: Release
