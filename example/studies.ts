@@ -128,10 +128,27 @@ export const DEMO_SOURCES: readonly PlottableSource[] = [
   },
 ];
 
-const BY_ID = new Map(DEMO_SOURCES.map((source) => [source.id, source]));
+/**
+ * KEYED BY BOTH THE ID AND THE LABEL, and the second key is not belt-and-braces.
+ *
+ * `ChartWorkspace` stores `entry.label` — the DISPLAYED TEXT — as the chosen study's identity, and
+ * that string is what comes back to this lookup. Keyed by id alone it answers `undefined`, and the
+ * resolver then treats the source as unknown: no overlay, an unnamed lane, nothing drawn. That is
+ * exactly what the published page did, and it looked like the study was broken rather than unfound.
+ *
+ * Both keys are here so the demo works against the library as it behaves today. The id stays because
+ * a display string is the wrong identity for stored state — see the note in the README's boundary
+ * section — and this map is what will keep working when that is corrected.
+ */
+const BY_KEY = new Map(
+  DEMO_SOURCES.flatMap((source) => [
+    [source.id, source] as const,
+    [source.label, source] as const,
+  ]),
+);
 
-/** One id, one answer — the shape the resolver takes. */
-export const demoLookup = (id: string): PlottableSource | undefined => BY_ID.get(id);
+/** One key, one answer — the shape the resolver takes. */
+export const demoLookup = (key: string): PlottableSource | undefined => BY_KEY.get(key);
 
 export const DEMO_STUDY_CATALOGUE: readonly SeriesCatalogueEntry[] = DEMO_SOURCES.map((source) => ({
   provider: source.series()[0].provider,
@@ -143,4 +160,8 @@ export const DEMO_STUDY_CATALOGUE: readonly SeriesCatalogueEntry[] = DEMO_SOURCE
       : 'Drawn in a lane of its own, because it is not.',
 }));
 
-export const DEMO_STUDY_IDS: readonly string[] = DEMO_SOURCES.map((source) => source.id);
+/** Both spellings, because a stored payload may carry either. */
+export const DEMO_STUDY_IDS: readonly string[] = DEMO_SOURCES.flatMap((source) => [
+  source.id,
+  source.label,
+]);

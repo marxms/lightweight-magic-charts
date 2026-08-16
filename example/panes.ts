@@ -19,7 +19,16 @@ export const DEMO_PANES: readonly PaneSpec[] = [
     // The price pane declares no target height: it receives the residual.
     format: { kind: 'price', minMove: 0.01 },
     defaultVisible: true,
-    series: [],
+    /**
+     * THE OVERLAY SLOTS, DECLARED BY THE HOST. A study whose scale sits near the price is resolved
+     * as an overlay and its readings are filed under `ovl<lane>p<plot>` — but nothing in the library
+     * adds a series to the price pane, so a slot that is not declared here has a reading and no line.
+     * One per lane, matching the `lanes` count handed to `resolutionPolicy`.
+     */
+    series: [
+      { id: seriesId('ovl1p1'), label: 'Study', shape: 'line', color: '#4c9aff', lineWidth: 2 },
+      { id: seriesId('ovl2p1'), label: 'Study', shape: 'line', color: '#c792ea', lineWidth: 2 },
+    ],
   },
   {
     id: paneId('volume'),
