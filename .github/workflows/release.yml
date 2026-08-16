@@ -1,0 +1,54 @@
+# Publication, driven by a TAG and gated by the same suite.
+#
+# The tag is the trigger rather than a push to main because publishing is irreversible: a version on
+# npm cannot be replaced, only deprecated. Requiring an explicit `vX.Y.Z` makes the release an act,
+# not a side effect of merging.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      # The tag and the manifest must agree. They drift the moment someone tags without bumping, and
+      # the result is a release whose name does not match what is inside it.
+      - name: The tag must equal the version in package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "tag v$TAG does not match package.json $PKG"
+            exit 1
+          fi
+          echo "tag and manifest agree on $PKG"
+
+      - name: Build
+        run: npm run build
+
+      - name: Suite
+        run: npm test
+
+      # `--provenance` publishes a signed attestation linking the tarball to this workflow run, so a
+      # consumer can verify the package came from this repository and not from someone's laptop.
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,746 @@
+{
+  "probes": [
+    0.00008402,
+    55.4,
+    88431.5,
+    1234.5,
+    -9000
+  ],
+  "cases": [
+    [
+      "price plus three panes, one of them hidden",
+      [
+        {
+          "call": "createChart",
+          "options": {
+            "autoSize": false,
+            "layout": {
+              "background": {
+                "color": "transparent"
+              },
+              "textColor": "#B8BCC4",
+              "attributionLogo": true
+            },
+            "grid": {
+              "vertLines": {
+                "visible": false
+              },
+              "horzLines": {
+                "color": "rgba(255,255,255,0.05)"
+              }
+            },
+            "rightPriceScale": {
+              "borderVisible": false
+            },
+            "timeScale": {
+              "borderVisible": false,
+              "timeVisible": true
+            }
+          }
+        },
+        {
+          "call": "addSeries",
+          "shape": "candlestick",
+          "paneIndex": 0,
+          "color": null,
+          "upColor": "#26a69a",
+          "downColor": "#ef5350",
+          "lineWidth": null,
+          "priceLineVisible": null,
+          "lastValueVisible": null,
+          "borderVisible": false,
+          "wickUpColor": "#26a69a",
+          "wickDownColor": "#ef5350",
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.000001,
+          "formatted": [
+            "0.000084",
+            "55.40",
+            "88431.5",
+            "1234.5",
+            "-9000.000000"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@0",
+          "top": 0.12,
+          "bottom": 0.12
+        },
+        {
+          "call": "addPane",
+          "index": 1
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 1,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 1,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@1",
+          "top": 0.24,
+          "bottom": 0.12
+        },
+        {
+          "call": "addPane",
+          "index": 2
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 2,
+          "color": "#ffb74d",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 2,
+          "color": "#ffb74d",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "area",
+          "paneIndex": 2,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@2",
+          "top": 0.24,
+          "bottom": 0.12
+        },
+        {
+          "call": "addPane",
+          "index": 3
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 3,
+          "color": "#91a069",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0",
+            "55",
+            "88432",
+            "1235",
+            "-9000"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 3,
+          "color": "#91a069",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0",
+            "55",
+            "88432",
+            "1235",
+            "-9000"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@3",
+          "top": 0.24,
+          "bottom": 0.12
+        }
+      ]
+    ],
+    [
+      "price with companions, one on its own scale",
+      [
+        {
+          "call": "createChart",
+          "options": {
+            "autoSize": false,
+            "layout": {
+              "background": {
+                "color": "transparent"
+              },
+              "textColor": "#B8BCC4",
+              "attributionLogo": true
+            },
+            "grid": {
+              "vertLines": {
+                "visible": false
+              },
+              "horzLines": {
+                "color": "rgba(255,255,255,0.05)"
+              }
+            },
+            "rightPriceScale": {
+              "borderVisible": false
+            },
+            "timeScale": {
+              "borderVisible": false,
+              "timeVisible": true
+            }
+          }
+        },
+        {
+          "call": "addSeries",
+          "shape": "candlestick",
+          "paneIndex": 0,
+          "color": null,
+          "upColor": "#26a69a",
+          "downColor": "#ef5350",
+          "lineWidth": null,
+          "priceLineVisible": null,
+          "lastValueVisible": null,
+          "borderVisible": false,
+          "wickUpColor": "#26a69a",
+          "wickDownColor": "#ef5350",
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.000001,
+          "formatted": [
+            "0.000084",
+            "55.40",
+            "88431.5",
+            "1234.5",
+            "-9000.000000"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@0",
+          "top": 0.12,
+          "bottom": 0.12
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 0,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": "vol",
+          "minMove": 0.1,
+          "formatted": [
+            "0.0",
+            "55.4",
+            "88.4K",
+            "1.2K",
+            "-9.0K"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "vol",
+          "top": 0.84,
+          "bottom": 0
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 0,
+          "color": "#4fc3f7",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.000001,
+          "formatted": [
+            "0.000084",
+            "55.40",
+            "88431.5",
+            "1234.5",
+            "-9000.000000"
+          ]
+        },
+        {
+          "call": "addPane",
+          "index": 1
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 1,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 1,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@1",
+          "top": 0.24,
+          "bottom": 0.12
+        }
+      ]
+    ],
+    [
+      "no price pane: the first listed becomes the anchor",
+      [
+        {
+          "call": "createChart",
+          "options": {
+            "autoSize": false,
+            "layout": {
+              "background": {
+                "color": "transparent"
+              },
+              "textColor": "#B8BCC4",
+              "attributionLogo": true
+            },
+            "grid": {
+              "vertLines": {
+                "visible": false
+              },
+              "horzLines": {
+                "color": "rgba(255,255,255,0.05)"
+              }
+            },
+            "rightPriceScale": {
+              "borderVisible": false
+            },
+            "timeScale": {
+              "borderVisible": false,
+              "timeVisible": true
+            }
+          }
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 0,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 0,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 2,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.0001,
+          "formatted": [
+            "0.0084%",
+            "5540.0000%",
+            "8843150.0000%",
+            "123450.0000%",
+            "-900000.0000%"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@0",
+          "top": 0.24,
+          "bottom": 0.12
+        },
+        {
+          "call": "addPane",
+          "index": 1
+        },
+        {
+          "call": "addSeries",
+          "shape": "line",
+          "paneIndex": 1,
+          "color": "#ffb74d",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "histogram",
+          "paneIndex": 1,
+          "color": "#ffb74d",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": false,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "addSeries",
+          "shape": "area",
+          "paneIndex": 1,
+          "color": "#ffffff",
+          "upColor": null,
+          "downColor": null,
+          "lineWidth": 1,
+          "priceLineVisible": false,
+          "lastValueVisible": false,
+          "borderVisible": null,
+          "wickUpColor": null,
+          "wickDownColor": null,
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.01,
+          "formatted": [
+            "0.00",
+            "55.40",
+            "88431.50",
+            "1234.50",
+            "-9000.00"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@1",
+          "top": 0.24,
+          "bottom": 0.12
+        }
+      ]
+    ],
+    [
+      "the price pane alone",
+      [
+        {
+          "call": "createChart",
+          "options": {
+            "autoSize": false,
+            "layout": {
+              "background": {
+                "color": "transparent"
+              },
+              "textColor": "#B8BCC4",
+              "attributionLogo": true
+            },
+            "grid": {
+              "vertLines": {
+                "visible": false
+              },
+              "horzLines": {
+                "color": "rgba(255,255,255,0.05)"
+              }
+            },
+            "rightPriceScale": {
+              "borderVisible": false
+            },
+            "timeScale": {
+              "borderVisible": false,
+              "timeVisible": true
+            }
+          }
+        },
+        {
+          "call": "addSeries",
+          "shape": "candlestick",
+          "paneIndex": 0,
+          "color": null,
+          "upColor": "#26a69a",
+          "downColor": "#ef5350",
+          "lineWidth": null,
+          "priceLineVisible": null,
+          "lastValueVisible": null,
+          "borderVisible": false,
+          "wickUpColor": "#26a69a",
+          "wickDownColor": "#ef5350",
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.000001,
+          "formatted": [
+            "0.000084",
+            "55.40",
+            "88431.5",
+            "1234.5",
+            "-9000.000000"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@0",
+          "top": 0.12,
+          "bottom": 0.12
+        }
+      ]
+    ],
+    [
+      "a pane with no series at all",
+      [
+        {
+          "call": "createChart",
+          "options": {
+            "autoSize": false,
+            "layout": {
+              "background": {
+                "color": "transparent"
+              },
+              "textColor": "#B8BCC4",
+              "attributionLogo": true
+            },
+            "grid": {
+              "vertLines": {
+                "visible": false
+              },
+              "horzLines": {
+                "color": "rgba(255,255,255,0.05)"
+              }
+            },
+            "rightPriceScale": {
+              "borderVisible": false
+            },
+            "timeScale": {
+              "borderVisible": false,
+              "timeVisible": true
+            }
+          }
+        },
+        {
+          "call": "addSeries",
+          "shape": "candlestick",
+          "paneIndex": 0,
+          "color": null,
+          "upColor": "#26a69a",
+          "downColor": "#ef5350",
+          "lineWidth": null,
+          "priceLineVisible": null,
+          "lastValueVisible": null,
+          "borderVisible": false,
+          "wickUpColor": "#26a69a",
+          "wickDownColor": "#ef5350",
+          "visible": null,
+          "priceScaleId": null,
+          "minMove": 0.000001,
+          "formatted": [
+            "0.000084",
+            "55.40",
+            "88431.5",
+            "1234.5",
+            "-9000.000000"
+          ]
+        },
+        {
+          "call": "scaleMargins",
+          "scaleId": "right@0",
+          "top": 0.12,
+          "bottom": 0.12
+        },
+        {
+          "call": "addPane",
+          "index": 1
+        }
+      ]
+    ]
+  ]
+}

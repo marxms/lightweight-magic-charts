@@ -1,0 +1,273 @@
+{
+  "palette": {
+    "up": "#26a69a",
+    "down": "#ef5350"
+  },
+  "carry": [
+    [
+      "no carry, no gap",
+      [
+        1,
+        2,
+        3
+      ]
+    ],
+    [
+      "no carry, gap in the middle",
+      [
+        1,
+        null,
+        3
+      ]
+    ],
+    [
+      "no carry, all null",
+      [
+        null,
+        null
+      ]
+    ],
+    [
+      "carry, gap in the middle",
+      [
+        1,
+        1,
+        3
+      ]
+    ],
+    [
+      "carry, gap at the start",
+      [
+        null,
+        2,
+        2
+      ]
+    ],
+    [
+      "carry, gap at the end",
+      [
+        1,
+        1,
+        1
+      ]
+    ],
+    [
+      "carry, all null",
+      [
+        null,
+        null
+      ]
+    ],
+    [
+      "carry, empty",
+      []
+    ],
+    [
+      "carry declared false is the same as absent",
+      [
+        1,
+        null,
+        3
+      ]
+    ],
+    [
+      "carry preserves the zero, which is not a gap",
+      [
+        0,
+        0,
+        3
+      ]
+    ]
+  ],
+  "plot": [
+    [
+      "no flag at all",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": null
+        },
+        {
+          "time": 1700000060,
+          "value": -2,
+          "color": null
+        },
+        {
+          "time": 1700000120,
+          "value": 3,
+          "color": null
+        }
+      ]
+    ],
+    [
+      "mirrored negates the magnitude, even of an already negative value",
+      [
+        {
+          "time": 1700000000,
+          "value": -1,
+          "color": null
+        },
+        {
+          "time": 1700000060,
+          "value": -2,
+          "color": null
+        },
+        {
+          "time": 1700000120,
+          "value": "-0",
+          "color": null
+        }
+      ]
+    ],
+    [
+      "coloured by sign",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000060,
+          "value": -2,
+          "color": "#ef5350"
+        },
+        {
+          "time": 1700000120,
+          "value": 0,
+          "color": "#26a69a"
+        }
+      ]
+    ],
+    [
+      "coloured by the bar direction",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000060,
+          "value": 2,
+          "color": "#ef5350"
+        },
+        {
+          "time": 1700000120,
+          "value": 3,
+          "color": "#26a69a"
+        }
+      ]
+    ],
+    [
+      "bar direction beats the sign when both are declared",
+      [
+        {
+          "time": 1700000000,
+          "value": -1,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000060,
+          "value": -2,
+          "color": "#ef5350"
+        },
+        {
+          "time": 1700000120,
+          "value": -3,
+          "color": "#26a69a"
+        }
+      ]
+    ],
+    [
+      "mirrored and coloured by sign: the colour reads the PLOTTED value",
+      [
+        {
+          "time": 1700000000,
+          "value": -5,
+          "color": "#ef5350"
+        },
+        {
+          "time": 1700000060,
+          "value": -5,
+          "color": "#ef5350"
+        },
+        {
+          "time": 1700000120,
+          "value": -5,
+          "color": "#ef5350"
+        }
+      ]
+    ],
+    [
+      "a gap does not become a point",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000120,
+          "value": 3,
+          "color": "#26a69a"
+        }
+      ]
+    ],
+    [
+      "a reading longer than the bars is truncated",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": null
+        },
+        {
+          "time": 1700000060,
+          "value": 2,
+          "color": null
+        },
+        {
+          "time": 1700000120,
+          "value": 3,
+          "color": null
+        }
+      ]
+    ],
+    [
+      "a reading shorter than the bars invents no point",
+      [
+        {
+          "time": 1700000000,
+          "value": 1,
+          "color": null
+        }
+      ]
+    ],
+    [
+      "no reading at all",
+      []
+    ],
+    [
+      "zero is a point, and on the upper side",
+      [
+        {
+          "time": 1700000000,
+          "value": 0,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000060,
+          "value": 0,
+          "color": "#26a69a"
+        },
+        {
+          "time": 1700000120,
+          "value": 0,
+          "color": "#26a69a"
+        }
+      ]
+    ]
+  ]
+}

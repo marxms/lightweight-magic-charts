@@ -1,0 +1,145 @@
+{
+  "why": "LMC-68 — um teto único por símbolo seria falso: o custo medido varia 545 vezes entre o menor e o maior símbolo desta biblioteca, então a folga tem de vir da faixa em que o símbolo cai, não de um percentual universal.",
+  "measuredOn": "2026-08-16",
+  "measuredHow": "tsc -p tsconfig.esm.json -> dist/esm, depois esbuild com bundle, minify, format=esm e os pares declarados como externos; bytes do arquivo de saída.",
+  "bundler": {
+    "name": "esbuild",
+    "version": "0.25.12",
+    "why": "Versão EXATA, sem faixa. Saída de minificador muda entre versões menores, e um número de referência que se move sozinho transforma o gate em ruído: a falha deixaria de significar regressão e passaria a significar atualização de dependência."
+  },
+  "bands": {
+    "A": {
+      "what": "folha, abaixo de 500 B",
+      "slack": {
+        "kind": "fixed",
+        "bytes": 200
+      },
+      "why": "Percentual em folha não significa nada: 25% de 36 B são 9 B, e uma cláusula de guarda minificada custa de 40 a 80 B. O orçamento dispararia em manutenção honesta, não em regressão."
+    },
+    "B": {
+      "what": "módulo, de 500 B a 5 kB",
+      "slack": {
+        "kind": "percent",
+        "percent": 25
+      },
+      "why": "Crescimento aqui é evento de desenho que alguém tem de defender. 10% dispararia em refactor comum; 50% deixaria um módulo dobrar em dois passos sem nunca reprovar."
+    },
+    "C": {
+      "what": "composto, 5 kB ou mais",
+      "slack": {
+        "kind": "percent",
+        "percent": 10
+      },
+      "ratchet": "down-only",
+      "why": "São exatamente os símbolos que esta feature existe para encolher. Dar 25% a WorkspaceSurface licenciaria a god component a crescer enquanto a fatia que a dissolve está em voo, então aqui o valor medido é o teto: a faixa C só desce."
+    },
+    "spec": {
+      "what": "limite fixado pela spec, não derivado da fórmula",
+      "why": "LMC-35 nomeia computeLayout como sonda e fixa 2.000 B. O limite da spec vence o da fórmula, que daria 1.338."
+    }
+  },
+  "symbols": [
+    {
+      "symbol": "utcSeconds",
+      "band": "A",
+      "measured": 36,
+      "limit": 236
+    },
+    {
+      "symbol": "DEFAULT_WORKSPACE_THEME",
+      "band": "A",
+      "measured": 383,
+      "limit": 583
+    },
+    {
+      "symbol": "formatterFor",
+      "band": "A",
+      "measured": 449,
+      "limit": 649
+    },
+    {
+      "symbol": "reduceTabs",
+      "band": "B",
+      "measured": 959,
+      "limit": 1199
+    },
+    {
+      "symbol": "computeLayout",
+      "band": "spec",
+      "measured": 1078,
+      "limit": 2000
+    },
+    {
+      "symbol": "WorkspaceLegend",
+      "band": "B",
+      "measured": 1128,
+      "limit": 1410
+    },
+    {
+      "symbol": "DensityFieldOverlay",
+      "band": "B",
+      "measured": 1776,
+      "limit": 2220
+    },
+    {
+      "symbol": "applyFrame",
+      "band": "B",
+      "measured": 2574,
+      "limit": 3218
+    },
+    {
+      "symbol": "PaneStack",
+      "band": "B",
+      "measured": 2714,
+      "limit": 3383
+    },
+    {
+      "symbol": "openScope",
+      "band": "B",
+      "measured": 3974,
+      "limit": 4968
+    },
+    {
+      "symbol": "CONFORMANCE_CASES",
+      "band": "C",
+      "module": "conformance/suite.js",
+      "measured": 12505,
+      "limit": 13756,
+      "note": "SAIU DO ENTRY NO T53, e continua medida — pelo subcaminho ./conformance, que é onde o manifesto agora a declara. Apagar a linha seria levantar o teto ao infinito: o símbolo pesa 12,5 kB e alguém tem de continuar respondendo por ele. O que o entry ganhou está no sensor entryConformance, que passou a exigir zero."
+    },
+    {
+      "symbol": "ChartSurface",
+      "band": "C",
+      "measured": 22144,
+      "limit": 22144,
+      "note": "Era WorkspaceSurface, a god component de 764 linhas e 28 props. A fase 9 a dissolveu em react/surface/ e o símbolo mudou de nome junto. REMEDIDO no T59: 19.638 -> 21.430, e o limite NÃO acompanhou. Dissolver um componente em módulos nomeados só pode aumentar o bundle transitivo dele — cada nome custa de 36 a 44 bytes — e a folga de 10% da faixa C existe para absorver exatamente isso. Quem mede a dissolução é o teto de linhas por arquivo e o de props, e os dois apertaram: 764 -> 219 linhas e 28 -> 9 props. O limite fica em 21.602 porque faixa C só desce. RE-PINNED 2026-08-15 to 21463 (+28 B): the future-room contract — `futureBars` on the data seam of both the surface and the composed root, plus the count policy in domain/futureTail.ts. Measured, not estimated: the chart's right edge WAS the last bar (ink at column 1143 of 1144), so nothing could project past it. RE-PINNED 2026-08-15 to 21721 (+258 B): the future room itself — the whitespace tail appended where domain bars become the base library's payload. Measured 12 columns by default, spaced by the interval the last two real bars measured. The limit now EQUALS the measurement, dropping 139 B of leftover band-C slack: every other composite row in this ledger is pinned at its measurement, and slack on one row only is a ratchet that ratchets less. RE-PINNED 2026-08-15 to 21827 (+106 B): the room became PROPORTIONAL to the history and the opening view stopped framing it. Measured on a live deploy that 12 columns read as much too short; measured in the base library's source that `fitContent()` frames `_points.length - 1`, whitespace included — so a history-sized room needed framing by logical index instead. RE-PINNED 2026-08-15 to 21889 (+62 B): the opening margin became PROPORTIONAL. A flat twelve columns reads as 1.5% beside 800 bars and as 92% beside one, and one bar is exactly what a live timeframe change shows while history reloads — the candle got a thirteenth of the screen. The regression missed it because the test had written the defect down as the expectation (`to: 1 + 12`); it now asserts a ratio. RE-PINNED 2026-08-16 to 22110 (+221 B): the opening view stopped being framed once per dataset identity. That was a RACE — switching interval changes the identity immediately but history arrives a moment later, so the framing ran against one bar and then marked the dataset done, leaving the right half blank for good. The surface now remembers the bar count it framed with and frames again when the load has doubled; the live bar arriving never crosses that. RE-PINNED 2026-08-16 to 22144 (+34 B): the reframe rule covers BOTH directions. Measured on the deploy with fit-to-screen OFF: a chart framed for 800 bars with three in it, two lit columns out of 1144. The dataset identity changes one render before the bars do, so the framing is made for the interval being left and the arriving one starts small underneath it — shrinking is a load arriving just as much as growing is."
+    },
+    {
+      "symbol": "ChartWorkspace",
+      "band": "C",
+      "measured": 92868,
+      "limit": 92868,
+      "note": "The composed root, entered as PROVENANCE at the cutover boundary: it is the symbol this whole extraction produced and it had no row while it was being built. Measured 90,555 B — 91% of the whole entry, which is the honest shape of a drop-in: a consumer who imports the one composed component pays for the fourteen regions, the chrome layer and the surface underneath it, and almost nothing else on the entry is outside that graph. Pinned AT the measurement rather than at the band's 10% slack: band C only descends, and a symbol entering the ledger has no history to owe slack to. RE-PINNED 2026-08-14 to 91,308 (+753 B): the wording contract. 91% of the entry, which is expected — the root IS the composition. RE-PINNED 2026-08-14 to 91,389 (+81 B): the grid width fix and the alert label channel. RE-PINNED 2026-08-15 to 91719 (+330 B): the Intl formatting. RE-PINNED 2026-08-15 to 91772 (+53 B): the future-room contract — `futureBars` on the data seam of both the surface and the composed root, plus the count policy in domain/futureTail.ts. Measured, not estimated: the chart's right edge WAS the last bar (ink at column 1143 of 1144), so nothing could project past it. RE-PINNED 2026-08-15 to 92030 (+258 B): the future room itself — the whitespace tail appended where domain bars become the base library's payload. Measured 12 columns by default, spaced by the interval the last two real bars measured. RE-PINNED 2026-08-15 to 92136 (+106 B): the room became PROPORTIONAL to the history and the opening view stopped framing it. Measured on a live deploy that 12 columns read as much too short; measured in the base library's source that `fitContent()` frames `_points.length - 1`, whitespace included — so a history-sized room needed framing by logical index instead. RE-PINNED 2026-08-15 to 92539 (+403 B): drawings became scoped to the INSTRUMENT ON ITS EXCHANGE. Reproduced first: one layer served both markets, so switching asset left the previous market's drawings on screen, priced for a range that no longer existed. The rail now files the snapshot under the market being left, clears, and restores the arriving one; the key gained venue and market and still excludes the timeframe, which is what makes a line survive an interval change. RE-PINNED 2026-08-15 to 92601 (+62 B): the opening margin became PROPORTIONAL. A flat twelve columns reads as 1.5% beside 800 bars and as 92% beside one, and one bar is exactly what a live timeframe change shows while history reloads — the candle got a thirteenth of the screen. The regression missed it because the test had written the defect down as the expectation (`to: 1 + 12`); it now asserts a ratio. RE-PINNED 2026-08-16 to 92822 (+221 B): the opening view stopped being framed once per dataset identity. That was a RACE — switching interval changes the identity immediately but history arrives a moment later, so the framing ran against one bar and then marked the dataset done, leaving the right half blank for good. The surface now remembers the bar count it framed with and frames again when the load has doubled; the live bar arriving never crosses that. RE-PINNED 2026-08-16 to 92834 (+12 B): the lane notice stopped comparing a SeamState against a SeedVerdict member. `seam === 'verified'` could never be true — SeamState is none|anchored|unanchored — so the warning fired on every chart with bars, including ones whose seam was anchored. It reads the seed outcome now. RE-PINNED 2026-08-16 to 92868 (+34 B): the reframe rule covers BOTH directions. Measured on the deploy with fit-to-screen OFF: a chart framed for 800 bars with three in it, two lit columns out of 1144. The dataset identity changes one render before the bars do, so the framing is made for the interval being left and the arriving one starts small underneath it — shrinking is a load arriving just as much as growing is."
+    }
+  ],
+  "entry": {
+    "symbol": "*",
+    "band": "C",
+    "measured": 102055,
+    "limit": 102055,
+    "ratchet": "down-only",
+    "note": "The whole entry, as ballast. Down-only with ZERO slack: the limit IS the measurement, deliberately, so every growth has to be named. RE-PINNED 2026-08-15 from 100,574 to 100904 (+330 B, +0.33%) for correctness the default text did not have: the library rendered '1 panes' with one pane, joined lists with a hard-coded ', ' where Portuguese wants ' e ', and printed decimals with a point where Portuguese wants a comma. Plural, list and number now go through Intl.PluralRules, Intl.ListFormat and Intl.NumberFormat — platform, already in the ES2021 target, so the peers stay react and lightweight-charts and no runtime dependency was added. A cheaper variant (toLocaleString) was measured at 15 B less and refused: it costs the literalness the requirement asks for. Hard cap 194,061 at 52%. RE-PINNED 2026-08-15 to 100959 (+55 B): the future-room contract — `futureBars` on the data seam of both the surface and the composed root, plus the count policy in domain/futureTail.ts. Measured, not estimated: the chart's right edge WAS the last bar (ink at column 1143 of 1144), so nothing could project past it. RE-PINNED 2026-08-15 to 101217 (+258 B): the future room itself — the whitespace tail appended where domain bars become the base library's payload. Measured 12 columns by default, spaced by the interval the last two real bars measured. RE-PINNED 2026-08-15 to 101323 (+106 B): the room became PROPORTIONAL to the history and the opening view stopped framing it. Measured on a live deploy that 12 columns read as much too short; measured in the base library's source that `fitContent()` frames `_points.length - 1`, whitespace included — so a history-sized room needed framing by logical index instead. RE-PINNED 2026-08-15 to 101726 (+403 B): drawings became scoped to the INSTRUMENT ON ITS EXCHANGE. Reproduced first: one layer served both markets, so switching asset left the previous market's drawings on screen, priced for a range that no longer existed. The rail now files the snapshot under the market being left, clears, and restores the arriving one; the key gained venue and market and still excludes the timeframe, which is what makes a line survive an interval change. RE-PINNED 2026-08-15 to 101788 (+62 B): the opening margin became PROPORTIONAL. A flat twelve columns reads as 1.5% beside 800 bars and as 92% beside one, and one bar is exactly what a live timeframe change shows while history reloads — the candle got a thirteenth of the screen. The regression missed it because the test had written the defect down as the expectation (`to: 1 + 12`); it now asserts a ratio. RE-PINNED 2026-08-16 to 102009 (+221 B): the opening view stopped being framed once per dataset identity. That was a RACE — switching interval changes the identity immediately but history arrives a moment later, so the framing ran against one bar and then marked the dataset done, leaving the right half blank for good. The surface now remembers the bar count it framed with and frames again when the load has doubled; the live bar arriving never crosses that. RE-PINNED 2026-08-16 to 102021 (+12 B): the lane notice stopped comparing a SeamState against a SeedVerdict member. `seam === 'verified'` could never be true — SeamState is none|anchored|unanchored — so the warning fired on every chart with bars, including ones whose seam was anchored. It reads the seed outcome now. RE-PINNED 2026-08-16 to 102055 (+34 B): the reframe rule covers BOTH directions. Measured on the deploy with fit-to-screen OFF: a chart framed for 800 bars with three in it, two lit columns out of 1144. The dataset identity changes one render before the bars do, so the framing is made for the interval being left and the arriving one starts small underneath it — shrinking is a load arriving just as much as growing is. HARD CAP RE-MEASURED 2026-08-16 at 195761 (was 194061) in the library's OWN repository: the ceiling is `lightweight-charts` under this same probe, and the peer installed here is 5.2.1. The number moving with the peer is the point — a ceiling pinned against a build nobody has is a ceiling about nothing.",
+    "hardCap": 195761,
+    "pinnedAtPhase": "15-definitive"
+  },
+  "entryConformance": {
+    "what": "bytes de src/conformance/ DENTRO do bundle do entry principal",
+    "measured": 0,
+    "limit": 0,
+    "target": 0,
+    "targetSlice": 2,
+    "reachedIn": "T53",
+    "marker": "a frame from another scope is discarded, never applied",
+    "why": "LMC-27. Medido no arquivo de saída, nunca em módulos analisados: analisar lista tudo o que o grafo alcança e não discrimina o que sobrevive ao tree-shaking. O marcador de texto é a segunda asserção, independente do metafile, para o sensor não morrer se um mecanismo mudar. ALVO ALCANÇADO NO T53, uma fatia antes do previsto: a fase 9 não cabia sob o teto do entry sem estes 8,7 kB, então o dono deixou de ser a fatia 4 por necessidade medida, não por conveniência."
+  }
+}

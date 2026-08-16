@@ -1,0 +1,64 @@
+# The gate, run on the same commands a contributor runs locally.
+#
+# WHY THESE FOUR AND NOT A GENERIC "lint, test, build": this library's guarantees are enforced BY the
+# suite — the language gate, the derived-reference gate, the size budget and the boundary checks all
+# live in `npm test`. A CI that ran something else would be weaker than the local gate, and a gate
+# that can be weaker than the developer's own run is not a gate.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # BUILD FIRST. The size budget and the derived reference both measure the BUILT entry, so a
+      # suite run against a stale `dist` would assert against an artefact nobody is shipping.
+      - name: Build
+        run: npm run build
+
+      - name: Suite (includes the language, reference, boundary and size-budget gates)
+        run: npm test
+
+      # The published tarball is part of the contract: `files` promises paths, and a promise that
+      # resolves to nothing is a broken install for whoever consumes it.
+      - name: Pack, and prove every promised path exists
+        run: |
+          npm pack --dry-run
+          node -e "
+            const p = require('./package.json');
+            const fs = require('fs');
+            const missing = (p.files ?? []).filter((f) => !fs.existsSync(f));
+            if (missing.length > 0) {
+              console.error('files[] promises paths that do not exist:', missing.join(', '));
+              process.exit(1);
+            }
+            for (const [name, map] of Object.entries(p.exports ?? {})) {
+              for (const target of Object.values(typeof map === 'string' ? { default: map } : map)) {
+                if (typeof target === 'string' && !fs.existsSync(target)) {
+                  console.error('exports ' + name + ' points at a missing file:', target);
+                  process.exit(1);
+                }
+              }
+            }
+            console.log('files[] and exports both resolve');
+          "

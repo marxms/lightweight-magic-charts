@@ -1,0 +1,272 @@
+{
+  "boxes": [
+    [
+      "nothing applied yet",
+      []
+    ],
+    [
+      "degenerate budget",
+      []
+    ],
+    [
+      "the anchor pane alone",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 692
+          }
+        ]
+      ]
+    ],
+    [
+      "anchor plus three panes",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 396
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 397,
+            "height": 121
+          }
+        ],
+        [
+          "b",
+          {
+            "top": 519,
+            "height": 86
+          }
+        ],
+        [
+          "c",
+          {
+            "top": 606,
+            "height": 86
+          }
+        ]
+      ]
+    ],
+    [
+      "a pane collapsed to zero gets no box, and does not shift the ones below",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 394
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 395,
+            "height": 120
+          }
+        ],
+        [
+          "c",
+          {
+            "top": 516,
+            "height": 83
+          }
+        ]
+      ]
+    ],
+    [
+      "every pane collapsed",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 690
+          }
+        ]
+      ]
+    ],
+    [
+      "the stack order decides the position, not the map order",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 396
+          }
+        ],
+        [
+          "c",
+          {
+            "top": 397,
+            "height": 86
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 484,
+            "height": 121
+          }
+        ],
+        [
+          "b",
+          {
+            "top": 606,
+            "height": 86
+          }
+        ]
+      ]
+    ],
+    [
+      "a pane missing from the factor map counts as zero",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 476
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 477,
+            "height": 120
+          }
+        ]
+      ]
+    ],
+    [
+      "an anchor with no price uses the id of the first pane",
+      [
+        [
+          "a",
+          {
+            "top": 0,
+            "height": 390
+          }
+        ],
+        [
+          "b",
+          {
+            "top": 391,
+            "height": 85
+          }
+        ]
+      ]
+    ],
+    [
+      "fractional height",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 394
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 395,
+            "height": 120
+          }
+        ],
+        [
+          "b",
+          {
+            "top": 516,
+            "height": 86
+          }
+        ]
+      ]
+    ],
+    [
+      "budget smaller than the time-axis band",
+      [
+        [
+          "price",
+          {
+            "top": 0,
+            "height": 2
+          }
+        ],
+        [
+          "a",
+          {
+            "top": 3,
+            "height": 2
+          }
+        ]
+      ]
+    ],
+    [
+      "zero price with live indicators",
+      [
+        [
+          "a",
+          {
+            "top": 0,
+            "height": 109
+          }
+        ],
+        [
+          "b",
+          {
+            "top": 110,
+            "height": 75
+          }
+        ]
+      ]
+    ],
+    [
+      "a single pane, with no price",
+      [
+        [
+          "a",
+          {
+            "top": 0,
+            "height": 269
+          }
+        ]
+      ]
+    ]
+  ],
+  "same": [
+    [
+      "two empty maps",
+      true
+    ],
+    [
+      "same content, same order",
+      true
+    ],
+    [
+      "same content, swapped order",
+      true
+    ],
+    [
+      "different sizes",
+      false
+    ],
+    [
+      "same key, different top",
+      false
+    ],
+    [
+      "same key, different height",
+      false
+    ],
+    [
+      "different keys",
+      false
+    ]
+  ]
+}

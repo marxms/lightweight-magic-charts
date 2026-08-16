@@ -1,0 +1,759 @@
+{
+  "palette": {
+    "up": "#26a69a",
+    "down": "#ef5350"
+  },
+  "lines": [
+    [
+      "price plus two panes, all with room",
+      [
+        {
+          "id": "price",
+          "title": "ABC · 1h",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "0.0084%"
+            }
+          ]
+        },
+        {
+          "id": "sides",
+          "title": "Lados",
+          "topPx": 492,
+          "entries": [
+            {
+              "id": "up",
+              "label": "Sobe",
+              "color": "#26a69a",
+              "value": "88.4K"
+            },
+            {
+              "id": "dn",
+              "label": "Desce",
+              "color": "#ef5350",
+              "value": "-9.0K"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "pane too short for a label gets no line",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "pane exactly at the label floor gets a line",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "100.0000%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "pane missing from the box map gets no line",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "invisible pane is skipped before any measurement",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "sides",
+          "title": "Lados",
+          "topPx": 492,
+          "entries": [
+            {
+              "id": "up",
+              "label": "Sobe",
+              "color": "#26a69a",
+              "value": "1.0"
+            },
+            {
+              "id": "dn",
+              "label": "Desce",
+              "color": "#ef5350",
+              "value": "2.0"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "with no price pane, only the indicators speak",
+      [
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "50.0000%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "with no bars, the price line exists and states no number",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": []
+        }
+      ]
+    ],
+    [
+      "zero open: the change is undefined, never infinite",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "0.000000"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "55.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "-5.000000"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "50.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#ef5350",
+              "value": "—"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "a falling bar paints the change in the down colour",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#ef5350",
+              "value": "-9.09%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "an index past the end is clamped to the last bar",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#ef5350",
+              "value": "-9.09%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "a negative index is clamped to the first bar",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "a null reading becomes a dash, never a zero",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "—"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "a pane with no recorded reading also speaks in a dash",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "—"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "a price-pane companion reads in its OWN unit",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            },
+            {
+              "id": "vol",
+              "label": "Vol",
+              "color": "#8884",
+              "value": "88.4K"
+            },
+            {
+              "id": "sem",
+              "label": "Sem formato",
+              "color": "#999",
+              "value": "1234.5"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "with no caption declared, the pane title serves",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        }
+      ]
+    ],
+    [
+      "the order is price first, then the declared order of the panes",
+      [
+        {
+          "id": "price",
+          "title": "Mercado",
+          "topPx": 0,
+          "entries": [
+            {
+              "id": "o",
+              "label": "O",
+              "color": null,
+              "value": "100.00"
+            },
+            {
+              "id": "h",
+              "label": "H",
+              "color": null,
+              "value": "115.00"
+            },
+            {
+              "id": "l",
+              "label": "L",
+              "color": null,
+              "value": "95.00"
+            },
+            {
+              "id": "c",
+              "label": "C",
+              "color": null,
+              "value": "110.00"
+            },
+            {
+              "id": "chg",
+              "label": "",
+              "color": "#26a69a",
+              "value": "+10.00%"
+            }
+          ]
+        },
+        {
+          "id": "sides",
+          "title": "Lados",
+          "topPx": 492,
+          "entries": [
+            {
+              "id": "up",
+              "label": "Sobe",
+              "color": "#26a69a",
+              "value": "2.0"
+            },
+            {
+              "id": "dn",
+              "label": "Desce",
+              "color": "#ef5350",
+              "value": "3.0"
+            }
+          ]
+        },
+        {
+          "id": "rate",
+          "title": "Taxa",
+          "topPx": 401,
+          "entries": [
+            {
+              "id": "r",
+              "label": "R",
+              "color": "#abc",
+              "value": "100.0000%"
+            }
+          ]
+        }
+      ]
+    ]
+  ]
+}

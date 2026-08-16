@@ -1,0 +1,13 @@
+# The library ships ZERO runtime dependencies, so what needs watching is the toolchain and the two
+# peers — a break there reaches consumers through the build, not through node_modules.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
