@@ -109,29 +109,26 @@ wide, and it is the **only** check in this repository that has ever seen a pixel
 `maxWidth: 0` on the surface, `maxWidth: 0` on the row — paint a blank screen and pass every
 library assertion. The probe kills the five in about seven seconds each.
 
-**It does not run in a clean clone of this repository, and it says so.** Measured 2026-08-16 it
-exits 2 with:
-
-```text
-layout probe: needs a browser driver — `playwright-core` did not resolve, and this probe measures
-what only a real browser can answer.
-```
-
-`playwright-core` is not a declared dependency here. In the monorepo it resolved transitively
-through `apps/web`; extraction removed that accident without replacing it. To run the probe you
-install the driver and a browser yourself:
+`playwright-core` is a declared devDependency, so `npm ci` installs the driver. The **browser** is a
+machine-local artefact rather than a repository one, so it is fetched once, by hand:
 
 ```sh
-npm i -D --no-save playwright-core   # not in package.json — see the note below
-npx playwright install chromium      # a machine-local artefact, not a repository one
+npx playwright install --only-shell chromium
 ```
 
-Leaving it undeclared is a choice, not an oversight: declaring it makes a browser download a
-prerequisite of `npm ci` for every contributor and every CI run, and a stage that cannot go green on
-a clean machine gets switched off before it discriminates anything. What the extraction has **not**
-yet done is give the probe a home of its own — it is the one measurement in this package that no
-gate carries, and until it has one, a geometry regression is caught by a human or not at all. Say
-so out loud rather than quoting a pass that includes geometry without having run it.
+`--only-shell` is the headless shell rather than the full browser: this probe measures layout, and
+nothing here needs a window. Without it the probe exits 2 and names what is missing rather than
+reporting a pass it did not earn.
+
+It runs in CI as a **job of its own**, not as a step on the gate. The gate has to stay runnable on a
+clean machine in seconds, and the matrix of three Node versions would pay for the browser download
+three times to measure geometry that does not vary by Node version.
+
+This is the correction of a real gap, and it is worth knowing why the rule exists. Until 2026-08-16
+the probe had no home: it resolved `playwright-core` by accident through the monorepo's app, and the
+extraction removed the accident without replacing it. `0.1.0` then shipped with a demo whose studies
+panel could not be closed by keyboard — past a green suite and a green CI, because nothing in the
+pipeline rendered anything.
 
 The jsdom side is the cheap half and it is asserted where the suite already runs —
 `test/compactGrid.spec.tsx`, `test/chartSurface.spec.tsx` and `test/canvasRow.spec.tsx` pin the

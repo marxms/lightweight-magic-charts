@@ -66,3 +66,34 @@ jobs:
         run: |
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
+
+  # THE ONLY CHECK HERE THAT HAS EVER SEEN A PIXEL, and until now it had no home: it needed
+  # `playwright-core`, which resolved by accident through the monorepo's app and vanished with the
+  # extraction. That gap cost a real release — `0.1.0` shipped with a demo whose panel could not be
+  # closed by keyboard, past a green suite and a green CI, because nothing rendered anything.
+  #
+  # A JOB OF ITS OWN, not a step on `gate`. It downloads a browser, which the gate must never need:
+  # the gate has to stay runnable on a clean machine in seconds, and a matrix of three would pay for
+  # the download three times to measure geometry that does not vary by Node version.
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # `--only-shell` fetches the headless shell rather than the full browser: this probe measures
+      # layout, and nothing here needs a window.
+      - name: Install the browser the probe drives
+        run: npx playwright install --only-shell chromium
+
+      - name: Layout probe (the geometry jsdom cannot produce)
+        run: npm run layout-probe
