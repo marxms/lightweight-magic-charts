@@ -107,7 +107,7 @@ The other two siblings are the adapters every host writes once: `example/port.ts
 ### Run it
 
 ```sh
-npm run example -w libs/lightweight-magic-charts
+npm run example
 ```
 
 One command, no backend and no credential. It builds the ESM output, bundles the page with esbuild

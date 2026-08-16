@@ -8,22 +8,23 @@ clean checkout, that is a bug in this file — report it as one.
 
 ## Setting up
 
-The package lives inside a monorepo and is an npm workspace. Install from the repository root, once:
+This package is its own repository and has no runtime dependencies. One install, from the root:
 
 ```sh
-npm install
+npm ci        # or `npm install` if you are changing the manifest
 ```
 
-Everything after this is run from the repository root too. `-w libs/lightweight-magic-charts` is what
-scopes a command to this package.
+Every command below is run from the repository root. There is no workspace flag: this package used
+to live inside a monorepo and was extracted, so if you find a `-w libs/…` anywhere in this tree, it
+is a leftover and a bug.
 
 ## Running the suite
 
 ```sh
-npm test -w libs/lightweight-magic-charts
+npm test
 ```
 
-95 suites, 1131 tests as measured on 2026-08-14, jest with `ts-jest`. The count is written with its
+99 suites, 1172 tests as measured on 2026-08-16, jest with `ts-jest`. The count is written with its
 date because it moves with every change; the command above is the authority, not this line. The
 default environment is `node` on purpose — most of
 this package is browser-free arithmetic, and a module that reaches for `window` should fail rather
@@ -33,15 +34,28 @@ docblock.
 Anything after `--` goes to jest:
 
 ```sh
-npm test -w libs/lightweight-magic-charts -- test/gates/fileSize.spec.ts   # one file
-npm test -w libs/lightweight-magic-charts -- -t "the exports map"          # one test, by name
+npm test -- test/gates/fileSize.spec.ts   # one file
+npm test -- -t "the list only shrinks"    # one test, by name, across every suite that has it
 ```
+
+### Three gates do not run here, and the reason is in the config
+
+`jest.config.js` ignores `hookPurity`, `packageName` and `packaging`. They read `apps/web` — the
+consumer this library was extracted out of. They are real gates and they still run **in the
+monorepo**, where that app exists. Here they would read a path that is not there and fail for the
+wrong reason, which is worse than not running: a red suite that means "wrong checkout" trains people
+to ignore red. `boundary.spec.ts` is deliberately **not** on that list — most of it audits this
+package, and only its final case reaches into the app, skipped from inside the file with the reason
+next to it.
+
+If you change what those three measure, you are changing something this checkout cannot verify. Say
+so in the pull request.
 
 ## Building
 
 ```sh
-npm run build -w libs/lightweight-magic-charts       # tsc (CommonJS + declarations), then build:esm
-npm run build:esm -w libs/lightweight-magic-charts   # ESM tree + the extension rewrite and the marker
+npm run build       # tsc (CommonJS + declarations), then build:esm
+npm run build:esm   # ESM tree + the extension rewrite and the marker
 ```
 
 `build:esm` is not optional decoration: `tsc` emits extensionless specifiers and Node's ESM resolver
@@ -51,52 +65,63 @@ you measure.
 
 ## The gates
 
-```sh
-npm run gate                                              # everything, from the repository root
-npx --no-install biome lint libs/lightweight-magic-charts # this package only — must be zero errors
-node libs/lightweight-magic-charts/scripts/size-gate.mjs  # the size probe, through its real CLI
-```
-
-`npm run gate` runs `scripts/quality-gate.sh`. Exit 0 is a pass; `[WARN]` never fails, `[FAIL]` does.
-Two knobs, both read from the environment:
-
-- `GATE_BASE=<sha> npm run gate` — the ratcheted checks take their scope from the diff against
-  `<sha>` instead of the working tree. Use it when the change spans several commits;
-- `GATE_SKIP_TESTS=1 npm run gate` — skips the slow wholesale suites. **It cannot produce a pass**:
-  the script fails deliberately with `chart library gates NÃO EXECUTADOS`, because a skipped stage is
-  not an approved one. It exists to read the earlier stages quickly, nothing else;
-- `LAYOUT_PROBE=1 npm run gate` — adds the browser-geometry stage below. Without it that stage
-  prints `[SKIP]` and the final verdict says so out loud.
-
-### The gate stage that runs a browser, and why it is opt-in
+There is no gate script. The gates **are** the suite, so the whole verdict is two commands:
 
 ```sh
-LAYOUT_PROBE=1 npm run gate                             # the probe as a gate stage
-npm run layout-probe -w libs/lightweight-magic-charts   # the same probe, on its own
+npm run build   # the size budget and the derived reference measure the BUILT entry
+npm test        # every gate below, plus the behavioural suites
+node scripts/size-gate.mjs   # the size probe again, through its real CLI
 ```
 
-`scripts/layout-probe.mjs` drives `example/` in a real Chromium and measures the geometry jsdom
-cannot produce: whether the elastic members of the canvas row actually SHARE it. It is the check
-that found the compact grid sitting at 0 px wide, and it is the **only** check in this repository
-that has ever seen a pixel. Measured 2026-08-14: five edits of ONE property — `maxWidth: 0` on the
-grid, `flex: 1` / `flexBasis: 0` / `maxWidth: 0` on the surface, `maxWidth: 0` on the row — paint a
-blank screen and pass all 1131 library assertions and all 1204 of the app. The probe kills the five
-in about seven seconds each.
+Run in that order. A suite run against a stale `dist/` asserts against an artefact nobody is
+shipping — which is why `sizeBudget` refuses to measure a `dist/` older than `src/` rather than
+report a stale number.
 
-It is **opt-in rather than unconditional**, and the reason is a hard dependency rather than a
-preference: it needs `playwright-core` — which this package does not declare and which resolves only
-transitively, through `apps/web` — plus a downloaded Chromium, which is a machine-local artefact and
-not a repository one. Unconditional, it makes a browser download a prerequisite of every gate
-invocation, and a stage that cannot go green on a clean machine gets switched off before it
-discriminates anything.
+The third command is not redundant with the second. `test/gates/sizeBudget.spec.ts` exercises the
+probe **through its CLI** — the exit code and the printed report — because that is the surface CI
+depends on; running it by hand is how you read the table when a budget moves. Measured 2026-08-16:
+`size-gate: OK — 16 measurements under the budget`, exit 0.
 
-Opt-in is **not** the "skipped stage" the convention above refuses. That rule is *a skipped stage is
-not an approved one* — what it refuses is a **silent** one. The pattern for this exact case is
-already written and in use for the gate's most important check, live parity: it runs under an
-explicit signal, prints `[SKIP] layout probe (set LAYOUT_PROBE=1 to run …)` when it does not, and
-the final verdict is rewritten to `GATE: PASS (WITHOUT … browser geometry — the layout probe; did
-not run — this is not a full pass)`. Nobody can quote a pass that includes geometry without having
-run it.
+`.github/workflows/ci.yml` runs exactly these, plus a pack check that every path promised in
+`files[]` and every target in `exports` resolves to something that exists. Nothing in CI is stronger
+than what you can run locally, and nothing local is weaker than CI. That is the point.
+
+### The check that runs a browser, and why it is not wired in
+
+```sh
+npm run layout-probe   # builds the ESM tree, then drives example/ in a real Chromium
+```
+
+`scripts/layout-probe.mjs` measures the geometry jsdom cannot produce: whether the elastic members
+of the canvas row actually SHARE it. It is the check that found the compact grid sitting at 0 px
+wide, and it is the **only** check in this repository that has ever seen a pixel. Measured
+2026-08-14: five edits of ONE property — `maxWidth: 0` on the grid, `flex: 1` / `flexBasis: 0` /
+`maxWidth: 0` on the surface, `maxWidth: 0` on the row — paint a blank screen and pass every
+library assertion. The probe kills the five in about seven seconds each.
+
+**It does not run in a clean clone of this repository, and it says so.** Measured 2026-08-16 it
+exits 2 with:
+
+```text
+layout probe: needs a browser driver — `playwright-core` did not resolve, and this probe measures
+what only a real browser can answer.
+```
+
+`playwright-core` is not a declared dependency here. In the monorepo it resolved transitively
+through `apps/web`; extraction removed that accident without replacing it. To run the probe you
+install the driver and a browser yourself:
+
+```sh
+npm i -D --no-save playwright-core   # not in package.json — see the note below
+npx playwright install chromium      # a machine-local artefact, not a repository one
+```
+
+Leaving it undeclared is a choice, not an oversight: declaring it makes a browser download a
+prerequisite of `npm ci` for every contributor and every CI run, and a stage that cannot go green on
+a clean machine gets switched off before it discriminates anything. What the extraction has **not**
+yet done is give the probe a home of its own — it is the one measurement in this package that no
+gate carries, and until it has one, a geometry regression is caught by a human or not at all. Say
+so out loud rather than quoting a pass that includes geometry without having run it.
 
 The jsdom side is the cheap half and it is asserted where the suite already runs —
 `test/compactGrid.spec.tsx`, `test/chartSurface.spec.tsx` and `test/canvasRow.spec.tsx` pin the
@@ -104,11 +129,10 @@ declarations that decide the geometry, including the ones that only ever appear 
 (`style.flex` and `style.maxWidth` must both serialise empty). Those clauses are a strictly weaker
 sensor than the probe: they fail on the declarations they name, the probe fails on the pixels.
 
-A note on lint scope. `npm run lint` at the root runs biome over the whole monorepo and fails on a
-pre-existing baseline that has nothing to do with this package (measured 2026-08-14: 52 errors, none
-of them here). The gate therefore lints **this package only**, and there the verdict is zero errors.
-Formatting is not gated: no stage runs `biome format`, and run by hand it disagrees with this
-package's own style. Match the file you are editing.
+A note on lint. There is none, and that is the honest state rather than a policy: the monorepo
+linted this package with biome from its root, and no biome configuration came across with the
+extraction. Nothing in this repository checks style today. Match the file you are editing, and if
+you add a linter, add it as a gate with a ledger like every other rule here.
 
 ### What each deterministic gate guarantees, and what it does not
 
@@ -127,22 +151,27 @@ a guard whose blind spot is unwritten gets read as covering everything.
 | `test/gates/fileSize.spec.ts` | no file under `src/` past 350 lines of **code** (comments and blanks are free) | nothing about cohesion — a 349-line file doing four jobs passes |
 | `test/gates/propCount.spec.ts` | no component under `src/react` declares more than 12 **top-level** props, counted by the compiler | nothing about props moved into context. That hole is what `setupFanOut.spec.ts` measures |
 | `test/gates/setupFanOut.spec.ts` | no file reads more than 4 distinct setup fields, and no selector takes the whole value | it counts reads, not coupling through other channels |
-| `test/gates/hookPurity.spec.ts` | a `use*` module exports at most 2 non-hook symbols, none over 40 code lines | it does not look at the whole app: scope is this library plus the chart workspace hooks, deliberately |
+| `test/gates/hookPurity.spec.ts` **(monorepo only)** | a `use*` module exports at most 2 non-hook symbols, none over 40 code lines | it does not look at the whole app: scope is this library plus the chart workspace hooks, deliberately. **Ignored in this checkout** — it reads `apps/web` |
 | `test/gates/memoisation.spec.tsx` | every `react/workspace/` region and every chrome widget is `React.memo`, **and** a region does not re-render when the root does without its own field moving | it stops at that boundary. The published composites decide their own render discipline, because a host mounts them |
 | `test/gates/danglingRef.spec.ts` | no comment in `src/`, `test/` or `docs/` points at an archived plan, and every `I1`..`I14` still names a live conformance case | it cannot tell a *correct* pointer from a merely *resolvable* one |
 | `test/gates/commentBudget.spec.ts` | `src/` stays at or under 0.20 comment lines per code line, no single file past 1.0, and every `docs/<file>.md#<anchor>` written in `src/` resolves to a real file **and** a real heading | it counts lines, not truth. A comment can resolve, fit the budget and still be wrong |
 | `test/gates/language.spec.ts` | comments in `src/` and `test/`, prose strings in `test/`, and diagnostics in `src/` are English | **product text is deliberately out of scope** — what the library paints belongs to the host, through `chrome.labels`. `src/indicator/coverage.ts` still builds a Portuguese footer, named rather than hidden |
 | `test/gates/wording.spec.ts` | no component under `src/react` holds a sentence of its own, in what a reader sees, a screen reader hears or a pointer reveals | it guards the channel, not the wording. A bad English default passes |
 | `test/gates/socketParity.spec.ts` | a region that declares a field the composition never passes fails the build | it sees declared fields, not behaviour: a field passed with the wrong value is invisible to it |
-| `test/gates/packageName.spec.ts` | the published name is right, and the retired spelling cannot come back, across everything `git ls-files` tracks | the two record trees (`.specs/`, the frozen `openspec/` archive) are exempt with a written reason |
+| `test/gates/packageName.spec.ts` **(monorepo only)** | the published name is right, and the retired spelling cannot come back, across everything `git ls-files` tracks | the two record trees (`.specs/`, the frozen `openspec/` archive) are exempt with a written reason. **Ignored in this checkout** — it reads `apps/web` |
 | `test/gates/sizeBudget.spec.ts` | the per-symbol byte budget, exercised through the probe's **CLI** — the exit code and the printed report, which is what CI depends on | it measures the ESM tree it is given. It refuses to measure a `dist/` older than `src/` rather than report a stale number |
-| `test/gates/packaging.spec.ts` | both trees **load in a real `node`**, the tarball is listed out of a real archive, and declarations compile under the nested TypeScript 4.9 that `apps/web` runs | it asserts against artefacts, so it is only as fresh as your last build |
-| `test/boundary.spec.ts` | per-file declared purity, what each layer may import, and that no business concept is named inside `src/` | prose *about* a rule is stripped before the scan, so a comment may name what the code may not |
+| `test/gates/packaging.spec.ts` **(monorepo only)** | both trees **load in a real `node`**, the tarball is listed out of a real archive, and declarations compile under the nested TypeScript 4.9 that `apps/web` runs | it asserts against artefacts, so it is only as fresh as your last build. **Ignored in this checkout** — the nested-TypeScript half needs the app. CI covers the tarball half with its own pack check |
+| `test/gates/docExamples.spec.ts` | every TypeScript block in `docs/` and the README is **compiled**, not read for plausibility | it compiles a block, it does not run one. Code that type-checks and does the wrong thing passes |
+| `test/gates/docReference.spec.ts` | the symbol reference is **derived** from the entry, so it cannot name an absent symbol or omit an exported one | it holds the list equal to the exports, not the prose equal to the behaviour |
+| `test/gates/docShape.spec.ts` | no tutorial, how-to or reference page past 300 lines, and no orphan page nothing links to | length and reachability are not readability. A reachable 299-line page can still answer nothing |
+| `test/gates/readmeExample.spec.ts` | the two blocks the README calls "verbatim" are byte-for-byte equal to `example/` | whether either side is any GOOD. Equality says the two agree, not that they compile — `tsconfig.example.json` is what puts `example/` under the type-checker |
+| `test/boundary.spec.ts` | per-file declared purity, what each layer may import, and that no business concept is named inside `src/` | prose *about* a rule is stripped before the scan, so a comment may name what the code may not. Its final case, the one that reaches into `apps/web`, skips itself here |
 
 ## What a pull request has to carry
 
-1. **A green `npm run gate`.** Paste the verdict line. `GATE: PASS` is the bar; a run that ends in
-   `GATE: FAIL` is not ready, and a `GATE_SKIP_TESTS=1` run is not a run.
+1. **A green `npm run build && npm test`.** Paste the counts jest prints. That is the bar, and it is
+   the same thing CI runs. A suite run without the build in front of it is not a run: two gates
+   measure `dist/`, and they will refuse rather than report a stale number.
 2. **Tests that assert an outcome, not an implementation.** New behaviour arrives with a test that
    would fail without it. Weakening, skipping or deleting a test to get to green is never the fix.
 3. **A ledger that only shrank.** If your change makes a recorded violator comply, take it out of the
@@ -168,5 +197,8 @@ declared blind spot in the docblock, and — if it lands over existing violators
 the equality assertion that keeps it shrinking. A gate lit over violators with no ledger is a gate
 somebody suppresses, and a suppressed gate never measures anything again.
 
-If the gate should block on its own rather than only inside the whole suite, add a `gate_stage` line
-for it in `scripts/quality-gate.sh` so an absent report reads as `FAIL` instead of as silence.
+There is no separate stage to register it in: a suite under `test/gates/` is picked up by `npm test`
+and therefore by CI, which is the whole reason the gates were built as suites rather than as shell
+stages. A gate that needs something the suite cannot give it — a browser, a sibling package, a
+network — does not belong in `test/gates/` until that dependency is declared, or it becomes the next
+`layout-probe`: a real measurement nobody runs.
