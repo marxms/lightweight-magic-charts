@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm
     permissions:
-      contents: read
+      contents: write # the tag written AFTER a successful publish, below
       id-token: write # npm provenance
     steps:
       - uses: actions/checkout@v4
@@ -85,9 +85,24 @@ jobs:
 
       # `--provenance` publishes a signed attestation linking the tarball to this workflow run and to
       # this commit, so a consumer can verify the package came from this repository and not from
-      # someone's laptop. It is also why no tag is created: the commit is recorded in the attestation,
-      # so a tag would be a second, weaker record of the same fact.
+      # someone's laptop.
       - name: Publish ${{ needs.decide.outputs.version }}
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # THE TAG IS A RECORD, NOT A TRIGGER, and the order is the whole point: it is written only
+      # after the publish returned, so `v0.1.0` existing means that version shipped. A tag written
+      # before, or by a workflow that then failed, is a marker pointing at a release that never
+      # happened — which is worse than no marker, because people trust it.
+      #
+      # IT CANNOT BE THE TRIGGER even if we wanted it to be. GitHub does not start workflow runs from
+      # events raised with the default GITHUB_TOKEN, precisely to stop workflows recursing; only
+      # workflow_dispatch and repository_dispatch are exempt. So a `on: push: tags` release driven by
+      # a tag this job creates would never run, and would look configured while doing nothing.
+      - name: Record the release as a tag
+        run: |
+          TAG="v${{ needs.decide.outputs.version }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "tagged $TAG at $GITHUB_SHA"

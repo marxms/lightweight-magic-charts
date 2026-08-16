@@ -210,9 +210,10 @@ Three consequences worth knowing before you bump anything:
   silent rather than red.
 - **The publish waits for a human.** It runs in the `npm` environment, which carries a required
   reviewer. An irreversible act gets one deliberate approval.
-- **There is no tag.** The provenance attestation records the commit that produced the tarball, so a
-  tag would be a second and weaker record of the same fact. To find what shipped a version, read the
-  attestation.
+- **The tag is written after the publish, not before.** `v0.1.0` appears once `0.1.0` is on the
+  registry, so a tag in this repository always means that version shipped. It is a record, never a
+  trigger — GitHub does not start workflow runs from events raised with the default `GITHUB_TOKEN`,
+  so a release driven by a tag this workflow creates would look configured and never run.
 
 If the registry answers anything other than "present" or "absent", the run stops instead of guessing.
 An outage must not read as "not published yet".
