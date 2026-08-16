@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node"],
+    "paths": {
+      "lightweight-magic-charts": ["./src/index.ts"]
+    }
+  },
+  "include": ["example/**/*"],
+  "exclude": ["dist", "node_modules"]
+}

@@ -1,0 +1,39 @@
+{
+  "version": 3,
+  "reconcile": [
+    ["nothing saved",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["payload is not an object",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["payload is a string",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["different version",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["version missing",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["saved order preserved and the new catalogue appended",{"version":3,"panes":[{"id":"beta","visible":false,"heightPx":90},{"id":"alpha","visible":true,"heightPx":126},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["an unknown id drops out",{"version":3,"panes":[{"id":"gamma","visible":false,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":null}],
+    ["a duplicated id comes out once, the FIRST occurrence",{"version":3,"panes":[{"id":"gamma","visible":false,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":null}],
+    ["a height outside the limits is trimmed",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":400},{"id":"beta","visible":true,"heightPx":40},{"id":"gamma","visible":true,"heightPx":100}],"timeframe":null}],
+    ["a non-numeric height falls back to the catalogue value",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a fractional height rounds",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":121},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a NaN height falls back to the catalogue value",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a non-boolean visible falls back to the catalogue default",{"version":3,"panes":[{"id":"beta","visible":false,"heightPx":90},{"id":"alpha","visible":true,"heightPx":126},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a null entry in the list is ignored",{"version":3,"panes":[{"id":"gamma","visible":false,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":null}],
+    ["an entry with no id is ignored",{"version":3,"panes":[{"id":"gamma","visible":false,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":null}],
+    ["panes is not a list",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a persisted symbol is discarded",{"version":3,"panes":[{"id":"gamma","visible":true,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":null}],
+    ["a served timeframe is preserved",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":"1w"}],
+    ["a timeframe not served falls to null",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a non-string timeframe falls to null",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}]
+  ],
+  "parse": [
+    ["null",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["malformed json",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["well-formed payload",{"version":3,"panes":[{"id":"gamma","visible":false,"heightPx":126},{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90}],"timeframe":"4h"}],
+    ["a list json",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}],
+    ["a literal null json",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}]
+  ],
+  "emptyCatalogue": [
+    ["empty catalogue, nothing saved",{"version":3,"panes":[],"timeframe":null}],
+    ["empty catalogue, panes saved",{"version":3,"panes":[],"timeframe":null}]
+  ],
+  "noServed": [
+    ["no timeframe served",{"version":3,"panes":[{"id":"alpha","visible":true,"heightPx":126},{"id":"beta","visible":false,"heightPx":90},{"id":"gamma","visible":true,"heightPx":126}],"timeframe":null}]
+  ]
+}

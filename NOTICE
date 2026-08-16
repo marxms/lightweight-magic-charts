@@ -1,0 +1,41 @@
+lightweight-magic-charts
+Copyright 2026 Marx Menezes
+
+Licensed under the Apache License, Version 2.0. See LICENSE for the full text.
+
+--------------------------------------------------------------------------------
+Why this file exists
+--------------------------------------------------------------------------------
+
+Not because a license clause demands it.
+
+This package renders through `lightweight-charts`, which is Apache-2.0 and carries
+`Copyright 2023 TradingView, Inc.` Clause 4(d) of that license only obliges a
+downstream NOTICE when the upstream work "includes a NOTICE text file as part of
+its distribution" -- and, measured against `lightweight-charts` 5.2.0, it ships no
+NOTICE at all: the published tarball contains `LICENSE`, `README.md`,
+`package.json` and the build output, nothing more. On top of that, this package
+does not redistribute `lightweight-charts`; it declares the library as a required
+peer dependency, so the consumer installs it directly from TradingView and never
+receives a copy from us. There is no Derivative Work here to attach a notice to.
+
+The file exists because the *name* does. `lightweight-magic-charts` echoes
+`lightweight-charts` on purpose -- it is meant to read as "the workspace you build
+on top of that renderer" -- and a name that close invites the reader to assume a
+relationship that does not exist. Apache-2.0 grants no trademark rights (clause 6)
+and offers no protection against confusion of origin, so the disclaimer has to be
+written down somewhere. This is that place.
+
+--------------------------------------------------------------------------------
+Attribution and disclaimer
+--------------------------------------------------------------------------------
+
+`lightweight-charts` -- https://github.com/tradingview/lightweight-charts
+Copyright 2023 TradingView, Inc.
+Licensed under the Apache License, Version 2.0.
+
+`lightweight-magic-charts` is an independent project. It is **not affiliated with,
+sponsored by, endorsed by, or otherwise connected to TradingView, Inc.**
+"TradingView" and "Lightweight Charts" are the property of their respective
+owners; they are used here only to identify the library this package renders
+through, which is the descriptive use clause 6 of the Apache License allows.

@@ -1,0 +1,6 @@
+{
+  "_why": "O MESMO SUBCAMINHO, PARA QUEM AINDA NÃO LÊ `exports`. O mapa `exports` do manifesto da raiz é o que declara `./conformance`, e é o que resolvedores modernos usam. Consumidor em resolução node10 — e este monorepo tem dois: `apps/web` compila com moduleResolution=node (apps/web/tsconfig.json) e roda os testes com jest-resolve 27, nenhum dos dois lê `exports` — cairia aqui, num diretório que não existiria, e o import falharia. Este manifesto aninhado é o caminho físico que essa resolução procura, apontando para o mesmo arquivo que o `exports` declara. Uma só verdade: se o alvo do `exports` mudar sem que este mude junto, o gate de tamanho reprova.",
+  "main": "../dist/conformance/suite.js",
+  "types": "../dist/conformance/suite.d.ts",
+  "sideEffects": false
+}

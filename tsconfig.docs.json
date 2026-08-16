@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.example.json",
+  "compilerOptions": {
+    "moduleDetection": "force"
+  },
+  "include": []
+}

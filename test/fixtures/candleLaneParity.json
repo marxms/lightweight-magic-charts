@@ -1,0 +1,14 @@
+{
+  "order": [
+    "subscribe BTC/USDT·1h@binance/perp",
+    "fetchBars BTC/USDT·1h from=0 to=9007199254740991 barCount=800 aborted=false"
+  ],
+  "bars": 2,
+  "seam": "anchored",
+  "outcome": "seeded",
+  "orderAfterUnmount": [
+    "subscribe BTC/USDT·1h@binance/perp",
+    "fetchBars BTC/USDT·1h from=0 to=9007199254740991 barCount=800 aborted=false",
+    "unsubscribe"
+  ]
+}
