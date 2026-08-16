@@ -194,6 +194,29 @@ a guard whose blind spot is unwritten gets read as covering everything.
    `non-english-fixture: <reason>` next to the string it excuses, with a reason long enough to be one.
 8. **Commits in Conventional Commits form**, one logical change each.
 
+## Releasing
+
+There is no release ceremony and nothing to run by hand. **The version in `package.json` is the
+release decision**, and it is made in a pull request like everything else.
+
+On every merge into `master`, `.github/workflows/release.yml` asks the registry whether
+`lightweight-magic-charts@<version>` already exists. If it does, the run is a clean no-op. If it does
+not, the same build, the same suite and the same tarball check run again, and the package is
+published with `--provenance`.
+
+Three consequences worth knowing before you bump anything:
+
+- **A merge that does not touch the version publishes nothing.** That is the ordinary case, and it is
+  silent rather than red.
+- **The publish waits for a human.** It runs in the `npm` environment, which carries a required
+  reviewer. An irreversible act gets one deliberate approval.
+- **There is no tag.** The provenance attestation records the commit that produced the tarball, so a
+  tag would be a second and weaker record of the same fact. To find what shipped a version, read the
+  attestation.
+
+If the registry answers anything other than "present" or "absent", the run stops instead of guessing.
+An outage must not read as "not published yet".
+
 ## Adding a gate
 
 A new deterministic rule ships as a suite under `test/gates/`, and it carries four things: the

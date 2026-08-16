@@ -1,22 +1,61 @@
-# Publication, driven by a TAG and gated by the same suite.
+# Publication, driven by the VERSION IN THE MANIFEST and gated by the same suite.
 #
-# The tag is the trigger rather than a push to master because publishing is irreversible: a version on
-# npm cannot be replaced, only deprecated. Requiring an explicit `vX.Y.Z` makes the release an act,
-# not a side effect of merging.
+# The trigger is a merge into master, so nobody publishes from a laptop and nobody has to remember a
+# tag. But a merge is not the decision — the decision is the version. This workflow asks the registry
+# whether `name@version` already exists and publishes only when it does not, so an ordinary merge is
+# a clean no-op and a merge that bumps the manifest is a release.
+#
+# WHY NOT SIMPLY PUBLISH ON EVERY MERGE: publishing is irreversible — a version on npm cannot be
+# replaced, only deprecated — and npm refuses a duplicate, so "publish on merge" would paint every
+# routine merge red for the one reason that is not a defect. The version bump is the release act, it
+# lives in the pull request, and it gets reviewed like everything else.
 name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [master]
 
 permissions:
   contents: read
-  id-token: write # npm provenance
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
+  # DELIBERATELY OUTSIDE THE ENVIRONMENT. The `npm` environment holds a required reviewer, and asking
+  # a human to approve a run that has nothing to publish teaches them to approve without looking.
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.registry.outputs.publish }}
+      version: ${{ steps.registry.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ask the registry whether this version already exists
+        id: registry
+        run: |
+          PKG="$(node -p "require('./package.json').name")"
+          VER="$(node -p "require('./package.json').version")"
+          CODE="$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$PKG/$VER")"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          case "$CODE" in
+            # A THIRD ANSWER IS NOT "NO". Treating every non-200 as absent would turn an outage into
+            # a publish attempt, so anything but these two stops the run instead of guessing.
+            200) echo "$PKG@$VER is already published — nothing to do"; echo "publish=false" >> "$GITHUB_OUTPUT" ;;
+            404) echo "$PKG@$VER is not on the registry — releasing"; echo "publish=true" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "the registry answered $CODE for $PKG@$VER — refusing to guess"; exit 1 ;;
+          esac
+
   publish:
+    needs: decide
+    if: needs.decide.outputs.publish == 'true'
     runs-on: ubuntu-latest
     environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm provenance
     steps:
       - uses: actions/checkout@v4
 
@@ -31,35 +70,24 @@ jobs:
 
       - run: npm ci
 
-      # The tag and the manifest must agree. They drift the moment someone tags without bumping, and
-      # the result is a release whose name does not match what is inside it.
-      - name: The tag must equal the version in package.json
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG="$(node -p "require('./package.json').version")"
-          if [ "$TAG" != "$PKG" ]; then
-            echo "tag v$TAG does not match package.json $PKG"
-            exit 1
-          fi
-          echo "tag and manifest agree on $PKG"
-
       - name: Build
         run: npm run build
 
       - name: Suite
         run: npm test
 
-      # THE LAST THING BEFORE THE IRREVERSIBLE ONE. `ci.yml` runs this too, but it triggers on pull
-      # requests and on pushes to master — never on a tag. Without it here, the only run that
-      # actually publishes is the only run that never checked what it is about to ship.
+      # THE LAST THING BEFORE THE IRREVERSIBLE ONE. `ci.yml` runs this too, but without it here the
+      # only run that actually publishes would be the only run that never checked what it ships.
       - name: Prove every promised path exists
         run: |
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
 
-      # `--provenance` publishes a signed attestation linking the tarball to this workflow run, so a
-      # consumer can verify the package came from this repository and not from someone's laptop.
-      - name: Publish
+      # `--provenance` publishes a signed attestation linking the tarball to this workflow run and to
+      # this commit, so a consumer can verify the package came from this repository and not from
+      # someone's laptop. It is also why no tag is created: the commit is recorded in the attestation,
+      # so a tag would be a second, weaker record of the same fact.
+      - name: Publish ${{ needs.decide.outputs.version }}
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

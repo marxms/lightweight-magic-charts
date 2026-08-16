@@ -9,9 +9,6 @@ It is **not** an indicator catalogue, **not** an exchange client and **not** a d
 three are yours, and the line between them and this package is the first thing to read: see
 [The ownership boundary](#the-ownership-boundary).
 
-> Not on the public registry yet — the manifest still carries `"private": true`. Inside this
-> repository npm workspaces already resolve it by name, which is what the example below relies on.
-
 ## Install
 
 ```sh
@@ -28,8 +25,11 @@ peer by design.
 | `react` | `>=18.0.0 <20` | one React instance per application; two would break hooks |
 | `lightweight-charts` | `>=5.2.0 <6` | the renderer you inject through `ChartEngine`. This package never imports it at runtime |
 
-An install outside either range is refused by npm with the range named — that refusal is measured in
-`test/gates/packaging.spec.ts`, not promised here.
+An install outside either range is refused by npm with the range named. That refusal is measured
+rather than promised, by `test/gates/packaging.spec.ts` — which runs in the monorepo this package was
+extracted from, because it also checks the declarations against a consumer that lives there. In this
+repository the suite skips it and CI proves the narrower claim instead: that every path `files[]` and
+`exports` promise resolves to something that exists.
 
 ### Entry points
 
@@ -40,7 +40,8 @@ import { CONFORMANCE_CASES } from 'lightweight-magic-charts/conformance';
 
 The conformance suite leaves by its own subpath so that mounting the workspace never carries it into
 a bundle. ESM and CommonJS are both published and selected by the `exports` map; declarations resolve
-under `moduleResolution: "node"` down to TypeScript 4.9.
+under `moduleResolution: "node"` down to TypeScript 4.9 — the last of those three is the clause the
+extracted checkout cannot re-measure on its own, for the reason given under the peers above.
 
 ## Minimal working example
 
