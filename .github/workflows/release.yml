@@ -117,3 +117,44 @@ jobs:
           git push origin "$TAG"
           gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
           echo "tagged and released $TAG at $GITHUB_SHA"
+
+  # The live example, deployed only after the version it demonstrates is on the registry.
+  #
+  # WHY IT HANGS OFF `publish` AND NOT OFF MASTER: a page built from master shows an API that
+  # `npm install` does not yet hand you, and a demo that is ahead of the package teaches the reader
+  # something false. Gated this way, what the page renders is exactly what the published version does.
+  #
+  # It is a separate job rather than more steps on `publish` so that a Pages outage cannot fail a run
+  # that has already published — the irreversible step is done by then, and failing after it would
+  # report a release that did happen as a release that did not.
+  demo:
+    needs: [decide, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - name: Build the example for ${{ needs.decide.outputs.version }}
+        run: npm run build:example
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: example/site
+
+      - id: deploy
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5

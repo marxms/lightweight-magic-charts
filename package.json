@@ -61,6 +61,7 @@
     "test": "jest --config jest.config.js",
     "build:esm": "tsc -p tsconfig.esm.json && node scripts/finalise-esm.mjs",
     "example": "npm run build:esm && node example/serve.mjs",
+    "build:example": "npm run build:esm && node scripts/build-example.mjs",
     "layout-probe": "npm run build:esm && node scripts/layout-probe.mjs"
   },
   "devDependencies": {

@@ -9,6 +9,10 @@ It is **not** an indicator catalogue, **not** an exchange client and **not** a d
 three are yours, and the line between them and this package is the first thing to read: see
 [The ownership boundary](#the-ownership-boundary).
 
+**[See it running →](https://marxms.github.io/lightweight-magic-charts/)** — the example below, built
+from the published version rather than from the default branch, so what the page renders is what
+`npm install` hands you.
+
 ## Install
 
 ```sh

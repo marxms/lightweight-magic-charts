@@ -215,6 +215,9 @@ Three consequences worth knowing before you bump anything:
   silent rather than red.
 - **The publish waits for a human.** It runs in the `npm` environment, which carries a required
   reviewer. An irreversible act gets one deliberate approval.
+- **The live example is redeployed from the published version**, not from `master`. A page ahead of
+  the package teaches the reader an API that `npm install` does not hand them. It deploys in its own
+  job, so a Pages outage cannot fail a run that has already published.
 - **The tag is written after the publish, not before.** `v0.1.0` appears once `0.1.0` is on the
   registry, so a tag in this repository always means that version shipped. It is a record, never a
   trigger — GitHub does not start workflow runs from events raised with the default `GITHUB_TOKEN`,
