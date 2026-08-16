@@ -3,6 +3,7 @@ import type { Bar } from 'lightweight-magic-charts';
 import type { ReactElement } from 'react';
 
 import { DEMO_CATALOGUE } from './catalogue';
+import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
 import { DEMO_PANES } from './panes';
 import { demoPort, demoRead } from './port';
@@ -30,6 +31,7 @@ export function App(): ReactElement {
       panes={DEMO_PANES}
       data={{ port: demoPort, engine: demoEngine, symbol: 'DEMO-USD', read: demoRead }}
       layout={{ heightPx: 620 }}
+      drawing={{ vocabulary: DEMO_DRAWING_VOCABULARY, binding: demoDrawingBinding }}
       studies={{
         catalogue: DEMO_STUDY_CATALOGUE,
         // RESOLVED BY THE HOST, on demand. The library hands over the chosen ids and the bars in
