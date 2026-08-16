@@ -391,6 +391,37 @@ one.
 `lastClose === null` means there are no bars, so there is no price to put a line near, and the
 control says so by disabling itself rather than inventing a level.
 
+## react/workspace/SeriesMenuRegion.tsx
+
+### Escape cannot be bound to the overlay
+
+The listener is on the `document`, and the reason is where focus is standing.
+
+The moment the panel opens, focus is on the **trigger** — the control that was just clicked — and the
+trigger is a *sibling* of the overlay, not a descendant. A `keydown` bound to the overlay would
+therefore never fire in the one state every visitor reaches first: opened it, has not moved, presses
+Escape. It would appear to work in a test that focuses something inside the panel and nowhere else.
+
+This was not reasoned out in advance. It was measured on the published demo: the panel stayed open
+on Escape and went on intercepting clicks, while the `Close` button worked. `FlyoutMenu` had the
+handler and this region did not, so the pattern existed in the codebase and this one had missed it.
+
+### Focus goes back to what opened it, captured on the way in
+
+`PillProps` carries no `ref`, deliberately — it is a slot the host may replace, and the public
+contract is capped at twelve props. So there is nothing to point at when the panel closes.
+
+Instead the region records `document.activeElement` at the moment it opens and focuses that on
+Escape. It is not a weaker substitute for a ref: what opened the panel is exactly what should get
+focus back, whether that is the built-in trigger or something the host supplied.
+
+### The container's Escape wins when a tool is armed
+
+`ChartWorkspace` handles Escape too, and cancels an armed drawing tool. Its handler is a React one on
+the container and runs before a document listener, calling `stopPropagation` only when a tool is
+armed — so with both a tool armed and the panel open, the first Escape cancels the tool and the
+second closes the panel. That order is the right one: the armed tool is the more recent intent.
+
 ## react/workspace/StatusFooter.tsx
 
 ### The footer is a sink

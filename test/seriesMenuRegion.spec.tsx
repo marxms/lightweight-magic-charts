@@ -232,4 +232,58 @@ describe('the pointer leaving the menu', () => {
     });
     expect(overlay()).not.toBeNull();
   });
+
+  /**
+   * ESCAPE, AND WHY THE LISTENER CANNOT LIVE ON THE OVERLAY.
+   *
+   * The moment the panel opens, focus is on the TRIGGER — the thing just clicked — and the trigger
+   * is a sibling of the overlay, not a descendant. A handler bound to the overlay would therefore
+   * never see the key in the one state every visitor reaches first. Measured against the published
+   * demo before this was written: the panel stayed open on Escape and went on intercepting clicks.
+   */
+  it('closes on Escape with focus still on the trigger, which is where it lands on open', () => {
+    render(<Harness />);
+    // Focused BY HAND because jsdom does not focus a button on click and a browser does. Skipping
+    // it would test a state no visitor is ever in.
+    trigger().focus();
+    fireEvent.click(trigger());
+    expect(overlay()).not.toBeNull();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(overlay()).toBeNull();
+  });
+
+  it('closes on Escape with the keyboard inside the panel', () => {
+    render(<Harness sections={SECTIONS} />);
+    fireEvent.click(trigger());
+    screen.getByTestId('host-slider').focus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(overlay()).toBeNull();
+  });
+
+  it('gives focus back to what opened it, rather than dropping it on the body', () => {
+    render(<Harness sections={SECTIONS} />);
+    trigger().focus();
+    fireEvent.click(trigger());
+    screen.getByTestId('host-slider').focus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('DISCRIMINATES — it listens for Escape only, and only while open', () => {
+    render(<Harness />);
+
+    // A key that is not ours leaves the panel alone.
+    fireEvent.click(trigger());
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(overlay()).not.toBeNull();
+
+    // And closed, the listener is gone rather than merely inert: closing twice is not a state.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(overlay()).toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(overlay()).toBeNull();
+  });
 });

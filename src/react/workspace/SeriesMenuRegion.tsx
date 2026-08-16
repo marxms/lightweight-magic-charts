@@ -8,7 +8,7 @@
  * away it would be one click from exactly the person who just added something and wants to check
  * it — and removing would go back to hunting for a marked entry among hundreds.
  */
-import { memo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
 import type { ResolvedSourceView } from '../../indicator/resolution';
@@ -60,6 +60,7 @@ export const SeriesMenuRegion = memo(function SeriesMenuRegion({
   const { Pill, IconButton } = components;
   const [open, setOpen] = useState(false);
   const overlay = useRef<HTMLDivElement | null>(null);
+  const returnFocusTo = useRef<HTMLElement | null>(null);
   const { views, capacity, onRemove, onMove } = indicators;
   const close = (): void => setOpen(false);
 
@@ -68,12 +69,32 @@ export const SeriesMenuRegion = memo(function SeriesMenuRegion({
   // addition to the trigger instead of the only way in or out.
   useHoverDismiss(overlay, { enabled: open, onDismiss: close });
 
+  // Escape is bound to the DOCUMENT rather than to the overlay.
+  // See docs/explanation/react-workspace.md#escape-cannot-be-bound-to-the-overlay
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      returnFocusTo.current?.focus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   return (
     <>
       <Pill
         theme={theme}
         state={{ kind: 'toggle', pressed: open }}
-        onSelect={() => setOpen((shown) => !shown)}
+        onSelect={() =>
+          setOpen((shown) => {
+            // Captured on the way IN, because the trigger is a slot the host may replace and the
+            // contract carries no ref. What opened it is what Escape hands focus back to.
+            if (!shown) returnFocusTo.current = document.activeElement as HTMLElement | null;
+            return !shown;
+          })
+        }
       >
         {text.trigger}
       </Pill>

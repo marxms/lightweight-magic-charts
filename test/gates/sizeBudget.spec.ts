@@ -89,7 +89,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 102055,
+  '*': 102178,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -102,7 +102,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 22144,
-  ChartWorkspace: 92868,
+  ChartWorkspace: 92991,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
