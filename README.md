@@ -49,30 +49,55 @@ extracted checkout cannot re-measure on its own, for the reason given under the 
 
 ## Minimal working example
 
-This is `example/App.tsx`, verbatim — the same file the runnable example mounts. It is the whole
-mount: the three required prop groups and nothing else.
+This is `example/App.tsx`, verbatim — the same file the runnable example mounts. It is a HOST's
+mount: the library composes, lays out and labels; the host supplies the vocabulary (`panes`,
+`studies`) and the numbers (`data`).
 
 ```tsx
-import { ChartWorkspace } from 'lightweight-magic-charts';
+import { ChartWorkspace, resolutionPolicy, resolveSources } from 'lightweight-magic-charts';
+import type { Bar } from 'lightweight-magic-charts';
 import type { ReactElement } from 'react';
 
 import { DEMO_CATALOGUE } from './catalogue';
 import { demoEngine } from './engine';
-import { demoPort } from './port';
+import { DEMO_PANES } from './panes';
+import { demoPort, demoRead } from './port';
+import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
 
 /**
- * The drop-in, mounted with the three required prop groups and nothing else: what may be drawn
- * (`catalogue`), where the numbers come from (`data`) and how much height it may use (`layout`).
+ * The drop-in, mounted the way a HOST mounts it.
  *
- * No theme, no chrome role, no label, no section body. Every region that appears below is there
- * because the composition owns it, not because this file asked for it.
+ * IT USED TO MOUNT THE MINIMUM, and that was the right file for a contract test and the wrong one
+ * for a published page. `0.1.0` shipped showing three required prop groups and nothing else: an
+ * empty volume lane, a studies panel with nothing in it, no density, no trough. Every absence was
+ * correct behaviour for what it was given, which is precisely why it read as broken — the page
+ * demonstrated the library's floor and was presented as its shape.
+ *
+ * What it shows now is the seam, in both directions: the library composes, lays out, labels and
+ * keyboard-reaches; the host supplies the vocabulary (`panes`, `studies`) and the numbers (`data`).
+ * Nothing below computes a chart, and nothing below styles one.
  */
+const POLICY = resolutionPolicy({ lanes: 2, plotsPerLane: 3 });
+
 export function App(): ReactElement {
   return (
     <ChartWorkspace
       catalogue={DEMO_CATALOGUE}
-      data={{ port: demoPort, engine: demoEngine, symbol: 'DEMO-USD' }}
-      layout={{ heightPx: 520 }}
+      panes={DEMO_PANES}
+      data={{ port: demoPort, engine: demoEngine, symbol: 'DEMO-USD', read: demoRead }}
+      layout={{ heightPx: 620 }}
+      studies={{
+        catalogue: DEMO_STUDY_CATALOGUE,
+        // RESOLVED BY THE HOST, on demand. The library hands over the chosen ids and the bars in
+        // view; what those ids mean is the host's dictionary, and `resolveSources` is the helper
+        // the package publishes for exactly this call rather than a private one it keeps.
+        resolve: (ids: readonly string[], bars: readonly Bar[]) =>
+          resolveSources(ids, demoLookup, bars, POLICY),
+        capacity: 6,
+        // Without lanes there is nowhere for an own-pane study to go, and picking one would look
+        // like nothing happening.
+        lanes: { plots: 3, colors: ['#f5a623', '#4c9aff', '#c792ea'], heightPx: 120 },
+      }}
     />
   );
 }
@@ -84,10 +109,18 @@ verbatim:
 ```ts
 import type { WorkspaceSetupPolicy } from 'lightweight-magic-charts';
 
+import { DEMO_STUDY_IDS } from './studies';
+
 /**
  * What this build offers: two panes, two intervals, and a coercion function for whatever a
  * previous visit stored. Titles are not identifiers — `price` is displayed as `Price action`,
  * so the only way to render that string is to have read `title`.
+ *
+ * THE OVERLAYS ARE ON, and that is a correction rather than a preference. The first published page
+ * had `showDensity` and `showProfile` off and `coerceIndicators` returning an empty array, so the
+ * density field, the volume trough and every study were unreachable — a visitor met the drop-in's
+ * minimum and had no way to learn the rest existed. Defaults on a REFERENCE page are the feature
+ * list; off, they are a feature list of nothing.
  */
 export const DEMO_CATALOGUE: WorkspaceSetupPolicy = {
   catalogue: [
@@ -98,10 +131,16 @@ export const DEMO_CATALOGUE: WorkspaceSetupPolicy = {
   gridFallback: ['1h'],
   maxGridCells: 4,
   density: { floor: 0.1, gamma: 1 },
-  showDensity: false,
-  showProfile: false,
+  showDensity: true,
+  showProfile: true,
   autoFit: true,
-  coerceIndicators: () => [],
+  /**
+   * KEEPS WHAT THIS BUILD STILL OFFERS, drops the rest. Returning `[]` unconditionally — which is
+   * what the first version did — is indistinguishable from "the stored payload was invalid", so a
+   * visitor's chosen studies vanished on every reload with nothing saying why.
+   */
+  coerceIndicators: (raw) =>
+    Array.isArray(raw) ? raw.filter((id): id is string => DEMO_STUDY_IDS.includes(id as string)) : [],
 };
 ```
 
@@ -120,9 +159,10 @@ and serves it on <http://127.0.0.1:5173>; nothing is written to disk. The candle
 function of the bar index rather than from a clock or a random source, so every load draws the same
 240 hourly bars — a reference that changed per visit would be no reference at all.
 
-Two things on that page are the library telling the truth rather than failing, and both are worth
-recognising before you meet them in your own mount: a notice saying the history-to-live seam could
-not be proven, because this port has no live channel; and an empty *Traded volume* pane, because a
+One thing on that page is the library telling the truth rather than failing, and it is worth
+recognising before you meet it in your own mount: a notice saying the history-to-live seam could
+not be proven, because this port has no live channel. What it no longer shows is an empty *Traded
+volume* pane — that lane was empty because a
 catalogue entry with no authored series is drawn as a titled empty pane. Pass `panes` and it fills.
 
 ## The ownership boundary
