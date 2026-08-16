@@ -162,6 +162,30 @@ one, six below that.
 A 68_000 instrument and a 0.0000042 one cannot share a fixed precision without one of them reading as
 noise and the other as a flat line.
 
+### The axis step is a division, not a negative power
+
+`minMoveOf` derives the step as `1 / 10 ** decimals`. The obvious spelling is `10 ** -decimals`, and
+it was the original one. It is wrong, and the reason is that ECMAScript leaves the `**` operator
+**implementation-approximated**: an engine is allowed to return the nearest double it computes rather
+than the nearest double to the true value. Division is not — IEEE 754 specifies it exactly.
+
+Measured 2026-08-16 on the two engines this package meets in practice:
+
+| `decimals` | `10 ** -decimals` on Node 20.20.2 | `1 / 10 ** decimals`, both engines |
+| --- | --- | --- |
+| 4 | `0.00009999999999999999` | `0.0001` |
+| 5 | `0.000009999999999999999` | `0.00001` |
+
+Node 25.9.0 gets the negative power right at every exponent from 0 to 15; Node 20.20.2 is off at
+exactly 4 and 5. Two values, and 4 is the ordinary precision for a percent or a ratio — so the seam
+was both narrow and squarely in the common case.
+
+The positive power is safe where the negative one is not because 10^n is exactly representable as a
+double up to 10^22, so there is nothing for an engine to approximate; the division that follows is
+then exactly specified. `Number('1e-' + decimals)` carries the same guarantee through the spec's
+string-to-number conversion, and is what the test uses as its oracle, precisely so that the check
+does not restate the implementation.
+
 ## src/domain/readings.ts
 
 ### Readings are domain not render

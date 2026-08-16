@@ -42,6 +42,7 @@ export function minMoveOf(format: ValueFormat): number {
     case 'percent':
     case 'compact':
     case 'ratio':
-      return 10 ** -format.decimals;
+      // Division, never `10 ** -decimals`. See docs/explanation/domain.md#the-axis-step-is-a-division-not-a-negative-power
+      return 1 / 10 ** format.decimals;
   }
 }
