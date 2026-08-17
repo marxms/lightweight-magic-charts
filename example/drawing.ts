@@ -17,69 +17,55 @@ import type {
   DrawingToolOption,
   DrawingVocabulary,
 } from 'lightweight-magic-charts';
-import { DrawingManager } from 'lightweight-charts-drawing';
+import { DrawingManager, getToolRegistry } from 'lightweight-charts-drawing';
 
 import { realChartOf } from './engine';
 
 /**
- * THE CURATED RAIL — eight, not sixty-seven. The plugin ships 67 tool types; a rail that showed all
- * of them would be a menu wearing a toolbar's clothes. These are the ones a reader recognises, and
- * everything else stays one click away in the flyout below.
+ * THE VOCABULARY IS DERIVED FROM THE PACKAGE'S OWN REGISTRY, not written out here.
+ *
+ * `DrawingToolDefinition` already carries `name`, `category` and `requiredAnchors`, and the registry
+ * offers `getAll`. A hand-written map of ids to families — which is what this file had — is a second
+ * taxonomy that has to be reconciled on every release of the package, and the first tool added
+ * upstream is born outside it. Only the RAIL is a choice: eight recognisable tools, because a rail
+ * showing all sixty-seven is a menu wearing a toolbar's clothes.
  */
-const RAIL: readonly DrawingTool[] = [
-  { id: 'trend-line', label: 'Trend line', glyph: '╱', shortcut: 'Alt+T' },
-  { id: 'horizontal-line', label: 'Horizontal line', glyph: '─', shortcut: 'Alt+H' },
-  { id: 'vertical-line', label: 'Vertical line', glyph: '│', shortcut: 'Alt+V' },
-  { id: 'ray', label: 'Ray', glyph: '→' },
-  { id: 'rectangle', label: 'Rectangle', glyph: '▭' },
-  { id: 'ellipse', label: 'Ellipse', glyph: '◯' },
-  { id: 'fib-retracement', label: 'Fibonacci retracement', glyph: '≡' },
-  { id: 'text', label: 'Text', glyph: 'T' },
-];
+const registry = getToolRegistry();
 
-/** The rest, in families, so sixty-seven entries are searchable rather than merely present. */
-const GROUPS: readonly DrawingToolGroup[] = [
-  { id: 'lines', label: 'Lines', glyph: '╱' },
-  { id: 'shapes', label: 'Shapes', glyph: '▭' },
-  { id: 'fibonacci', label: 'Fibonacci', glyph: '≡' },
-  { id: 'marks', label: 'Marks and notes', glyph: 'T' },
-];
+const RAIL_IDS = [
+  'trend-line',
+  'horizontal-line',
+  'vertical-line',
+  'ray',
+  'rectangle',
+  'ellipse',
+  'fib-retracement',
+  'text-annotation',
+] as const;
 
-const ALL: readonly DrawingToolOption[] = [
-  { id: 'trend-line', name: 'Trend line', group: 'lines' },
-  { id: 'horizontal-line', name: 'Horizontal line', group: 'lines' },
-  { id: 'vertical-line', name: 'Vertical line', group: 'lines' },
-  { id: 'cross-line', name: 'Cross line', group: 'lines' },
-  { id: 'ray', name: 'Ray', group: 'lines' },
-  { id: 'extended-line', name: 'Extended line', group: 'lines' },
-  { id: 'arrow', name: 'Arrow', group: 'lines' },
-  { id: 'parallel-channel', name: 'Parallel channel', group: 'lines' },
-  { id: 'disjoint-channel', name: 'Disjoint channel', group: 'lines' },
-  { id: 'andrews-pitchfork', name: "Andrews' pitchfork", group: 'lines' },
-  { id: 'rectangle', name: 'Rectangle', group: 'shapes' },
-  { id: 'ellipse', name: 'Ellipse', group: 'shapes' },
-  { id: 'circle', name: 'Circle', group: 'shapes' },
-  { id: 'triangle', name: 'Triangle', group: 'shapes' },
-  { id: 'arc', name: 'Arc', group: 'shapes' },
-  { id: 'curve', name: 'Curve', group: 'shapes' },
-  { id: 'brush', name: 'Brush', group: 'shapes' },
-  { id: 'fib-retracement', name: 'Fibonacci retracement', group: 'fibonacci' },
-  { id: 'fib-extension', name: 'Fibonacci extension', group: 'fibonacci' },
-  { id: 'fib-channel', name: 'Fibonacci channel', group: 'fibonacci' },
-  { id: 'fib-arcs', name: 'Fibonacci arcs', group: 'fibonacci' },
-  { id: 'fib-circles', name: 'Fibonacci circles', group: 'fibonacci' },
-  { id: 'fib-time-zone', name: 'Fibonacci time zone', group: 'fibonacci' },
-  { id: 'fib-wedge', name: 'Fibonacci wedge', group: 'fibonacci' },
-  { id: 'text', name: 'Text', group: 'marks' },
-  { id: 'callout', name: 'Callout', group: 'marks' },
-  { id: 'comment', name: 'Comment', group: 'marks' },
-  { id: 'anchored-text', name: 'Anchored text', group: 'marks' },
-  { id: 'arrow-marker', name: 'Arrow marker', group: 'marks' },
-  { id: 'arrow-mark-up', name: 'Arrow up', group: 'marks' },
-  { id: 'arrow-mark-down', name: 'Arrow down', group: 'marks' },
-  { id: 'price-range', name: 'Price range', group: 'marks' },
-  { id: 'date-range', name: 'Date range', group: 'marks' },
-];
+const GLYPH: Readonly<Record<string, string>> = {
+  'trend-line': '\u2571',
+  'horizontal-line': '\u2500',
+  'vertical-line': '\u2502',
+  ray: '\u2192',
+  rectangle: '\u25AD',
+  ellipse: '\u25EF',
+  'fib-retracement': '\u2261',
+  'text-annotation': 'T',
+};
+
+const RAIL: readonly DrawingTool[] = RAIL_IDS.flatMap((id) => {
+  const tool = registry.get(id);
+  return tool === undefined ? [] : [{ id, label: tool.name, glyph: GLYPH[id] ?? '\u25A1' }];
+});
+
+const ALL: readonly DrawingToolOption[] = registry
+  .getAll()
+  .map((tool) => ({ id: tool.type, name: tool.name, group: tool.category }));
+
+const GROUPS: readonly DrawingToolGroup[] = registry
+  .getCategories()
+  .map((category) => ({ id: category, label: category, glyph: '\u25A1' }));
 
 export const DEMO_DRAWING_VOCABULARY: DrawingVocabulary = {
   tools: RAIL,
@@ -96,28 +82,74 @@ export const DEMO_DRAWING_VOCABULARY: DrawingVocabulary = {
  * separately, and with nothing selected the right behaviour is to do nothing rather than to clear.
  */
 export const demoDrawingBinding: DrawingBinding = (host, events) => {
-  const manager = new DrawingManager();
   const chart = realChartOf(host.chart);
-
-  // NO CHART, NO LAYER — and it says so by being inert rather than by throwing. A binding that
-  // threw here would take down a mount whose only fault is a renderer this adapter does not know.
-  if (chart !== undefined) {
-    manager.attach(chart, host.series as never, host.container);
+  // NO CHART, NO LAYER — inert rather than throwing. A binding that threw would take down a mount
+  // whose only fault is a renderer this adapter does not know.
+  if (chart === undefined) {
+    return {
+      setActiveTool: () => undefined,
+      deleteSelection: () => undefined,
+      clearAll: () => undefined,
+      detach: () => undefined,
+    };
   }
+
+  const manager = new DrawingManager();
+  manager.attach(chart, host.series as never, host.container);
 
   const report = (): void => events.onCountChange(manager.getAllDrawings().length);
   const off = [
-    manager.on('drawing:added', () => {
-      report();
-      // The tool disarms once its shape is finished, which is what the rail shows as "not armed".
-      events.onToolFinished();
-    }),
+    manager.on('drawing:added', report),
     manager.on('drawing:removed', report),
     manager.on('drawing:cleared', report),
   ];
 
+  /**
+   * THE CREATION THE PACKAGE DOES NOT HAVE — and it is not an oversight of this file.
+   *
+   * `DrawingManager.handleClick` returns early whenever a tool is armed, and `setActiveTool` records
+   * a string nothing consumes. So arming a tool and clicking produced no drawing and no error: a
+   * perfect silent failure. Collecting the anchors and building the drawing is the caller's job.
+   *
+   * It works for all sixty-seven tools at once because `requiredAnchors` is declarative on the
+   * registry entry — one line, not a switch over tool types.
+   */
+  let activeTool: string | null = null;
+  let pending: { time: unknown; price: number }[] = [];
+  let created = 0;
+
+  const onClick = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
+    if (activeTool === null || param.point === undefined) return;
+    // `point` is LOCAL TO THE PANE clicked, so y only prices on pane 0. Any other pane would read
+    // the wrong scale, and there is no honest guard other than the index itself.
+    if (param.paneIndex !== undefined && param.paneIndex !== 0) return;
+    const time = param.time ?? host.chart.timeScale().coordinateToTime?.(param.point.x);
+    const price = host.series.coordinateToPrice(param.point.y);
+    if (time === null || time === undefined || price === null) return;
+
+    pending.push({ time, price });
+    if (pending.length < (registry.get(activeTool)?.requiredAnchors ?? 2)) return;
+
+    created += 1;
+    try {
+      const drawing = registry.createDrawing(activeTool, `demo-${activeTool}-${created}`, pending as never);
+      if (drawing !== null) manager.addDrawing(drawing);
+    } catch {
+      // A tool the package cannot build in this window is one drawing fewer, never a crash.
+    }
+    pending = [];
+    events.onToolFinished(); // back to the cursor, as every chart app does
+  };
+  host.chart.subscribeClick?.(onClick as never);
+
   return {
-    setActiveTool: (toolId) => manager.setActiveTool(toolId),
+    setActiveTool: (toolId) => {
+      // The anchors belong to the ARMED tool. Switching without clearing would finish the next
+      // drawing with a point the visitor placed for a different one.
+      activeTool = toolId;
+      pending = [];
+      manager.setActiveTool(toolId);
+    },
     deleteSelection: () => {
       const selected = manager.getSelectedDrawing();
       if (selected !== null) manager.removeDrawing(selected.id);
@@ -125,6 +157,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     clearAll: () => manager.clearAll(),
     serialize: () => manager.exportDrawings(),
     detach: () => {
+      host.chart.unsubscribeClick?.(onClick as never);
       for (const unsubscribe of off) unsubscribe();
       manager.detach();
     },
