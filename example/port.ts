@@ -11,6 +11,8 @@
 import type { Bar, MarketDataPort, PaneSpec, SeriesSpec } from 'lightweight-magic-charts';
 import { utcSeconds } from 'lightweight-magic-charts';
 
+import { densityOf } from './density';
+
 /** 2023-11-14T22:13:20Z, written as a constant so no clock enters the output. */
 const FIRST_BAR_AT = 1_700_000_000;
 const ONE_HOUR = 3_600;
@@ -54,6 +56,9 @@ function seriesOf(count: number): readonly Bar[] {
 
 /** Built once at module scope: the series is a constant, so it is computed like one. */
 const BARS = seriesOf(BAR_COUNT);
+
+/** The simulated liquidation map, built once from the same constant series. */
+export const DEMO_DENSITY = densityOf(BARS);
 
 /**
  * WHAT AN AUTHORED PANE ACTUALLY DRAWS COMES THROUGH `data.read`, not through the port.

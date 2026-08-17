@@ -6,7 +6,7 @@ import { DEMO_CATALOGUE } from './catalogue';
 import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
 import { DEMO_PANES } from './panes';
-import { demoPort, demoRead } from './port';
+import { DEMO_DENSITY, demoPort, demoRead } from './port';
 import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
 
 /**
@@ -29,7 +29,13 @@ export function App(): ReactElement {
     <ChartWorkspace
       catalogue={DEMO_CATALOGUE}
       panes={DEMO_PANES}
-      data={{ port: demoPort, engine: demoEngine, symbol: 'DEMO-USD', read: demoRead }}
+      data={{
+        port: demoPort,
+        engine: demoEngine,
+        symbol: 'DEMO-USD',
+        read: demoRead,
+        density: DEMO_DENSITY,
+      }}
       layout={{ heightPx: 620 }}
       drawing={{ vocabulary: DEMO_DRAWING_VOCABULARY, binding: demoDrawingBinding }}
       studies={{
