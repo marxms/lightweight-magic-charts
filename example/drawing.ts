@@ -44,6 +44,41 @@ const RAIL_IDS = [
   'text-annotation',
 ] as const;
 
+/**
+ * A GLYPH PER CATEGORY, because the fallback was a literal empty box.
+ *
+ * `DrawingToolGroup.glyph` is required by the type and I gave every family the same `\u25A1` — an
+ * outlined square, which renders as exactly what it is: a placeholder nobody replaced. The flyout
+ * showed ten identical boxes. The vocabulary is closed at `DrawingCategory`
+ * (`lightweight-charts-drawing/dist/index.d.ts:1086`), so this map can be exhaustive rather than
+ * defensive, and a family added upstream is a compile error here rather than another empty box.
+ */
+const CATEGORY_GLYPH: Readonly<Record<string, string>> = {
+  line: '\u2571',
+  channel: '\u2261',
+  fibonacci: '\u4E28',
+  gann: '\u25E5',
+  pitchfork: '\u03A8',
+  shape: '\u25AD',
+  annotation: 'T',
+  trading: '\u21C5',
+  forecasting: '\u2933',
+  measurement: '\u2194',
+};
+
+const CATEGORY_LABEL: Readonly<Record<string, string>> = {
+  line: 'Lines',
+  channel: 'Channels',
+  fibonacci: 'Fibonacci',
+  gann: 'Gann',
+  pitchfork: 'Pitchforks',
+  shape: 'Shapes',
+  annotation: 'Notes and text',
+  trading: 'Positions',
+  forecasting: 'Forecasts',
+  measurement: 'Measurements',
+};
+
 const GLYPH: Readonly<Record<string, string>> = {
   'trend-line': '\u2571',
   'horizontal-line': '\u2500',
@@ -57,7 +92,10 @@ const GLYPH: Readonly<Record<string, string>> = {
 
 const RAIL: readonly DrawingTool[] = RAIL_IDS.flatMap((id) => {
   const tool = registry.get(id);
-  return tool === undefined ? [] : [{ id, label: tool.name, glyph: GLYPH[id] ?? '\u25A1' }];
+  // No silent box here either: a rail id with no glyph is a mistake in RAIL_IDS, not a tool to draw
+  // as a blank square, so it is dropped and the rail is shorter rather than wrong.
+  const glyph = GLYPH[id];
+  return tool === undefined || glyph === undefined ? [] : [{ id, label: tool.name, glyph }];
 });
 
 const ALL: readonly DrawingToolOption[] = registry
@@ -66,7 +104,11 @@ const ALL: readonly DrawingToolOption[] = registry
 
 const GROUPS: readonly DrawingToolGroup[] = registry
   .getCategories()
-  .map((category) => ({ id: category, label: category, glyph: '\u25A1' }));
+  .map((category) => ({
+    id: category,
+    label: CATEGORY_LABEL[category] ?? category,
+    glyph: CATEGORY_GLYPH[category] ?? '\u2022',
+  }));
 
 export const DEMO_DRAWING_VOCABULARY: DrawingVocabulary = {
   tools: RAIL,
