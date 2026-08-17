@@ -76,8 +76,16 @@ export const DEFAULT_PRICE_ALERT_STYLE: PriceAlertStyle = {
   label: (alert) => (alert.triggered ? 'Alert ✓' : 'Alert'),
 };
 
-/** How close the pointer has to be, in pixels, to grab a line rather than pan the chart. */
-export const ALERT_GRAB_PX = 6;
+/**
+ * How close the pointer has to be, in pixels, to grab a line rather than pan the chart.
+ *
+ * MEASURED, not chosen. It was 6, and at 6 the line could not be grabbed at all — every attempt
+ * panned the chart instead, which is what "the alert cannot be selected in any way" feels like from
+ * the other side. Swept in a browser against a control that never adds an alert: 6 and 8 fail; 10,
+ * 12 and 16 succeed. 12 rather than the floor of 10, because pinning a threshold at the exact value
+ * that worked leaves the next pointer a few pixels off back to panning.
+ */
+export const ALERT_GRAB_PX = 12;
 
 /** The base library's `LineStyle.Dashed`. An ordinal, because the enum is a value we cannot import. */
 const DASHED = 2;

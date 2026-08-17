@@ -22,7 +22,7 @@ export const observed: AlertObservation = observePrice([level], lastPrice);
 
 ## Exports
 
-- **`ALERT_GRAB_PX`** · value · `6`
+- **`ALERT_GRAB_PX`** · value · `12`
 - **`AlertObservation`** · type · `interface AlertObservation { alerts: readonly PriceAlert[]; crossed: readonly PriceAlert[] }`
 - **`AlertSide`** · type · `type AlertSide = 'above' | 'below'`
 - **`armAlert`** · value · `(alert: PriceAlert, price: number) => PriceAlert`
