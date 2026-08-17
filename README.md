@@ -61,7 +61,7 @@ import type { ReactElement } from 'react';
 import { DEMO_CATALOGUE } from './catalogue';
 import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
-import { DEMO_PANES } from './panes';
+import { DEMO_PANES, STUDY_CAPACITY } from './panes';
 import { DEMO_DENSITY, demoPort, demoRead } from './port';
 import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
 
@@ -78,7 +78,14 @@ import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
  * keyboard-reaches; the host supplies the vocabulary (`panes`, `studies`) and the numbers (`data`).
  * Nothing below computes a chart, and nothing below styles one.
  */
-const POLICY = resolutionPolicy({ lanes: 2, plotsPerLane: 3 });
+/**
+ * `lanes` IS THE TOTAL STUDY CAP, not the number of lanes left over after the overlays.
+ * `resolveSources` starts with `laneOrder(active, policy.lanes)`, which truncates the chosen list
+ * to that many entries — overlays included. Set to 2 while the panel offered `capacity: 6`, it let
+ * a visitor pick six studies and silently resolved the first two. The two numbers are one number,
+ * so they are written as one.
+ */
+const POLICY = resolutionPolicy({ lanes: STUDY_CAPACITY, plotsPerLane: 3 });
 
 export function App(): ReactElement {
   return (
@@ -101,7 +108,7 @@ export function App(): ReactElement {
         // the package publishes for exactly this call rather than a private one it keeps.
         resolve: (ids: readonly string[], bars: readonly Bar[]) =>
           resolveSources(ids, demoLookup, bars, POLICY),
-        capacity: 6,
+        capacity: STUDY_CAPACITY,
         // Without lanes there is nowhere for an own-pane study to go, and picking one would look
         // like nothing happening.
         lanes: { plots: 3, colors: ['#f5a623', '#4c9aff', '#c792ea'], heightPx: 120 },

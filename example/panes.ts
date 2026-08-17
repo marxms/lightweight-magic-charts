@@ -12,6 +12,20 @@
 import type { PaneSpec } from 'lightweight-magic-charts';
 import { paneId, seriesId } from 'lightweight-magic-charts';
 
+/** How many studies the workspace accepts. Kept beside the slots it sizes. */
+export const STUDY_CAPACITY = 6;
+
+/** The palette cycles by position, exactly as the lanes' does, so two overlays never share a hue. */
+const OVERLAY_COLORS = ['#4c9aff', '#c792ea', '#26c6da', '#f5a623', '#66bb6a', '#ef5350'];
+
+const OVERLAY_SLOTS = Array.from({ length: STUDY_CAPACITY }, (_unused, lane) => ({
+  id: seriesId(`ovl${lane + 1}p1`),
+  label: 'Study',
+  shape: 'line' as const,
+  color: OVERLAY_COLORS[lane % OVERLAY_COLORS.length],
+  lineWidth: 2 as const,
+}));
+
 export const DEMO_PANES: readonly PaneSpec[] = [
   {
     id: paneId('price'),
@@ -20,15 +34,18 @@ export const DEMO_PANES: readonly PaneSpec[] = [
     format: { kind: 'price', minMove: 0.01 },
     defaultVisible: true,
     /**
-     * THE OVERLAY SLOTS, DECLARED BY THE HOST. A study whose scale sits near the price is resolved
-     * as an overlay and its readings are filed under `ovl<lane>p<plot>` — but nothing in the library
-     * adds a series to the price pane, so a slot that is not declared here has a reading and no line.
-     * One per lane, matching the `lanes` count handed to `resolutionPolicy`.
+     * THE OVERLAY SLOTS, DECLARED BY THE HOST — one per study the workspace will accept.
+     *
+     * A study whose scale sits near the price resolves as an OVERLAY, and its readings are filed
+     * under `ovl<lane>p<plot>`. Nothing in the library adds a series to the price pane, so a slot
+     * that is not declared here has a reading and no line to draw it on.
+     *
+     * THE COUNT IS THE STUDY CAPACITY, not a smaller number that looked like enough. With two slots
+     * and a capacity of six, picking a third study over the price resolved it, filed its readings,
+     * and drew nothing — the panel said 3/6 and the chart showed two. Every cap in this example is
+     * the same cap: `App.tsx` exports `STUDY_CAPACITY`, and this list is that long.
      */
-    series: [
-      { id: seriesId('ovl1p1'), label: 'Study', shape: 'line', color: '#4c9aff', lineWidth: 2 },
-      { id: seriesId('ovl2p1'), label: 'Study', shape: 'line', color: '#c792ea', lineWidth: 2 },
-    ],
+    series: OVERLAY_SLOTS,
   },
   {
     id: paneId('volume'),
