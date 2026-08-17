@@ -19,6 +19,7 @@ import type {
 } from 'lightweight-magic-charts';
 import { DrawingManager, getToolRegistry } from 'lightweight-charts-drawing';
 
+import { DrawingPreviewPrimitive, type PreviewAnchor } from './drawingPreview';
 import { realChartOf } from './engine';
 
 /**
@@ -115,8 +116,18 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
    * registry entry — one line, not a switch over tool types.
    */
   let activeTool: string | null = null;
-  let pending: { time: unknown; price: number }[] = [];
+  let pending: PreviewAnchor[] = [];
   let created = 0;
+
+  // THE FEEDBACK BETWEEN CLICKS. Built and hung inside one try: a preview that fails has to degrade
+  // to "no preview", never take the drawing layer down with it.
+  let preview: DrawingPreviewPrimitive | null = null;
+  try {
+    preview = new DrawingPreviewPrimitive();
+    host.series.attachPrimitive(preview);
+  } catch {
+    preview = null;
+  }
 
   const onClick = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
     if (activeTool === null || param.point === undefined) return;
@@ -127,7 +138,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     const price = host.series.coordinateToPrice(param.point.y);
     if (time === null || time === undefined || price === null) return;
 
-    pending.push({ time, price });
+    pending.push({ time: time as PreviewAnchor['time'], price });
     if (pending.length < (registry.get(activeTool)?.requiredAnchors ?? 2)) return;
 
     created += 1;
@@ -138,9 +149,30 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // A tool the package cannot build in this window is one drawing fewer, never a crash.
     }
     pending = [];
+    preview?.setState(null);
     events.onToolFinished(); // back to the cursor, as every chart app does
   };
   host.chart.subscribeClick?.(onClick as never);
+
+  /**
+   * The cursor enters through the SAME pair the click uses — `point` and `paneIndex` — with the same
+   * pane guard. Pricing y against another pane's scale would draw the trace somewhere it will not
+   * land, which is worse than drawing nothing.
+   */
+  const onCrosshair = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
+    if (activeTool === null || param.point === undefined || (param.paneIndex ?? 0) !== 0) {
+      preview?.setState(null);
+      return;
+    }
+    const time = param.time ?? host.chart.timeScale().coordinateToTime?.(param.point.x);
+    const price = host.series.coordinateToPrice(param.point.y);
+    if (time === null || time === undefined || price === null) {
+      preview?.setState(null);
+      return;
+    }
+    preview?.setState({ tool: activeTool, anchors: pending, cursor: { time: time as PreviewAnchor['time'], price } });
+  };
+  host.chart.subscribeCrosshairMove(onCrosshair as never);
 
   return {
     setActiveTool: (toolId) => {
@@ -148,6 +180,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // drawing with a point the visitor placed for a different one.
       activeTool = toolId;
       pending = [];
+      preview?.setState(null);
       manager.setActiveTool(toolId);
     },
     deleteSelection: () => {
@@ -158,6 +191,8 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     serialize: () => manager.exportDrawings(),
     detach: () => {
       host.chart.unsubscribeClick?.(onClick as never);
+      host.chart.unsubscribeCrosshairMove(onCrosshair as never);
+      if (preview !== null) host.series.detachPrimitive(preview);
       for (const unsubscribe of off) unsubscribe();
       manager.detach();
     },
