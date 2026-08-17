@@ -634,3 +634,23 @@ could explain, and blamed on the backend; the wire was measured and found correc
 
 The notice now reads the SEED OUTCOME, which is the thing that actually answers the question:
 `seeded-unverified` means live with an unproven seam, and nothing else earns the warning.
+
+### ChromeContext: sections carry live counts
+
+The churn sensor watches every member of the write-once context and warns when one changes identity
+between renders. For `sections` that warning was WRONG, and it accused the host of a fault the
+library was committing itself.
+
+`ChartWorkspace` builds the section list with live counts in it — how many panes are visible, how
+many overlays are on, how many patterns are active. Those numbers move whenever a pane is toggled or
+a study is chosen, so the array is a NEW array, correctly. The sensor read that as churn and told the
+host to memoise something it does not own.
+
+What is genuinely write-once about a section is which sections exist, in what order, and which
+component draws each. The sensor now compares that shape instead: the ids joined with each `Body`'s
+identity, where the identity is a stable number handed out by a `WeakMap`. A body cannot be
+stringified and a fresh body every render is the defect worth catching, because it remounts the
+panel's whole subtree.
+
+So the sensor still fires on a section added, removed, reordered, or drawn by a new component, and
+stays quiet on a count. Verified against the example: choosing a study used to warn on every pick.

@@ -59,6 +59,30 @@ const NO_SECTIONS: readonly WorkspaceSection[] = [];
 
 const WorkspaceChromeContext = createContext<WorkspaceChromeValue | null>(null);
 
+/** A stable number per component, so a body can enter a comparable key without being stringified. */
+const BODY_KEYS = new WeakMap<ComponentType<unknown>, number>();
+let nextBodyKey = 0;
+const bodyKey = (Body: ComponentType<unknown>): number => {
+  const held = BODY_KEYS.get(Body);
+  if (held !== undefined) return held;
+  nextBodyKey += 1;
+  BODY_KEYS.set(Body, nextBodyKey);
+  return nextBodyKey;
+};
+
+/**
+ * What is WRITE-ONCE about a section: which sections exist, in what order, and which component draws
+ * each one. NOT the count — that is live data the composition itself recomputes every time a pane is
+ * toggled or a study is chosen, so watching the array identity accused the host of a fault the
+ * library was committing on its own.
+ * See docs/explanation/react-chrome.md#chromecontext-sections-carry-live-counts
+ */
+function sectionShape(sections: readonly WorkspaceSection[] | undefined): string {
+  return (sections ?? NO_SECTIONS)
+    .map((section) => `${section.id}:${bodyKey(section.Body as ComponentType<unknown>)}`)
+    .join('\u0000');
+}
+
 /**
  * Recurring with rate limiting, never "warn on the first one and go quiet".
  * See docs/explanation/react-chrome.md#chromecontext-the-churn-sensor-repeats
@@ -111,7 +135,9 @@ export const WorkspaceChromeProvider = memo(function WorkspaceChromeProvider({
     Tooltip: tooltipSlot,
     Notice: noticeSlot,
     labels,
-    sections,
+    // SECTIONS BY SHAPE, NOT BY ARRAY IDENTITY.
+    // See docs/explanation/react-chrome.md#chromecontext-sections-carry-live-counts
+    sections: sectionShape(sections),
   });
 
   const value = useMemo<WorkspaceChromeValue>(

@@ -76,8 +76,8 @@ export interface DrawingToolbarProps {
 const CURSOR_ID = '__cursor__';
 const GLYPH_WIDTH_PX = 28;
 const RAIL_PADDING_PX = 4;
-/** The rail's width: one icon button plus the padding, and nothing else. */
-const RAIL_WIDTH_PX = GLYPH_WIDTH_PX + RAIL_PADDING_PX * 2 + 2;
+/** One column of icon buttons plus the padding. The rail grows by whole columns, never in between. */
+const RAIL_COLUMN_PX = GLYPH_WIDTH_PX + RAIL_PADDING_PX * 2 + 2;
 /** A host `id` may be an invalid DOM `id`. See docs/explanation/react.md#sanitising-host-ids-for-the-dom */
 const domSafe = (value: string): string => value.replace(/[^\w-]/g, '-');
 
@@ -183,7 +183,8 @@ export function DrawingToolbar({
         // `relative` anchors the flyout. See docs/explanation/react.md#height-scrolling-and-the-flyout-anchor
         position: 'relative',
         boxSizing: 'border-box',
-        ...(vertical ? { width: RAIL_WIDTH_PX, height: heightPx } : {}),
+        // A COLUMN COUNT, NOT A SCROLLBAR. See docs/explanation/react.md#the-rail-wraps-it-does-not-scroll
+        ...(vertical ? { minWidth: RAIL_COLUMN_PX, width: 'max-content', height: heightPx } : {}),
         padding: RAIL_PADDING_PX,
         background: theme.surface,
         color: theme.text,
@@ -199,9 +200,16 @@ export function DrawingToolbar({
           flexDirection: vertical ? 'column' : 'row',
           alignItems: 'center',
           height: heightPx === undefined ? undefined : '100%',
-          // Scrolling only where there is a height to respect, and only on the VERTICAL axis.
-          overflowY: heightPx === undefined || !vertical ? undefined : 'auto',
-          overflowX: vertical ? 'hidden' : undefined,
+          // WRAP INTO ANOTHER COLUMN rather than scroll. A rail that scrolls hides tools behind a
+          // gesture nobody makes on a 28px strip, and a hidden tool is an absent one.
+          //
+          // THE WRAP IS HERE AND NOT ON THE GROUP, and that was measured twice. A relative ceiling
+          // on the group never bit — a column flex item sizes to its content — and giving it the
+          // remaining space instead let it SHRINK and clip three tools out of sight, which is the
+          // same defect as the scrollbar wearing a better disguise.
+          ...(vertical && heightPx !== undefined
+            ? { flexWrap: 'wrap' as const, alignContent: 'flex-start' as const, columnGap: 2 }
+            : {}),
         }}
       >
         {/* Arrow traversal is the obligation `role="radiogroup"` carries; it sits on the GROUP. */}
@@ -211,7 +219,11 @@ export function DrawingToolbar({
           aria-label={labels.group}
           aria-orientation={vertical ? 'vertical' : 'horizontal'}
           onKeyDown={onRailKeyDown}
-          style={{ display: 'flex', flexDirection: vertical ? 'column' : 'row', flexShrink: 0 }}
+          style={{
+            display: 'flex',
+            flexDirection: vertical ? 'column' : 'row',
+            flexShrink: 0,
+          }}
         >
           {entries.map((tool, index) => (
             <IconButton
