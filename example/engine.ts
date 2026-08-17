@@ -23,6 +23,7 @@ import {
   createChart,
   type ChartOptions,
   type DeepPartial,
+  type IChartApi,
   type ISeriesApi,
   type SeriesType,
 } from 'lightweight-charts';
@@ -40,6 +41,22 @@ function definitionOf(shape: SeriesShape): unknown {
       return AreaSeries;
   }
 }
+
+/**
+ * THE REAL CHART, KEPT REACHABLE — and the reason is a gap in the drawing seam worth naming.
+ *
+ * `DrawingSurfaceHost` hands a binding `{ chart, series, container }`, where `series` is the real
+ * `ISeriesApi` (a real series satisfies `SeriesHandle` structurally, as below) but `chart` is the
+ * STRUCTURAL handle this file builds. A drawing library that wants `IChartApi` — and
+ * `lightweight-charts-drawing` does — cannot get it from the seam alone.
+ *
+ * So the host keeps the pairing. A WeakMap rather than a field on the handle: nothing should be able
+ * to reach the base chart by walking the port, and an entry dies with the handle that keys it.
+ */
+const REAL_CHARTS = new WeakMap<WorkspaceChartHandle, IChartApi>();
+
+export const realChartOf = (handle: WorkspaceChartHandle): IChartApi | undefined =>
+  REAL_CHARTS.get(handle);
 
 export const demoEngine: ChartEngine = (container, options) => {
   const chart = createChart(container, {
@@ -72,5 +89,6 @@ export const demoEngine: ChartEngine = (container, options) => {
       return created;
     },
   };
+  REAL_CHARTS.set(handle, chart);
   return handle;
 };

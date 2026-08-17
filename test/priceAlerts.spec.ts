@@ -107,8 +107,11 @@ interface LineRecord {
 function fakeSeries(priceToY: (price: number) => number | null): {
   readonly series: SeriesHandle;
   readonly lines: LineRecord[];
+  /** Handles handed back to `removePriceLine`. `lines` records every line ever CREATED. */
+  readonly removed: PriceLineHandle[];
 } {
   const lines: LineRecord[] = [];
+  const removed: PriceLineHandle[] = [];
   const series: SeriesHandle = {
     priceToCoordinate: priceToY,
     coordinateToPrice: (coordinate) => 1000 - coordinate,
@@ -120,11 +123,13 @@ function fakeSeries(priceToY: (price: number) => number | null): {
       lines.push(record);
       return { applyOptions: (next) => record.applied.push(next) };
     },
-    removePriceLine: () => undefined,
+    removePriceLine: (line) => {
+      removed.push(line);
+    },
     attachPrimitive: () => undefined,
     detachPrimitive: () => undefined,
   };
-  return { series, lines };
+  return { series, lines, removed };
 }
 
 describe('PriceAlertLines', () => {
@@ -168,6 +173,45 @@ describe('PriceAlertLines', () => {
     lines.endDrag();
     expect(lines.isDragging()).toBe(false);
     expect(drawn[0].applied.some((options) => options.price === 700)).toBe(true);
+  });
+
+  /**
+   * DRAGGING A LEVEL OFF THE PANE REMOVES IT — the only way a visitor had to get rid of one.
+   *
+   * Reported as "the alert line cannot be selected to delete". The observation was exact and the
+   * cause was worse than a broken selection: neither selection NOR removal existed. `addLevel` and
+   * a drag were the whole vocabulary, and `Delete` reaches the drawing layer, never this one.
+   */
+  it('discards the dragged level when the release is off the pane', () => {
+    const { series, removed } = fakeSeries((price) => 1000 - price);
+    const lines = new PriceAlertLines(series);
+    lines.add(900);
+    lines.add(700);
+
+    expect(lines.beginDrag(100)).toBe(true);
+    lines.dragTo(300);
+    lines.endDrag(true);
+
+    expect(lines.isDragging()).toBe(false);
+    expect(lines.all().map((alert) => alert.price)).toEqual([700]);
+    // The LINE goes with the level: a removed alert that keeps painting is a ghost. `drawn`
+    // records every line ever created, so the live set is what `removed` measures.
+    expect(removed).toHaveLength(1);
+  });
+
+  it('DISCRIMINATES — an ordinary release keeps the level, and a discard with no drag is inert', () => {
+    const { series } = fakeSeries((price) => 1000 - price);
+    const lines = new PriceAlertLines(series);
+    lines.add(900);
+
+    lines.beginDrag(100);
+    lines.dragTo(300);
+    lines.endDrag(false);
+    expect(lines.all()).toHaveLength(1);
+
+    // Nothing is being dragged, so nothing is discarded: `endDrag` is not a delete button.
+    lines.endDrag(true);
+    expect(lines.all()).toHaveLength(1);
   });
 
   it('lists levels highest first and forgets a removed one entirely', () => {

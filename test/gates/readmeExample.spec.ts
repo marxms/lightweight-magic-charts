@@ -69,7 +69,7 @@ describe('T101 — what the README quotes IS the file the example runs', () => {
 
   it('says so when a block drifts, and when the claim itself is withdrawn', () => {
     // DISCRIMINATION PROOF, served from memory — the two ways this pair can come apart.
-    const drifted = README.replace('layout={{ heightPx: 520 }}', 'layout={{ heightPx: 999 }}');
+    const drifted = README.replace('layout={{ heightPx: 620 }}', 'layout={{ heightPx: 999 }}');
     expect(quotedBlock(drifted, 'example/App.tsx', 'tsx')).not.toBe(fileText('example/App.tsx'));
     // And the locator refuses rather than shrugging: a README that stops making the claim is not a
     // README that keeps it. Silently returning "" here would turn withdrawal into a pass.

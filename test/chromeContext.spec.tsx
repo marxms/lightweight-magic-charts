@@ -278,15 +278,62 @@ describe('the identity churn sensor', () => {
     expect(String(warn.mock.calls[0][0])).toMatch(/theme/);
   });
 
-  it('watches the SECTIONS too — the same discipline holds for every member of the context', () => {
-    const SECTIONS = [{ id: 'a', label: 'A', count: 0, Body: (): null => null }];
+  /**
+   * SECTIONS ARE WATCHED BY SHAPE, and the old assertion here encoded a false positive.
+   *
+   * It re-rendered with a copied array and expected a warning. But `ChartWorkspace` puts LIVE COUNTS
+   * in its sections — visible panes, active overlays, chosen patterns — so the array is legitimately
+   * new on every toggle, and the sensor was telling the host to memoise something the library itself
+   * rebuilds. Measured on the example: picking a study warned every time.
+   */
+  it('stays quiet when only the COUNT moved — that is data, not churn', () => {
+    const Body = (): null => null;
     const { rerender } = render(
-      <WorkspaceChromeProvider sections={SECTIONS}>
+      <WorkspaceChromeProvider sections={[{ id: 'a', label: 'A', count: 0, Body }]}>
         <span />
       </WorkspaceChromeProvider>,
     );
     rerender(
-      <WorkspaceChromeProvider sections={[...SECTIONS]}>
+      <WorkspaceChromeProvider sections={[{ id: 'a', label: 'A', count: 7, Body }]}>
+        <span />
+      </WorkspaceChromeProvider>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('warns when a section is ADDED, because the set is write-once', () => {
+    const Body = (): null => null;
+    const { rerender } = render(
+      <WorkspaceChromeProvider sections={[{ id: 'a', label: 'A', count: 0, Body }]}>
+        <span />
+      </WorkspaceChromeProvider>,
+    );
+    rerender(
+      <WorkspaceChromeProvider
+        sections={[
+          { id: 'a', label: 'A', count: 0, Body },
+          { id: 'b', label: 'B', count: 0, Body },
+        ]}
+      >
+        <span />
+      </WorkspaceChromeProvider>,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/sections/);
+  });
+
+  it('warns on a FRESH BODY, which is the defect worth catching — it remounts the subtree', () => {
+    const { rerender } = render(
+      <WorkspaceChromeProvider
+        sections={[{ id: 'a', label: 'A', count: 0, Body: (): null => null }]}
+      >
+        <span />
+      </WorkspaceChromeProvider>,
+    );
+    rerender(
+      <WorkspaceChromeProvider
+        sections={[{ id: 'a', label: 'A', count: 0, Body: (): null => null }]}
+      >
         <span />
       </WorkspaceChromeProvider>,
     );

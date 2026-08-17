@@ -8,8 +8,10 @@
  * it is taken, and "it looks wrong here" stops being reproducible. The seed and the first timestamp
  * are constants, nothing reads the clock, so every load in every browser draws the same series.
  */
-import type { Bar, MarketDataPort } from 'lightweight-magic-charts';
+import type { Bar, MarketDataPort, PaneSpec, SeriesSpec } from 'lightweight-magic-charts';
 import { utcSeconds } from 'lightweight-magic-charts';
+
+import { densityOf } from './density';
 
 /** 2023-11-14T22:13:20Z, written as a constant so no clock enters the output. */
 const FIRST_BAR_AT = 1_700_000_000;
@@ -54,6 +56,28 @@ function seriesOf(count: number): readonly Bar[] {
 
 /** Built once at module scope: the series is a constant, so it is computed like one. */
 const BARS = seriesOf(BAR_COUNT);
+
+/** The simulated liquidation map, built once from the same constant series. */
+export const DEMO_DENSITY = densityOf(BARS);
+
+/**
+ * WHAT AN AUTHORED PANE ACTUALLY DRAWS COMES THROUGH `data.read`, not through the port.
+ *
+ * This surprised me and it is worth writing down. `HistoryResult` carries an optional `series` map
+ * and it looks like the channel — it is declared in `port/ports.ts` and exported. Nothing in `src/`
+ * reads it. The reading a pane draws is asked for per frame, by `SeriesReader`, off the data source.
+ *
+ * A `PaneSpec` declares that a lane holds a series and what it looks like; it carries no numbers.
+ * Leaving this out is what shipped a lane titled `Traded volume` with nothing in it, over bars that
+ * had carried volume the whole time — the declaration existed and the reading never arrived.
+ */
+const READINGS: ReadonlyMap<string, readonly (number | null)[]> = new Map([
+  ['volume', BARS.map((bar) => bar.volume ?? null)],
+]);
+
+/** Positional: one reading per bar, in bar order, or `null` where the series has nothing to say. */
+export const demoRead = (_pane: PaneSpec, series: SeriesSpec): readonly (number | null)[] =>
+  READINGS.get(series.id) ?? [];
 
 /**
  * History answers with the whole series and declares itself exhausted; live subscribes to nothing

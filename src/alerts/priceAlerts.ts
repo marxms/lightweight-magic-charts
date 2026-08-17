@@ -76,8 +76,16 @@ export const DEFAULT_PRICE_ALERT_STYLE: PriceAlertStyle = {
   label: (alert) => (alert.triggered ? 'Alert ✓' : 'Alert'),
 };
 
-/** How close the pointer has to be, in pixels, to grab a line rather than pan the chart. */
-export const ALERT_GRAB_PX = 6;
+/**
+ * How close the pointer has to be, in pixels, to grab a line rather than pan the chart.
+ *
+ * MEASURED, not chosen. It was 6, and at 6 the line could not be grabbed at all — every attempt
+ * panned the chart instead, which is what "the alert cannot be selected in any way" feels like from
+ * the other side. Swept in a browser against a control that never adds an alert: 6 and 8 fail; 10,
+ * 12 and 16 succeed. 12 rather than the floor of 10, because pinning a threshold at the exact value
+ * that worked leaves the next pointer a few pixels off back to panning.
+ */
+export const ALERT_GRAB_PX = 12;
 
 /** The base library's `LineStyle.Dashed`. An ordinal, because the enum is a value we cannot import. */
 const DASHED = 2;
@@ -164,8 +172,11 @@ export class PriceAlertLines {
     return true;
   }
 
-  /** Moves the dragged line and RE-ARMS it: a level moved somewhere new has not been crossed yet. */
-  dragTo(y: number): number | null {
+  /**
+   * Moves the dragged line and RE-ARMS it: a level moved somewhere new has not been crossed yet.
+   * `discarding` paints it in the fired colour so the gesture below is visible before it commits.
+   */
+  dragTo(y: number, discarding = false): number | null {
     if (this.dragging === null) return null;
     const price = this.series.coordinateToPrice(y);
     if (price === null || !Number.isFinite(price)) return null;
@@ -173,14 +184,23 @@ export class PriceAlertLines {
     this.alerts = this.alerts.map((alert) =>
       alert.id === id ? armAlert(alert, price) : alert,
     );
-    this.handles.get(id)?.applyOptions({ price, color: this.style.draggingColor });
+    const color = discarding ? this.style.firedColor : this.style.draggingColor;
+    this.handles.get(id)?.applyOptions({ price, color });
     return price;
   }
 
-  endDrag(): void {
+  /**
+   * `discard` REMOVES the dragged level rather than settling it.
+   * See docs/explanation/alerts.md#dragging-a-level-off-the-pane-removes-it
+   */
+  endDrag(discard = false): void {
     const id = this.dragging;
     this.dragging = null;
     if (id === null) return;
+    if (discard) {
+      this.remove(id);
+      return;
+    }
     this.restyle(id);
   }
 

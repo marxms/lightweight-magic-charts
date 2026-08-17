@@ -10,6 +10,9 @@ import type { PriceAlert } from '../../alerts/priceAlerts';
 import type { Bar } from '../../domain/types';
 import type { ChartHandles, LiveHandles } from './chartHandles';
 
+/** How far past the pane's edge a release still counts as settling rather than discarding. */
+const DISCARD_MARGIN_PX = 8;
+
 /** Positional: `handles` is the reactive dependency, `live` the synchronous view for the gesture.
  * See docs/explanation/react-surface.md#the-drag-goes-on-capture */
 export function usePriceAlertLayer(
@@ -48,6 +51,20 @@ export function usePriceAlertLayer(
     if (host === null) return;
     const yOf = (event: MouseEvent): number => event.clientY - host.getBoundingClientRect().top;
 
+    /**
+     * OFF THE PANE, with a margin so a release a pixel past the edge is not a deletion by accident.
+     * See docs/explanation/alerts.md#dragging-a-level-off-the-pane-removes-it
+     */
+    const outside = (event: MouseEvent): boolean => {
+      const box = host.getBoundingClientRect();
+      return (
+        event.clientX < box.left - DISCARD_MARGIN_PX ||
+        event.clientX > box.right + DISCARD_MARGIN_PX ||
+        event.clientY < box.top - DISCARD_MARGIN_PX ||
+        event.clientY > box.bottom + DISCARD_MARGIN_PX
+      );
+    };
+
     const onDown = (event: MouseEvent): void => {
       const lines = live.current?.alerts ?? null;
       if (lines === null || !lines.beginDrag(yOf(event))) return;
@@ -57,12 +74,12 @@ export function usePriceAlertLayer(
     };
     const onMove = (event: MouseEvent): void => {
       const lines = live.current?.alerts ?? null;
-      if (lines?.isDragging() === true) lines.dragTo(yOf(event));
+      if (lines?.isDragging() === true) lines.dragTo(yOf(event), outside(event));
     };
-    const onUp = (): void => {
+    const onUp = (event: MouseEvent): void => {
       const lines = live.current?.alerts ?? null;
       if (lines === null || !lines.isDragging()) return;
-      lines.endDrag();
+      lines.endDrag(outside(event));
       live.current?.chart.applyOptions({ handleScroll: true, handleScale: true });
       changeRef.current?.(lines.all().map((alert) => alert.price));
     };

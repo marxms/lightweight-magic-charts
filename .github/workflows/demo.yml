@@ -1,0 +1,55 @@
+# The live example, built and deployed to GitHub Pages.
+#
+# TWO WAYS IN, ONE BODY. `release.yml` calls this after a successful publish, so the page always
+# matches the version on the registry; a maintainer can also run it by hand from the Actions tab.
+# The manual door exists because the page is not the package: fixing a demo should not cost a version
+# on npm, and without this the only way to redeploy was to publish something.
+#
+# It is a reusable workflow rather than a copy of the same steps in `release.yml`. Two copies of a
+# deploy drift, and the one that drifts is the one nobody runs.
+name: Demo
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Pages allows one deployment at a time. `cancel-in-progress: false` because a cancelled deploy can
+# leave the site on a half-published state, and the page is cheap to wait for.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: npm ci
+
+      - name: Build the example
+        run: npm run build:example
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: example/site
+
+      - id: deploy
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
