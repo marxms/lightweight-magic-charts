@@ -29,7 +29,7 @@ is a leftover and a bug.
 npm test
 ```
 
-99 suites, 1172 tests as measured on 2026-08-16, jest with `ts-jest`. The count is written with its
+100 suites, 1198 tests as measured on 2026-08-16, jest with `ts-jest`. The count is written with its
 date because it moves with every change; the command above is the authority, not this line. The
 default environment is `node` on purpose — most of
 this package is browser-free arithmetic, and a module that reaches for `window` should fail rather
@@ -88,6 +88,24 @@ probe **through its CLI** — the exit code and the printed report — because t
 depends on; running it by hand is how you read the table when a budget moves. Measured 2026-08-16:
 `size-gate: OK — 16 measurements under the budget`, exit 0.
 
+```sh
+npm run e2e   # the demo, in a real browser
+```
+
+**The one command that renders anything.** Everything above runs without a browser, and on 2026-08-16
+that gap let seven defects reach the published page at once — an empty volume pane, an empty studies
+panel, a heatmap that painted nothing, a drawing tool that armed and never drew, a price alert that
+could not be removed, four of six chosen studies not plotting, and every category glyph rendered as
+an empty box. All seven were green across the whole suite, because none of it looks at a canvas.
+
+`scripts/e2e-demo.mjs` mounts `example/` in Chromium and asserts on legend readings, `data-testid`
+counters and canvas checksums compared against a captured control — never on a screenshot matching a
+golden file, which fails on a font and passes on a blank chart. It needs a browser once:
+
+```sh
+npx playwright-core install --with-deps chromium
+```
+
 The fourth command is the one a library owes the people installing it: `files[]` and `exports` are
 promises made to someone not in the room, and a target that resolves to nothing is an install that
 succeeds and then throws on first import. It lives in a script rather than inside a workflow
@@ -104,7 +122,9 @@ npm run layout-probe   # builds the ESM tree, then drives example/ in a real Chr
 
 `scripts/layout-probe.mjs` measures the geometry jsdom cannot produce: whether the elastic members
 of the canvas row actually SHARE it. It is the check that found the compact grid sitting at 0 px
-wide, and it is the **only** check in this repository that has ever seen a pixel. Measured
+wide. It was the only check here that had ever seen a pixel until `npm run e2e` joined it, and the
+two do not overlap: the probe interrogates one layout invariant, the suite drives the whole demo.
+Measured
 2026-08-14: five edits of ONE property — `maxWidth: 0` on the grid, `flex: 1` / `flexBasis: 0` /
 `maxWidth: 0` on the surface, `maxWidth: 0` on the row — paint a blank screen and pass every
 library assertion. The probe kills the five in about seven seconds each.
@@ -120,9 +140,9 @@ npx playwright install --only-shell chromium
 nothing here needs a window. Without it the probe exits 2 and names what is missing rather than
 reporting a pass it did not earn.
 
-It runs in CI as a **job of its own**, not as a step on the gate. The gate has to stay runnable on a
-clean machine in seconds, and the matrix of three Node versions would pay for the browser download
-three times to measure geometry that does not vary by Node version.
+It does **not** run in CI. The job that does render is `e2e`, below, and it drives the whole demo
+rather than this one measurement — the probe stays a tool you reach for when geometry is the
+suspect.
 
 This is the correction of a real gap, and it is worth knowing why the rule exists. Until 2026-08-16
 the probe had no home: it resolved `playwright-core` by accident through the monorepo's app, and the
@@ -179,22 +199,24 @@ a guard whose blind spot is unwritten gets read as covering everything.
 1. **A green `npm run build && npm test`.** Paste the counts jest prints. That is the bar, and it is
    the same thing CI runs. A suite run without the build in front of it is not a run: two gates
    measure `dist/`, and they will refuse rather than report a stale number.
-2. **Tests that assert an outcome, not an implementation.** New behaviour arrives with a test that
+2. **A green `npm run e2e` when the change can reach the page.** Anything under `example/`, and
+   anything in `src/react/`, is that kind of change. The suite is the only thing here that renders.
+3. **Tests that assert an outcome, not an implementation.** New behaviour arrives with a test that
    would fail without it. Weakening, skipping or deleting a test to get to green is never the fix.
-3. **A ledger that only shrank.** If your change makes a recorded violator comply, take it out of the
+4. **A ledger that only shrank.** If your change makes a recorded violator comply, take it out of the
    ledger in the same commit. If it adds a violator, the answer is the code, not the ledger.
-4. **Reasoning in `docs/`, one line and a pointer in the code.** See
+5. **Reasoning in `docs/`, one line and a pointer in the code.** See
    [`docs/README.md`](docs/README.md). Record the alternative you knocked down and what measured it —
    a rejected alternative with no written reason comes back with a fresh commit message.
-5. **A number, when you claim one.** "Faster", "smaller" and "safer" are claims; the byte count, the
+6. **A number, when you claim one.** "Faster", "smaller" and "safer" are claims; the byte count, the
    measurement and the date are what make them checkable. That is the same standard the gates hold
    themselves to.
-6. **A `CHANGELOG.md` entry for anything a consumer can see.** The entry for `0.1.0` lists what counts
+7. **A `CHANGELOG.md` entry for anything a consumer can see.** The entry for `0.1.0` lists what counts
    as a breaking change — read it before deciding your change is not one. Accessible names, roles and
    `data-testid` values are on that list, because a host's own tests hold on to them.
-7. **English.** Comment, test name and diagnostic. Where non-English is on purpose, mark the line
+8. **English.** Comment, test name and diagnostic. Where non-English is on purpose, mark the line
    `non-english-fixture: <reason>` next to the string it excuses, with a reason long enough to be one.
-8. **Commits in Conventional Commits form**, one logical change each.
+9. **Commits in Conventional Commits form**, one logical change each.
 
 ## Releasing
 

@@ -62,7 +62,8 @@
     "build:esm": "tsc -p tsconfig.esm.json && node scripts/finalise-esm.mjs",
     "example": "npm run build:esm && node example/serve.mjs",
     "build:example": "npm run build:esm && node scripts/build-example.mjs",
-    "layout-probe": "npm run build:esm && node scripts/layout-probe.mjs"
+    "layout-probe": "npm run build:esm && node scripts/layout-probe.mjs",
+    "e2e": "npm run build:esm && node scripts/e2e-demo.mjs"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

@@ -66,3 +66,46 @@ jobs:
         run: |
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
+
+  # THE ONLY JOB THAT RENDERS A PIXEL. `gate` runs 1198+ cases and none of them mount `example/` —
+  # `jest.config.js`'s own docblock explains why `testEnvironment` stays browser-free by default. On
+  # 2026-08-16 that gap let seven defects reach `example/` at once (an empty volume pane, an empty
+  # studies panel, a heatmap that painted nothing, a drawing tool that armed and never drew, a price
+  # alert that could not be removed, four of six chosen studies not plotting, and drawing glyphs
+  # rendered as an empty box) — every one of them green across the whole matrix above, because none
+  # of it looks at a canvas. `scripts/e2e-demo.mjs` does; see its own docblock for what it asserts
+  # and, as deliberately, what it refuses to (no pixel-count or screenshot-equals-golden-file check —
+  # every assertion is a legend number, a `data-testid` counter, or a canvas checksum compared
+  # against a captured control state).
+  #
+  # ITS OWN JOB, NOT A MATRIX. None of what this measures — a legend value, a drawing count, a canvas
+  # checksum — varies by Node runtime, only by browser and markup, both constant across Node
+  # versions. Paying for a Chromium download three times to prove that three times would be the
+  # `layout-probe` mistake this repository already named once: a real measurement that costs more
+  # than it needs to run nobody keeps running.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          # The lowest Node this package still supports (see `engines` in `package.json`) — the
+          # browser and the markup are what this job measures, and neither depends on which
+          # supported Node runs the driver.
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `playwright-core` is already a devDependency (it drives `scripts/layout-probe.mjs` too); the
+      # browser itself is fetched here rather than committed, same reasoning as that probe's own.
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: E2E demo suite
+        run: npm run e2e
