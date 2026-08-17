@@ -102,8 +102,25 @@ const ALL: readonly DrawingToolOption[] = registry
   .getAll()
   .map((tool) => ({ id: tool.type, name: tool.name, group: tool.category }));
 
+/**
+ * FOUR FAMILIES ON THE RAIL, not the registry's ten — and this is the host's mistake to own.
+ *
+ * The rail draws ONE BUTTON PER FAMILY, stacked in a column 28 px wide. Handing it all ten put
+ * twenty controls in a strip built for a handful: 600 px of content in 537 px, with two tools below
+ * the fold behind a scroll gesture nobody performs there. `DrawingToolbarProps.toolGroups` says it
+ * in its own comment — "Omitted = a single family" — so the number of families is a decision the
+ * host makes about its own rail, and I had made it badly.
+ *
+ * The six that are folded away are not lost: every tool still reaches the flyout through `allTools`,
+ * which groups by `tool.category` whether or not that category has a button of its own.
+ */
+const RAIL_FAMILIES = ['line', 'shape', 'fibonacci', 'annotation'] as const;
+
 const GROUPS: readonly DrawingToolGroup[] = registry
   .getCategories()
+  .filter((category): category is (typeof RAIL_FAMILIES)[number] =>
+    (RAIL_FAMILIES as readonly string[]).includes(category),
+  )
   .map((category) => ({
     id: category,
     label: CATEGORY_LABEL[category] ?? category,

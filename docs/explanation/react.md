@@ -610,21 +610,3 @@ edge it was built from.
 
 `OverlayFields.density` arrives already adapted by the host: which grid a slice describes is the
 host's vocabulary, not ours.
-
-### The rail wraps, it does not scroll
-
-A vertical rail 38 px wide with more tools than fit used to scroll. Measured on the example with the
-full drawing vocabulary: 600 px of content in a 537 px box, so two tools sat below the fold behind a
-scroll gesture nobody performs on a 28 px strip. A tool you cannot see is a tool you do not have.
-
-It now grows by whole columns: `width: max-content` with a one-column minimum, and the rail content
-wraps. Measured after: 67 px, two columns, twenty controls, none clipped and no scrollbar.
-
-**The wrap is on the scroll container, not on the tool group, and that took two wrong attempts.**
-Putting `maxHeight: 100%` on the group did nothing — a flex item in a column container sizes to its
-content, so the ceiling never bit and the rail went on scrolling. Giving the group `flex: 1 1 auto`
-instead let it SHRINK, which clipped three tools out of existence: the same defect as the scrollbar,
-wearing a better disguise and harder to notice. The container wraps; the group stays whole.
-
-The cost is that the destructive pair lands at the top of the second column rather than under the
-tools. That is a palette, and a palette with two columns is what every drawing application shows.

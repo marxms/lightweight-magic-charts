@@ -62,45 +62,26 @@ function mount(props: Partial<ComponentProps<typeof DrawingToolbar>> = {}) {
 const px = (value: string): number => Number.parseFloat(value);
 
 describe('DrawingToolbar — the box: narrow in width, whole in height', () => {
-  it('it is NARROW: one column of icon buttons, not the control that went away', () => {
+  it('it is NARROW: the width is that of an icon button, not of the control that went away', () => {
     mount();
 
     const rail = screen.getByTestId('drawing-toolbar');
     const button = screen.getByTestId('drawing-tool-rectangle');
     // The OLD measurement was 124px of `<select>` + 8 of padding = 132: the rail's column was worth
     // nearly four buttons of width to fit a tool name nobody read up close.
-    expect(px(rail.style.minWidth)).toBeLessThan(124);
-    // And the floor: one column cannot be wider than the button it stacks, plus its own padding.
-    expect(px(rail.style.minWidth)).toBeLessThanOrEqual(px(button.style.width) + 12);
+    expect(px(rail.style.width)).toBeLessThan(124);
+    // And the floor: the rail cannot be wider than the button it stacks, plus its own padding.
+    expect(px(rail.style.width)).toBeLessThanOrEqual(px(button.style.width) + 12);
   });
 
-  /**
-   * IT WRAPS RATHER THAN SCROLLS, and the assertion changed because the behaviour was wrong.
-   *
-   * It used to take the measured height and scroll inside it. Measured on the example with the full
-   * drawing vocabulary: 600px of content in a 537px box, so two tools sat below the fold behind a
-   * gesture nobody performs on a 28px strip. A tool you cannot reach is a tool you do not have.
-   */
-  it('takes the HEIGHT the host measured and wraps into another column instead of scrolling', () => {
+  it('takes the HEIGHT the host measured and scrolls inside when it does not fit', () => {
     mount({ heightPx: 480 });
 
     const rail = screen.getByTestId('drawing-toolbar');
     expect(rail.style.height).toBe('480px');
-    // Width is NOT asserted here, and the reason is the environment rather than the contract: the
-    // rail is laid out `width: max-content`, which jsdom's CSSOM drops rather than stores, so the
-    // property reads empty whatever the component set. What CAN be observed is the floor below and
-    // the wrap beside it; the column count itself is proven in a real browser by `npm run e2e`.
-
-    const scroll = screen.getByTestId('drawing-rail-scroll');
-    expect(scroll.style.flexWrap).toBe('wrap');
-    // THE POINT, stated as an absence: nothing is hidden behind a scrollbar.
-    expect(scroll.style.overflowY).not.toBe('auto');
-    expect(scroll.style.overflowY).not.toBe('scroll');
-  });
-
-  it('POSITIVE CONTROL: without a measured height there is nothing to wrap against', () => {
-    mount();
-    expect(screen.getByTestId('drawing-rail-scroll').style.flexWrap).toBe('');
+    // Its OWN scrolling: without it a tall catalogue would push the workspace footer out, which is
+    // the defect the measured height exists in order not to recreate.
+    expect(screen.getByTestId('drawing-rail-scroll').style.overflowY).toBe('auto');
   });
 
   it('POSITIVE CONTROL: with no height from the host the rail does not invent one', () => {

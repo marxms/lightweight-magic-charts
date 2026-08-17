@@ -90,8 +90,9 @@ function watchConsole(page) {
   return { errors, warnings };
 }
 
-async function freshPage(browser, base) {
-  const page = await browser.newPage({ viewport: VIEWPORT });
+/** `viewport` is optional: every scene but the rail one runs at the shared `VIEWPORT`. */
+async function freshPage(browser, base, viewport = VIEWPORT) {
+  const page = await browser.newPage({ viewport });
   const console_ = watchConsole(page);
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-testid="workspace-root"]').waitFor({ timeout: 30_000 });
@@ -520,6 +521,80 @@ async function sceneGlyphsAreNotPlaceholders(browser, base) {
   await page.close();
 }
 
+
+// ---------------------------------------------------------------------------------------------
+// Scene 6b — the rail CONTAINS its own controls, at more than one window size.
+//
+// This scene exists because the suite missed a regression it should have owned. The rail scrolled,
+// hiding two tools; the fix made it wrap; the wrap let controls paint OUTSIDE the palette, over the
+// chart. Thirty-one checks stayed green through all of it, because the one that looked at the rail
+// compared each button against THE RAIL'S OWN BOX — and that box grew with the overflow. A frame
+// measured against itself always fits. The frame here is the palette's border and the chart beside
+// it, both of which are independent of what the rail does.
+// ---------------------------------------------------------------------------------------------
+async function sceneRailContainsItsControls(browser, base) {
+  // TWO SIZES, because the rail is laid out against a measured height and the earlier scenes all
+  // ran at one. A control that fits at 1400x1000 and escapes at 900x700 is the shape of this bug.
+  for (const [width, height] of [
+    [1400, 1000],
+    [900, 700],
+  ]) {
+    const { page, console_ } = await freshPage(browser, base, { width, height });
+    const at = `${width}x${height}`;
+
+    const geometry = await page.evaluate(() => {
+      const rail = document.querySelector('[data-testid="workspace-drawing-toolbar"]');
+      const scroll = document.querySelector('[data-testid="workspace-drawing-rail-scroll"]');
+      const surface = document.querySelector('[data-testid="workspace-surface"]');
+      if (rail === null || scroll === null || surface === null) return null;
+      const railBox = rail.getBoundingClientRect();
+      const surfaceBox = surface.getBoundingClientRect();
+      const escaped = Array.from(rail.querySelectorAll('button')).filter((node) => {
+        const box = node.getBoundingClientRect();
+        return (
+          box.right > railBox.right + 1 ||
+          box.bottom > railBox.bottom + 1 ||
+          box.left < railBox.left - 1
+        );
+      });
+      return {
+        buttons: rail.querySelectorAll('button').length,
+        scrolls: scroll.scrollHeight > scroll.clientHeight,
+        escaped: escaped.map((node) => (node.textContent ?? '').trim()),
+        overlapsChart: railBox.right > surfaceBox.left + 1,
+      };
+    });
+
+    check(`rail.present@${at}`, geometry !== null && geometry.buttons > 0, JSON.stringify(geometry));
+
+    // NOTHING BEHIND A SCROLLBAR. A 28px strip is not a surface anyone scrolls, so a tool below the
+    // fold is a tool the visitor does not have.
+    check(
+      `rail.does-not-scroll@${at}`,
+      geometry !== null && geometry.scrolls === false,
+      geometry === null ? 'no rail' : `${geometry.buttons} controls, scrolls=${geometry.scrolls}`,
+    );
+
+    // AND NOTHING OUTSIDE THE PALETTE. Measured against the rail's own border, which is what a
+    // reader sees as the edge of the palette.
+    check(
+      `rail.controls-stay-inside@${at}`,
+      geometry !== null && geometry.escaped.length === 0,
+      geometry === null ? 'no rail' : JSON.stringify(geometry.escaped),
+    );
+
+    // The independent frame: whatever the rail does to itself, it must not paint over the chart.
+    check(
+      `rail.does-not-overlap-the-chart@${at}`,
+      geometry !== null && geometry.overlapsChart === false,
+      geometry === null ? 'no rail' : `overlaps=${geometry.overlapsChart}`,
+    );
+
+    reportConsole(`rail.console-clean@${at}`, console_);
+    await page.close();
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Scene 7 — "Add line" draws a price alert (proven by a canvas colour scan, since the line has no
 // DOM node), and dragging it out of the pane and releasing removes it — the 12px grab radius
@@ -626,6 +701,7 @@ try {
   await sceneDensityPaints(browser, base);
   await sceneDrawingCreatesWithPreview(browser, base);
   await sceneGlyphsAreNotPlaceholders(browser, base);
+  await sceneRailContainsItsControls(browser, base);
   await sceneAlertAddAndDragRemove(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
