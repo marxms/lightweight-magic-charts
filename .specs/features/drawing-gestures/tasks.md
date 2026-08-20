@@ -92,7 +92,7 @@ T12 → T13
 
 ## Task Breakdown
 
-### T1: Write the two explanation sections the new modules cite
+### T1: Write the two explanation sections the new modules cite — DONE
 
 **What**: Add `## The axis lock is the library's half of the drag` and `## The magnet is a rule, not a placement` to the drawing explainer, each stating what the library owns and what the binding owns.
 **Where**: `docs/explanation/drawing.md`
@@ -106,9 +106,9 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] Both headings exist and slugify to the anchors the later tasks write in `src/`
-- [ ] Each section names the split: engine-agnostic half in the package, hit-test in the binding
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] Both headings exist and slugify to the anchors the later tasks write in `src/`
+- [x] Each section names the split: engine-agnostic half in the package, hit-test in the binding
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build

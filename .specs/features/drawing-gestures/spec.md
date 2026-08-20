@@ -127,25 +127,25 @@ recorded.
 
 ## Requirement Traceability
 
-| Requirement ID | Story | Phase | Status |
+| Requirement ID | Story | Tasks | Status |
 | --- | --- | --- | --- |
-| DRAG-01 | P1: anchor drag does not pan | Tasks | Pending |
-| DRAG-02 | P1: anchor drag does not pan | Tasks | Pending |
-| DRAG-03 | P1: anchor drag does not pan | Tasks | Pending |
-| DRAG-04 | P1: anchor drag does not pan | Tasks | Pending |
-| DRAG-05 | P1: anchor drag does not pan | Tasks | Pending |
-| DRAG-06 | P1: anchor drag does not pan | Tasks | Pending |
-| MAGNET-01 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-02 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-03 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-04 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-05 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-06 | P2: the magnet is a mode | Tasks | Pending |
-| MAGNET-07 | P3: the preview shows the magnet | - | Pending |
+| DRAG-01 | P1: anchor drag does not pan | T1, T3, T10, T12 | Pending |
+| DRAG-02 | P1: anchor drag does not pan | T3 | Pending |
+| DRAG-03 | P1: anchor drag does not pan | T3 | Pending |
+| DRAG-04 | P1: anchor drag does not pan | T3 | Pending |
+| DRAG-05 | P1: anchor drag does not pan | T3, T5 | Pending |
+| DRAG-06 | P1: anchor drag does not pan | T3, T4 | Pending |
+| MAGNET-01 | P2: the magnet is a mode | T1, T6, T7, T8, T9, T11 | Pending |
+| MAGNET-02 | P2: the magnet is a mode | T2, T12 | Pending |
+| MAGNET-03 | P2: the magnet is a mode | T2, T10, T12 | Pending |
+| MAGNET-04 | P2: the magnet is a mode | T2 | Pending |
+| MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11 | Pending |
+| MAGNET-06 | P2: the magnet is a mode | T5, T8 | Pending |
+| MAGNET-07 | P3: the preview shows the magnet | T10 | Pending |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
-**Coverage:** 13 total, 0 mapped to tasks, 13 unmapped
+**Coverage:** 13 total, 13 mapped to tasks, 0 unmapped
 
 ---
 

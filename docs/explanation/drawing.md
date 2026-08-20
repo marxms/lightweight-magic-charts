@@ -108,3 +108,78 @@ of what a drawing is for.
 Venue and market are in the key because the same ticker on two exchanges is two instruments. Replaying
 one over the other draws lines at prices that never traded there, and a different price range does not
 put them slightly off — it puts them off the chart.
+
+## The axis lock is the library's half of the drag
+
+Lives in `src/drawing/axisLock.ts`.
+
+Pulling an anchor used to pan the chart underneath it, which made resizing a shape impossible: the
+base library's pan handler and the drawing engine's own drag handler hear the SAME press, in bubble
+phase, and both act on it. The lock exists to stop that. While a press is holding an anchor, the
+chart's `handleScroll` and `handleScale` are held at `false`; the release puts both back to `true`.
+
+**Where the split falls.** The drawing engine publishes no drag-start and no drag-end event —
+`_isDragging` is private, and `drawing:updated` only arrives after the first movement — so the
+trigger has to be the anchor hit-test the engine already offers. That hit-test is the ONLY
+engine-specific fact in the whole gesture, and importing the engine to reach it would break the
+zero-dependency manifest this package publishes. So the mechanism lives in the package, where every
+host gets it and a headless test can drive it: the capture-phase press, the `applyOptions` pair, the
+release, the disposal guard. The binding keeps one predicate, `DrawingLayer.anchorAt` — *is there an
+anchor at this point?* A layer that cannot answer simply does not get the lock, and panning stays
+what it always was.
+
+**Why the press is captured, and only a left button on an anchor locks.** Capture phase is the only
+place the lock can land BEFORE the base library reads the same press in bubble. And a press that
+lands anywhere else must leave both options untouched: panning is the correct default gesture, and a
+lock that fired on every press would trade one unusable chart for another.
+
+**Why the release listeners go on `window` and not on the container.** The drag that ends outside
+the chart is the common one, not the exotic one — the pointer leaves the pane and the button comes
+up over the page. A listener bound to the container would never hear it, and the axes would stay
+locked for good. `blur` is on the same footing: a gesture abandoned by a tab switch has to release
+too. A permanently frozen chart is worse than the defect being fixed.
+
+**Why the disposer flips a flag instead of only removing listeners.** A gesture can outlive the
+component that started it. Going full screen unmounts this surface while the button is still down,
+and the `mouseup` lands afterwards against a chart the base library has already disposed, which
+answers by throwing. Unlocking a dead chart means nothing, so the orphaned gesture just dissolves.
+
+## The magnet is a rule, not a placement
+
+Lives in `src/drawing/magnet.ts`.
+
+Every anchor used to land on a bar value whether or not that was wanted, and there was no way to
+refuse. The magnet is the choice that was missing: `off` resolves an anchor to the pointer's own
+price, `on` resolves it to the nearest of the bar's open, high, low and close when one of those sits
+within the threshold. Off is the default, because a library that ships defaulting to the
+complained-of behaviour has not fixed anything.
+
+**PRICE ONLY.** Measured against the base library in isolation: an off-bar time has no coordinate,
+so an anchor holding one would not render at all. The time axis stays quantised to bars, and free
+placement is a statement about price.
+
+**Where the split falls.** The package owns the rule and nothing else. `snapAnchorPrice` is a pure
+function of the mode, the bars, a time, a price, a screen threshold and a price-to-coordinate
+converter; it never touches a pointer, a chart or a drawing. The binding owns the MOMENT — it calls
+`DrawingSurfaceHost.snapPrice` where it commits an anchor, and again where it traces the dashed
+preview, so what is shown is already what will be recorded. Owning placement in the library would
+mean owning tool vocabulary, anchor counts and selection, which is the whole engine the seam exists
+to refuse.
+
+**Why the threshold is a screen distance, not a price distance.** A tolerance expressed in price
+means one thing on an instrument trading at 60 000 and something else entirely at 0.4, and something
+else again after a zoom. The gesture the user is performing is a screen gesture, so the tolerance is
+a screen distance: eight pixels by default. `SeriesHandle.priceToCoordinate` is already on the chart
+port, so pixels cost no new port surface.
+
+**Why a tie goes to the higher price.** Two candidates equidistant from the pointer have to resolve
+somewhere, and "whichever the loop saw first" is an outcome nobody decided. The higher price wins,
+written down here so the next reader can rely on it instead of measuring it.
+
+**Why the mode reaches the binding as a bound closure rather than as data.** The host object is built
+once per binding, inside the effect that attaches the layer. Handing that effect the bars would make
+it depend on data that changes on every tick, and re-running it re-attaches the layer — which throws
+away every drawing the user has made. The closure is stable and reads live refs instead, the same
+shape the seam already uses for its events. It also settles what happens when the mode changes
+mid-gesture: the closure reads the mode at CALL time, so the change applies to the next anchor and
+moves nothing already placed.
