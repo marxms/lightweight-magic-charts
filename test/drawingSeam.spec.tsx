@@ -215,6 +215,8 @@ interface SeamLog {
   readonly hosts: DrawingSurfaceHost[];
   readonly applied: Array<Record<string, unknown>>;
   readonly duringDetach: string[];
+  /** The two cleanup acts IN THE ORDER THEY HAPPENED. A total cannot say which came first. */
+  readonly order: string[];
 }
 
 const emptyLog = (): SeamLog => ({
@@ -222,6 +224,7 @@ const emptyLog = (): SeamLog => ({
   hosts: [],
   applied: [],
   duringDetach: [],
+  order: [],
 });
 
 /** One pixel per price unit, so a threshold in pixels reads as a price difference. */
@@ -243,7 +246,10 @@ function seamHandles(log: SeamLog): ChartHandles {
     panes: () => [],
     addPane: () => undefined,
     addSeries: () => series,
-    applyOptions: (options: Record<string, unknown>) => log.applied.push(options),
+    applyOptions: (options: Record<string, unknown>) => {
+      log.applied.push(options);
+      log.order.push(options.handleScroll === false ? 'lock' : 'release');
+    },
     subscribeCrosshairMove: () => undefined,
     unsubscribeCrosshairMove: () => undefined,
     remove: () => undefined,
@@ -263,10 +269,17 @@ function seamBinding(log: SeamLog, anchorAt: (() => boolean) | null): DrawingBin
       clearAll: () => undefined,
       ...(anchorAt === null ? {} : { anchorAt }),
       detach: () => {
-        // THE ORDERING PROBE. If the lock were still listening at this moment, this release would
-        // reach a chart the base library is about to dispose. The count says whether it did.
+        // THE ORDERING PROBE, and it records the ORDER rather than deducing it from a total. A total
+        // cannot tell the two orderings apart: with the lock released first the count is already 2,
+        // and with the lock still listening the `mouseup` below takes it to 2 before it is read.
+        //
+        // So two things are written here. The marker fixes the sequence, and the pair around the
+        // dispatch says whether the lock was still ANSWERING at this moment — it must not be, or a
+        // release would reach a chart the base library is about to dispose.
+        log.order.push('detach');
+        const before = log.applied.length;
         window.dispatchEvent(new MouseEvent('mouseup'));
-        log.duringDetach.push(`applied=${log.applied.length}`);
+        log.duringDetach.push(`applied ${before} -> ${log.applied.length}`);
       },
     };
   };
@@ -331,14 +344,30 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
 
     view.unmount();
 
-    // TWO CALLS BY THE TIME `detach()` RUNS, and that count is the ordering proof: the lock had
-    // already freed the axes on a chart still alive. `applied=1` here would mean the disposer went
-    // quiet and left the host a chart that can no longer be panned or zoomed.
-    expect(log.duringDetach).toEqual(['applied=2']);
+    // THE ORDER, read directly. Detaching first and unlocking after leaves `['lock','detach',
+    // 'release']` — a release aimed at a chart the layer has already let go of.
+    expect(log.order).toEqual(['lock', 'release', 'detach']);
     expect(log.applied).toEqual([
       { handleScroll: false, handleScale: false },
       { handleScroll: true, handleScale: true },
     ]);
+  });
+
+  it('the lock has already stopped listening by the time the layer detaches', () => {
+    // THE OTHER HALF OF DRAG-05 — "SHALL leave no listener attached". The layer dispatches a
+    // `mouseup` from inside its own `detach()`, which is the last moment a stranded listener could
+    // still answer, and the count either side of that dispatch says whether one did.
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+    pressHost(view);
+
+    view.unmount();
+
+    // Unlocking AFTER the detach instead reads `applied 1 -> 2`: the release the layer's own event
+    // provoked, aimed at a chart the base library is about to dispose.
+    expect(log.duringDetach).toEqual(['applied 2 -> 2']);
   });
 });
 

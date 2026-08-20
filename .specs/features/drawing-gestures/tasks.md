@@ -930,7 +930,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T28: The seam's ordering probe discriminates the ordering
+### T28: The seam's ordering probe discriminates the ordering — DONE
 
 **What**: Make `test/drawingSeam.spec.tsx` observe unlock-before-detach directly, instead of inferring it from a count the probe's own `detach()` corrupts.
 **Where**: `test/drawingSeam.spec.tsx`
@@ -944,12 +944,12 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: mutant **M20** — call `layer.detach()` before `unlock?.()` in `src/react/surface/useDrawingSeam.ts` — currently PASSES. The probe's `detach()` fires the very `mouseup` it measures (`test/drawingSeam.spec.tsx:268`), and the still-live listener answers it before `log.applied.length` is read
-- [ ] The comment at `:334-336` claims `applied=1` would expose a mute disposer; `applied=1` is unreachable in BOTH orders. Fix the claim or the probe — do not leave a comment asserting something false
-- [ ] The new assertion records the ORDER of the two calls, not a count
-- [ ] M20 dies; restore and verify `git status --porcelain`
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] Reproduce first: mutant **M20** — call `layer.detach()` before `unlock?.()` in `src/react/surface/useDrawingSeam.ts` — currently PASSES. The probe's `detach()` fires the very `mouseup` it measures (`test/drawingSeam.spec.tsx:268`), and the still-live listener answers it before `log.applied.length` is read
+- [x] The comment at `:334-336` claims `applied=1` would expose a mute disposer; `applied=1` is unreachable in BOTH orders. Fix the claim or the probe — do not leave a comment asserting something false
+- [x] The new assertion records the ORDER of the two calls, not a count
+- [x] M20 dies; restore and verify `git status --porcelain`
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥1 test passes (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
