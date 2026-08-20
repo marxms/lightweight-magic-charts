@@ -88,6 +88,22 @@ T11 → T12
 T12 → T13
 ```
 
+### Phase 6: Hardening, from the batch-1 adversarial review
+
+Inserted AHEAD of the blocked T11 deliberately. `attachAxisLock` and `snapAnchorPrice` are already
+published with reference pages of their own, so F2 and F3 are unvalidated public API today and must
+not accumulate more surface on top of them. Every task here traces to a finding that survived an
+independent refutation attempt; F1 is absent because `948f055` already fixed it.
+
+```
+T14 → T15
+T15 → T16
+T14 → T17
+T17 → T18
+T18 → T19
+T19 → T20
+```
+
 ---
 
 ## Task Breakdown
@@ -460,6 +476,197 @@ T12 → T13
 
 ---
 
+### T14: The disposer releases a live gesture before it stops listening
+
+**What**: Invoke `pendingRelease` while `detached` is still false, so a disposer that runs on a live chart restores the axes; keep the guard for events arriving after teardown.
+**Where**: `src/drawing/axisLock.ts`
+**Depends on**: None
+**Reuses**: the existing `release` closure and `detached` flag
+**Requirement**: DRAG-02
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: press an anchor, run the disposer with the chart still alive, and assert the CURRENT code leaves `handleScroll`/`handleScale` at `false` — the test must fail before the fix
+- [ ] After the fix the same sequence records `[LOCKED, FREE]`
+- [ ] DRAG-05 still holds: a release arriving AFTER teardown makes no call on the disposed chart
+- [ ] Confirm and note in the docblock that `useChartTeardown` runs the seam cleanup while the chart is still alive — if it does not, say so and stop
+- [ ] `test/axisLock.spec.ts` extended for both directions
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(drawing): the axis lock frees a live chart when the seam re-binds`
+
+---
+
+### T15: Overlapping presses cannot orphan a listener pair
+
+**What**: Hold the pending releases in a `Set` rather than one slot, so a second qualifying press cannot strand the first press's `mouseup`/`blur` pair past the disposer.
+**Where**: `src/drawing/axisLock.ts`
+**Depends on**: T14
+**Reuses**: the same `release` closure
+**Requirement**: DRAG-05
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: two qualifying `mousedown`s with no release between them, then dispose; assert the CURRENT code leaves a `window` listener pair attached — the test must fail before the fix
+- [ ] After the fix, `window` listener count returns to its pre-attach value immediately after `dispose()`, asserted by spying `window.addEventListener`/`removeEventListener`
+- [ ] No `applyOptions` call reaches the chart after teardown on any of these paths
+- [ ] `test/axisLock.spec.ts` extended
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(drawing): overlapping presses cannot strand a release listener`
+
+---
+
+### T16: The lock's coordinate contract becomes assertable
+
+**What**: Stub the container rect with non-zero `top`/`left` and dispatch presses carrying real `clientX`/`clientY`, then assert `anchorAt` received the container-relative point.
+**Where**: `test/axisLock.spec.ts`
+**Depends on**: T15
+**Reuses**: the rect-stubbing pattern at `test/priceAlertLayer.spec.tsx:160,171`
+**Requirement**: DRAG-01, DRAG-06
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] The recorded hit equals the offset point, not `{x: 0, y: 0}`
+- [ ] Prove the assertion discriminates: dropping `- rect.left` / `- rect.top` in `axisLock.ts` fails this test; transposing x and y fails it. Restore the source afterwards and verify with `git status --porcelain`
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(drawing): the axis lock's container-relative point is asserted`
+
+---
+
+### T17: The snap rule refuses an unmeasurable threshold
+
+**What**: Return the pointer price when `price` or `thresholdPx` is not finite, and drop a candidate whose coordinate is not finite rather than only when it is `null`.
+**Where**: `src/drawing/magnet.ts`
+**Depends on**: T14
+**Reuses**: the same guard `src/alerts/priceAlerts.ts:45` already applies, with its control-positive test
+**Requirement**: MAGNET-04
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: `thresholdPx: NaN` with a pointer far from every bar value currently snaps to the highest OHLC — the test must fail before the fix
+- [ ] After the fix a non-finite `thresholdPx` or `price` returns the pointer's own price
+- [ ] A candidate whose `priceToCoordinate` returns `NaN` or `Infinity` is dropped, and the snap survives it
+- [ ] `test/magnet.spec.ts` extended
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥3 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(drawing): an unmeasurable threshold places at the pointer, never at a bar`
+
+---
+
+### T18: The magnet fixtures discriminate the scale and the tie rule
+
+**What**: Add a non-unity price-to-pixel slope so "the threshold is pixels, not price units" can fail, and reorder the tie fixture so the tie rule cannot be deleted green.
+**Where**: `test/magnet.spec.ts`
+**Depends on**: T17
+**Reuses**: the existing table structure in the same file
+**Requirement**: MAGNET-03
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] A case with slope ≠ -1 exists; verified discriminating with `priceToCoordinate: (p) => 400 - 4 * p`, pointer `107.5`, `thresholdPx: 8` — real code answers `107.5`, the price-unit mutant answers `110`
+- [ ] The tie fixture is `{open: 110, high: 110, low: 100, close: 100}` at `price: 105`, so deleting the tie rule answers `100` where the real code answers `110`
+- [ ] Prove BOTH mutants die: apply each to `magnet.ts`, watch the suite fail, restore, and verify with `git status --porcelain`
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(drawing): the magnet fixtures pin the pixel scale and the tie`
+
+---
+
+### T19: The three places that still teach a three-member host
+
+**What**: Name all four members of `DrawingSurfaceHost` in the how-to, the example's engine comment and the reference generator's prose, then regenerate the reference page.
+**Where**: `docs/how-to/bind-drawing.md`
+**Depends on**: T18
+**Reuses**: the generated page's own Exports table, which already lists `snapPrice`
+**Requirement**: MAGNET-03, MAGNET-07
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `docs/how-to/bind-drawing.md`, `example/engine.ts` and `scripts/reference-prose.mjs` all name `chart`, `series`, `container` and `snapPrice`
+- [ ] `node scripts/gen-reference.mjs` run, and `docs/reference/drawing/drawingLayer.md` no longer contradicts its own Exports table
+- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: none
+**Gate**: build
+
+**Commit**: `docs: the drawing host carries four members, not three`
+
+---
+
+### T20: The two axis locks, measured together
+
+**What**: Determine whether a price-alert drag and an anchor drag can hold the same `handleScroll`/`handleScale` pair at once, and pin the answer with a test.
+**Where**: `test/priceAlertLayer.spec.tsx`
+**Depends on**: T19
+**Reuses**: `src/react/surface/usePriceAlertLayer.ts:73,83`, which writes the same pair with its own paired lock
+**Requirement**: DRAG-02
+**Skills**: `ecc:react-patterns`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:react-patterns`
+
+**Done when**:
+- [ ] Establish reachability FIRST: both handlers register `mousedown` in capture on the same element, and the alert layer calls `stopPropagation` — not `stopImmediatePropagation` — which does not stop a second listener on that same element. Prove by test whether both locks can engage on one press
+- [ ] If they can: the alert's `mouseup` must not free the axes while an anchor drag is still held. Fix it and assert the sequence
+- [ ] If they cannot: write the test that proves they cannot, and record why in the docblock, so the next reader does not re-derive it
+- [ ] Either way the outcome is a named, tested answer — not an assumption
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(surface): the two axis locks agree on who frees the chart`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
@@ -478,6 +685,12 @@ Phase 4:  T9 → T10
           T10 → T11
           T11 → T12
 Phase 5:  T12 → T13
+Phase 6:  T14 → T15
+          T15 → T16
+          T14 → T17
+          T17 → T18
+          T18 → T19
+          T19 → T20
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -501,6 +714,13 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T11: host control | 1 file | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
+| T14: disposer release order | 1 module | ✅ Granular |
+| T15: listener set | 1 module | ✅ Granular |
+| T16: coordinate assertion | 1 test file | ✅ Granular |
+| T17: finiteness guard | 1 module | ✅ Granular |
+| T18: magnet fixtures | 1 test file | ✅ Granular |
+| T19: host member docs | 1 file + generated output | ✅ Granular |
+| T20: the two locks | 1 test file | ✅ Granular |
 
 ---
 
@@ -521,6 +741,13 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T11 | T10 | T10 → T11 | ✅ Match |
 | T12 | T11 | T11 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
+| T14 | None | (phase head) | ✅ Match |
+| T15 | T14 | T14 → T15 | ✅ Match |
+| T16 | T15 | T15 → T16 | ✅ Match |
+| T17 | T14 | T14 → T17 | ✅ Match |
+| T18 | T17 | T17 → T18 | ✅ Match |
+| T19 | T18 | T18 → T19 | ✅ Match |
+| T20 | T19 | T19 → T20 | ✅ Match |
 
 No dependency points at a later phase.
 
@@ -543,3 +770,10 @@ No dependency points at a later phase.
 | T11 | Example / host binding | none | none | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
+| T14 | Pure library module | unit | unit | ✅ OK |
+| T15 | Pure library module | unit | unit | ✅ OK |
+| T16 | Pure library module (test hardening) | unit | unit | ✅ OK |
+| T17 | Pure library module | unit | unit | ✅ OK |
+| T18 | Pure library module (test hardening) | unit | unit | ✅ OK |
+| T19 | Docs and ledgers | none | none | ✅ OK |
+| T20 | Surface hook | unit | unit | ✅ OK |
