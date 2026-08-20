@@ -80,8 +80,6 @@ T8 → T9
 T9 → T10
 T10 → T21
 T21 → T11
-T11 → T22
-T22 → T12
 ```
 
 ### Phase 5: The ledger
@@ -106,14 +104,26 @@ T18 → T19
 T19 → T20
 ```
 
-### Phase 7: The defect Phase 6 surfaced and refused to smuggle
+### Phase 7: The feature pays its own byte bill, and hardens
 
-T20 measured the two axis locks together and found them benign, but it uncovered a second thing it
-declined to fix inside another task's commit. Reachable with no drawing layer at all, so it is the
-price-alert layer's defect, not this feature's.
+The entry sits at 104967 against `PROVISIONAL_ENTRY_LIMIT = 104994`
+(`test/gates/sizeBudget.spec.ts:48`) — 26 bytes. That number is not a re-pin target: its docblock
+calls it "the highest the entry limit was ever allowed to reach, written down so the descent is
+checkable", so raising it would erase the marker rather than move a budget. The bytes come back out
+of the modules THIS feature added, not out of unrelated code.
 
 ```
-T20 → T23
+T24 → T25
+T24 → T26
+```
+
+### Phase 8: Wire the control, prove it in a browser, close the ledgers
+
+```
+T26 → T22
+T22 → T12
+T12 → T13
+T12 → T23
 ```
 
 ---
@@ -478,7 +488,7 @@ and the first shape measured 105005. The lean shape measures 104967.
 
 **What**: `DrawingRail` passes the mode and setter straight from `useDrawingRail()` into the toolbar's magnet group, and passes the regrouped `edits`.
 **Where**: `src/react/workspace/DrawingRail.tsx`
-**Depends on**: T11
+**Depends on**: T26
 **Reuses**: the region already calls `useDrawingRail()` and already renders the toolbar
 **Requirement**: MAGNET-01, MAGNET-06
 **Skills**: `ecc:react-patterns`
@@ -490,7 +500,8 @@ and the first shape measured 105005. The lean shape measures 104967.
 **Done when**:
 - [ ] The toggle holds no copy of the mode — it reads and writes the provider's state
 - [ ] `src/react/workspace/ChartWorkspace.tsx` is NOT touched; it sits at 347 of 350 code lines
-- [ ] Flipping the toggle changes what `ChartSurface` receives as `SurfaceDrawing.magnet`, asserted through the composed root
+- [ ] **Asserted through the REAL composition, not a probe.** `test/drawingRailRegion.spec.tsx:174-184` already mounts `<DrawingRailProvider><DrawingRail/></DrawingRailProvider>`; extend THAT harness. Two independent specialist reviews found this defect precisely because every existing magnet test either mounts `DrawingToolbar` in isolation with a hand-built group, or reads the context through a bespoke probe that skips `DrawingRail`
+- [ ] The toggle is found by role, pressed, and the mode observed to change — a test that only asserts the prop was passed would have missed nothing and caught nothing
 - [ ] `test/drawingRailRegion.spec.tsx` extended
 - [ ] Gate check passes: `npm test`
 - [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
@@ -766,7 +777,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 **What**: The price-alert layer releases its axis lock on `blur`, as the drawing axis lock already does.
 **Where**: `src/react/surface/usePriceAlertLayer.ts`
-**Depends on**: T20
+**Depends on**: T12
 **Reuses**: the `blur` release the drawing lock already uses (`src/drawing/axisLock.ts`), and this layer's own paired lock at `usePriceAlertLayer.ts:73` and `:83`
 **Requirement**: DRAG-02
 **Skills**: `ecc:react-patterns`
@@ -791,6 +802,93 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
+### T24: The feature's own modules give the bytes back
+
+**What**: Shrink `magnet.ts`, `axisLock.ts` and `useDrawingSeam.ts` without changing one observable behaviour, until the entry has room for the rest of the feature.
+**Where**: `src/drawing/magnet.ts`
+**Depends on**: None
+**Reuses**: the candidates a five-lens sweep already proposed for these three files — the winner kept in two scalars instead of a `Candidate` object (~107 B); the two finiteness guards routed through the `measurable()` predicate the module already defines (~26 B); one `axes()` factory replacing four hand-written `{handleScroll, handleScale}` literals (~77 B); one `listen()` call registering and revoking the release pair (~40 B); `host.container` read once instead of three times (~15 B); `SnapInput` built by spread instead of five hand-copied fields (~62 B)
+**Requirement**: none — this funds the rest
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Every candidate is MEASURED with `npm run build:esm && node scripts/size-gate.mjs`, one at a time, and the ones that measure at or near zero are reverted rather than kept. Estimates count for nothing
+- [ ] `npm test` stays at 103 suites / 1260 tests with **no test edited, weakened, skipped or deleted** — this is a refactor, and a test that had to change means behaviour changed
+- [ ] **No fix is undone.** `magnet.ts`'s finiteness guards and `axisLock.ts`'s release-before-deaf ordering and release `Set` each exist because an adversarial review found a real defect. Read the docblocks; they say what each guard prevents
+- [ ] The entry measures **at least 130 B below** its current 104967, leaving room for T25, T26, T22 and T23 with margin
+- [ ] Both ledgers move DOWN, named: `size-budget.json` and `MEASURED_AT_PIN` in `test/gates/sizeBudget.spec.ts`. A descending re-pin is what the ratchet is for
+- [ ] Report the measured delta per candidate in the commit body — the ones that measured nothing are the useful finding
+- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `perf(drawing): the gesture modules give back the bytes the control needs`
+
+---
+
+### T25: The snap rule survives a converter that throws
+
+**What**: Guard `input.priceToCoordinate` the way `attachAxisLock` already guards `host.anchorAt`, so a host converter that throws degrades to the pointer's own price instead of escaping the gesture.
+**Where**: `src/drawing/magnet.ts`
+**Depends on**: T24
+**Reuses**: the `try { … } catch { return false; }` shape and its written rationale at `src/drawing/axisLock.ts:30-38` — "a hit-test against a state the engine did not expect costs one missed lock, never a crash"
+**Requirement**: MAGNET-04
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: a `priceToCoordinate` that throws currently propagates out of `snapAnchorPrice` — the test must fail before the fix
+- [ ] After the fix, a throwing converter returns `input.price`, matching every other unmeasurable-input path in the module
+- [ ] A converter that throws on ONE candidate only drops that candidate, and the snap survives
+- [ ] `snapAnchorPrice` is a published export, so this is a public-API robustness fix and the docblock says so
+- [ ] `test/magnet.spec.ts` extended
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(drawing): a converter that throws costs one candidate, never the gesture`
+
+---
+
+### T26: The magnet label stops being an avoidable break
+
+**What**: `DrawingToolbarLabels.magnet` becomes optional, with the toolbar falling back to the published default.
+**Where**: `src/react/DrawingToolbar.tsx`
+**Depends on**: T24
+**Reuses**: `DEFAULT_DRAWING_TOOLBAR_LABELS`, which already exists as the whole-object default
+**Requirement**: MAGNET-01
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `magnet` is `readonly magnet?: string` and the toolbar falls back to the default word
+- [ ] A host that hand-builds a full `DrawingToolbarLabels`, or supplies `DrawingVocabulary.labels` (whose `Pick` carries the FULL type, not a `Partial`), compiles again without adding a field
+- [ ] The `edits` regroup stays breaking — that one IS forced by `test/gates/propCount.spec.ts` at 12/12 — so T13's CHANGELOG entry narrows to it alone
+- [ ] The measured byte cost is named; if it exceeds the slack T24 banked, say so and stop rather than spending the margin the browser proof needs
+- [ ] `test/chrome.spec.tsx` and `test/drawingRail.spec.tsx` extended for the omitted-label path
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `refactor(drawing)!: the magnet label is optional, narrowing the break to edits`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
@@ -808,8 +906,6 @@ Phase 3:  T7 → T8
 Phase 4:  T9 → T10
           T10 → T21
           T21 → T11
-          T11 → T22
-          T22 → T12
 Phase 5:  T12 → T13
 Phase 6:  T14 → T15
           T15 → T16
@@ -817,7 +913,12 @@ Phase 6:  T14 → T15
           T17 → T18
           T18 → T19
           T19 → T20
-Phase 7:  T20 → T23
+Phase 7:  T24 → T25
+          T24 → T26
+Phase 8:  T26 → T22
+          T22 → T12
+          T12 → T13
+          T12 → T23
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -842,6 +943,9 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T11: rail toggle | 1 component | ✅ Granular |
 | T22: region wiring | 1 component | ✅ Granular |
 | T23: alert blur release | 1 hook | ✅ Granular |
+| T24: byte recovery | 3 cohesive modules | ⚠️ OK — one concern, measured |
+| T25: converter guard | 1 module | ✅ Granular |
+| T26: optional label | 1 component | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
 | T14: disposer release order | 1 module | ✅ Granular |
@@ -870,8 +974,11 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T10 | T9 | T9 → T10 | ✅ Match |
 | T21 | T10 | T10 → T21 | ✅ Match |
 | T11 | T21 | T21 → T11 | ✅ Match |
-| T22 | T11 | T11 → T22 | ✅ Match |
-| T23 | T20 | T20 → T23 | ✅ Match |
+| T22 | T26 | T26 → T22 | ✅ Match |
+| T24 | None | (phase head) | ✅ Match |
+| T25 | T24 | T24 → T25 | ✅ Match |
+| T26 | T24 | T24 → T26 | ✅ Match |
+| T23 | T12 | T12 → T23 | ✅ Match |
 | T12 | T22 | T22 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
 | T14 | None | (phase head) | ✅ Match |
@@ -904,6 +1011,9 @@ No dependency points at a later phase.
 | T11 | Surface component | unit | unit | ✅ OK |
 | T22 | Workspace component | unit | unit | ✅ OK |
 | T23 | Surface hook | unit | unit | ✅ OK |
+| T24 | Pure library module | unit | unit | ✅ OK |
+| T25 | Pure library module | unit | unit | ✅ OK |
+| T26 | Surface component | unit | unit | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
 | T14 | Pure library module | unit | unit | ✅ OK |
