@@ -130,15 +130,15 @@ recorded.
 
 | Requirement ID | Story | Tasks | Status |
 | --- | --- | --- | --- |
-| DRAG-01 | P1: anchor drag does not pan | T1, T3, T10, T12, T16 | Pending |
+| DRAG-01 | P1: anchor drag does not pan | T1, T3, T10, T12, T16 | Done |
 | DRAG-02 | P1: anchor drag does not pan | T3, T14, T20 | Done |
 | DRAG-03 | P1: anchor drag does not pan | T3 | Done |
 | DRAG-04 | P1: anchor drag does not pan | T3 | Done |
 | DRAG-05 | P1: anchor drag does not pan | T3, T5, T15 | Done |
 | DRAG-06 | P1: anchor drag does not pan | T3, T4, T16 | Done |
 | MAGNET-01 | P2: the magnet is a mode | T1, T6, T7, T8, T9, T21, T11, T26, T22 | Pending |
-| MAGNET-02 | P2: the magnet is a mode | T2, T12 | Pending |
-| MAGNET-03 | P2: the magnet is a mode | T2, T10, T12, T18, T19 | Pending |
+| MAGNET-02 | P2: the magnet is a mode | T2, T12 | Done |
+| MAGNET-03 | P2: the magnet is a mode | T2, T10, T12, T18, T19 | Done |
 | MAGNET-04 | P2: the magnet is a mode | T2, T17, T25 | Done |
 | MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11 | Pending |
 | MAGNET-06 | P2: the magnet is a mode | T5, T8, T22 | Done |

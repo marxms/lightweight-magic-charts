@@ -513,7 +513,7 @@ and the first shape measured 105005. The lean shape measures 104967.
 
 ---
 
-### T12: Prove both gestures in a real browser
+### T12: Prove both gestures in a real browser — DONE
 
 **What**: Two e2e scenes — a 200 px anchor drag that leaves the visible bar range unchanged, and an anchor placed with the magnet off then on.
 **Where**: `scripts/e2e-demo.mjs`
@@ -527,12 +527,12 @@ and the first shape measured 105005. The lean shape measures 104967.
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] `drag.range-unchanged` — anchor pressed and moved 200 px; the visible bar range read before and after is identical
-- [ ] `drag.anchor-moved` — the same gesture changes the drawing, so the check cannot pass by doing nothing
-- [ ] `magnet.off-is-free` — an anchor placed between two bar values reads a price equal to neither
-- [ ] `magnet.on-snaps` — an anchor placed near a high reads exactly that high
-- [ ] Gate check passes: `npm test && npm run e2e`
-- [ ] e2e count: 41 baseline + 4 checks pass
+- [x] `drag.range-unchanged` — anchor pressed and moved 200 px; the visible bar range read before and after is identical
+- [x] `drag.anchor-moved` — the same gesture changes the drawing, so the check cannot pass by doing nothing
+- [x] `magnet.off-is-free` — an anchor placed between two bar values reads a price equal to neither
+- [x] `magnet.on-snaps` — an anchor placed near a high reads exactly that high
+- [x] Gate check passes: `npm test && npm run e2e`
+- [x] e2e count: 41 baseline + 4 named checks + 2 `reportConsole` checks = 47/47. SPEC_DEVIATION: the two console checks are house convention for a scene and are kept, so the observed count is +6 rather than +4
 
 **Tests**: e2e
 **Gate**: full

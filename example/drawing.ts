@@ -158,6 +158,27 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
   const manager = new DrawingManager();
   manager.attach(chart, host.series as never, host.container);
 
+  /**
+   * THE BROWSER SUITE'S ONE READ-ONLY WINDOW, and it exists because the two gestures this demo
+   * proves have no other observable. An anchor's PRICE lives inside the drawing engine and the
+   * visible bar range lives inside the time scale; every DOM surface above shows bars, counts and
+   * labels, never either of those. `scripts/e2e-demo.mjs` reads both through here, so the magnet
+   * check asserts a price the anchor actually landed on rather than a class or an attribute.
+   *
+   * Both members only READ, and the whole thing is taken back in `detach()`.
+   */
+  const probe = {
+    anchors: (): readonly { readonly time: unknown; readonly price: number }[] =>
+      manager.exportDrawings().flatMap((drawing) => drawing.anchors),
+    /** Bar times at a fifth, half and four fifths of the width: a pan moves all three. */
+    barTimes: (): readonly unknown[] => {
+      const scale = host.chart.timeScale();
+      const width = host.container.clientWidth;
+      return [0.2, 0.5, 0.8].map((at) => scale.coordinateToTime?.(Math.round(width * at)) ?? null);
+    },
+  };
+  (globalThis as Record<string, unknown>).__lmcDrawingProbe = probe;
+
   const report = (): void => events.onCountChange(manager.getAllDrawings().length);
   const off = [
     manager.on('drawing:added', report),
@@ -297,6 +318,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       }
     },
     detach: () => {
+      delete (globalThis as Record<string, unknown>).__lmcDrawingProbe;
       host.container.removeEventListener('mousedown', onDown, true);
       host.chart.unsubscribeClick?.(onClick as never);
       host.chart.unsubscribeCrosshairMove(onCrosshair as never);
