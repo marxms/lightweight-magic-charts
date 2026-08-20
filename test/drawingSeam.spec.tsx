@@ -240,10 +240,38 @@ const lockSeries = (): SeriesHandle => ({
   detachPrimitive: () => undefined,
 });
 
+/**
+ * THE TWO PANES THE HOST DRAWS, and the id the fake chart answers WITH.
+ *
+ * Every chart fake in this repo answers `getHTMLElement: () => null` and this one answered
+ * `panes: () => []`. Both make the axis lock's pane guard inert, because an unanswered pane falls
+ * back to the whole container BY DESIGN (`src/drawing/axisLock.ts:54-56`) — so here the guard
+ * refuses nothing, and the line that feeds it can be deleted with everything still green.
+ *
+ * MEASURED, not suspected: deleting `pricePane` from the `attachAxisLock` call in
+ * `src/react/surface/useDrawingSeam.ts` left `npm test` at 1274/1274, `tsc --noEmit` silent and
+ * `npm run e2e` at 48/48, while the spec's third edge case went back to broken through the whole
+ * composition.
+ *
+ * THAT IS THE FIFTH TIME ON THIS FEATURE an optional member vanished with no type error and nothing
+ * noticed — after `anchorAt` dropped by the rail's provider wrapper, the `magnet` group never
+ * forwarded by `DrawingRail`, the one-pixel-per-price fixtures that could not tell a pixel
+ * threshold from a price one, and the preview clause that had no sensor at all. `pricePane?` is
+ * optional for the same good reason each of those was, and optional is exactly what lets a missing
+ * wire typecheck. So THIS fake answers an ELEMENT: a guard can only discriminate against a pane it
+ * can actually name.
+ */
+const PRICE_PANE = 'seam-price-pane';
+const STUDY_PANE = 'seam-study-pane';
+
+/** Read at press time, never captured: the panes do not exist until the harness has rendered. */
+const paneElement = (testId: string): HTMLElement | null =>
+  document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+
 function seamHandles(log: SeamLog): ChartHandles {
   const series = lockSeries();
   const chart = {
-    panes: () => [],
+    panes: () => [{ getHTMLElement: () => paneElement(PRICE_PANE) }],
     addPane: () => undefined,
     addSeries: () => series,
     applyOptions: (options: Record<string, unknown>) => {
@@ -300,15 +328,27 @@ function SeamHarness({
     setLive(handles);
   }, [handles]);
   useDrawingSeam(live, hostRef, binding, null, {}, snap);
-  return <div ref={hostRef} data-testid="seam-host" />;
+  // The chart draws its panes INSIDE the host, one under the other. A press never lands on the host
+  // element itself, which is why every press below targets a pane.
+  return (
+    <div ref={hostRef} data-testid="seam-host">
+      <div data-testid={PRICE_PANE} />
+      <div data-testid={STUDY_PANE} />
+    </div>
+  );
 }
 
 const OFF: DrawingSnapInput = { magnet: 'off', thresholdPx: 8, bars: BARS };
 const ON: DrawingSnapInput = { magnet: 'on', thresholdPx: 8, bars: BARS };
 
-const pressHost = (view: { getByTestId: (id: string) => HTMLElement }): void => {
-  view.getByTestId('seam-host').dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+type View = { getByTestId: (id: string) => HTMLElement };
+
+const pressIn = (view: View, testId: string): void => {
+  view.getByTestId(testId).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
 };
+
+/** Where a drag actually begins: on what the chart drew in the PRICE pane. */
+const pressPricePane = (view: View): void => pressIn(view, PRICE_PANE);
 
 describe('DRAG-05 — the surface attaches the lock and releases it before the layer goes', () => {
   it('a layer that can hit-test its anchors gets the lock', () => {
@@ -317,7 +357,7 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
       <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
     );
 
-    pressHost(view);
+    pressPricePane(view);
 
     expect(log.applied).toEqual([{ handleScroll: false, handleScale: false }]);
   });
@@ -329,7 +369,7 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
       <SeamHarness binding={seamBinding(log, null)} snap={OFF} handles={seamHandles(log)} />,
     );
 
-    pressHost(view);
+    pressPricePane(view);
 
     expect(log.applied).toEqual([]);
   });
@@ -339,7 +379,7 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
     const view = render(
       <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
     );
-    pressHost(view);
+    pressPricePane(view);
     expect(log.applied).toHaveLength(1);
 
     view.unmount();
@@ -361,13 +401,34 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
     const view = render(
       <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
     );
-    pressHost(view);
+    pressPricePane(view);
 
     view.unmount();
 
     // Unlocking AFTER the detach instead reads `applied 1 -> 2`: the release the layer's own event
     // provoked, aimed at a chart the base library is about to dispose.
     expect(log.duringDetach).toEqual(['applied 2 -> 2']);
+  });
+});
+
+describe('DRAG-06 — the seam is what tells the lock WHICH pane is the price pane', () => {
+  it('a press on a study pane makes no call, though the hit-test says yes', () => {
+    // THE WIRE, sensed. The module's own guard is already proven against a pane handed to it by
+    // hand (`test/axisLock.spec.ts:237`), and that proves the guard — never that anybody supplies
+    // it. This one presses through the real composition, so it goes red the moment the seam stops
+    // passing `pricePane`: the deletion that was silent across the ENTIRE suite until this case.
+    //
+    // The hit-test answers TRUE here on purpose. A study pane sits below the price pane inside the
+    // same container and `anchorAt` reads CONTAINER coordinates, so pressed down there it answers
+    // about a point the pointer is not on. Only the pane can tell the two apart.
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+
+    pressIn(view, STUDY_PANE);
+
+    expect(log.applied).toEqual([]);
   });
 });
 

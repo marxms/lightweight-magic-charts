@@ -1051,7 +1051,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T32: The seam's pane wiring becomes sensed
+### T32: The seam's pane wiring becomes sensed — DONE
 
 **What**: A chart fake that answers a REAL pane element, so deleting the line that supplies `pricePane` fails a test instead of passing everything.
 **Where**: `test/drawingSeam.spec.tsx`
@@ -1065,12 +1065,12 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: delete `src/react/surface/useDrawingSeam.ts:82` (the line supplying `pricePane`) and confirm the CURRENT suite stays at 1274/1274 with `tsc` clean and e2e at 48/48 — that is the defect
-- [ ] The fake's `panes()[0].getHTMLElement()` returns a real element instead of `null`, and a press outside it makes NO `applyOptions` call
-- [ ] With the wiring line deleted, that new case FAILS. Restore the line and verify `git status --porcelain`
-- [ ] This is the FIFTH time an optional member vanished unsensed on this feature — the docblock says so, so the next reader of this file knows why the fake answers an element rather than `null`
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] Reproduce first: delete `src/react/surface/useDrawingSeam.ts:82` (the line supplying `pricePane`) and confirm the CURRENT suite stays at 1274/1274 with `tsc` clean and e2e at 48/48 — that is the defect. **Measured**: `npm test` 1274/1274, `tsc --noEmit` exit 0, `npm run e2e` 48/48 — the deletion is invisible
+- [x] The fake's `panes()[0].getHTMLElement()` returns a real element instead of `null`, and a press outside it makes NO `applyOptions` call — `test/drawingSeam.spec.tsx:274` answers the price pane element; `:431` asserts `expect(log.applied).toEqual([])` for a press on the study pane
+- [x] With the wiring line deleted, that new case FAILS. Restore the line and verify `git status --porcelain` — 1 failed / 13 passed in the file, received `[{ handleScroll: false, handleScale: false }]`; restored, porcelain shows the test file only
+- [x] This is the FIFTH time an optional member vanished unsensed on this feature — the docblock says so, so the next reader of this file knows why the fake answers an element rather than `null` — `test/drawingSeam.spec.tsx:243-262`
+- [x] Gate check passes: `npm test` — 103 suites / 1275 tests, exit 0
+- [x] Test count: baseline + ≥1 test passes (no silent deletions) — 1274 → 1275
 
 **Tests**: unit
 **Gate**: quick
