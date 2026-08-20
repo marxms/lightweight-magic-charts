@@ -860,7 +860,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T26: The magnet label stops being an avoidable break
+### T26: The magnet label stops being an avoidable break — DONE
 
 **What**: `DrawingToolbarLabels.magnet` becomes optional, with the toolbar falling back to the published default.
 **Where**: `src/react/DrawingToolbar.tsx`
@@ -874,13 +874,13 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] `magnet` is `readonly magnet?: string` and the toolbar falls back to the default word
-- [ ] A host that hand-builds a full `DrawingToolbarLabels`, or supplies `DrawingVocabulary.labels` (whose `Pick` carries the FULL type, not a `Partial`), compiles again without adding a field
-- [ ] The `edits` regroup stays breaking — that one IS forced by `test/gates/propCount.spec.ts` at 12/12 — so T13's CHANGELOG entry narrows to it alone
-- [ ] The measured byte cost is named; if it exceeds the slack T24 banked, say so and stop rather than spending the margin the browser proof needs
-- [ ] `test/chrome.spec.tsx` and `test/drawingRail.spec.tsx` extended for the omitted-label path
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] `magnet` is `readonly magnet?: string` and the toolbar falls back to the default word
+- [x] A host that hand-builds a full `DrawingToolbarLabels`, or supplies `DrawingVocabulary.labels` (whose `Pick` carries the FULL type, not a `Partial`), compiles again without adding a field
+- [x] The `edits` regroup stays breaking — that one IS forced by `test/gates/propCount.spec.ts` at 12/12 — so T13's CHANGELOG entry narrows to it alone
+- [x] The measured byte cost is named; if it exceeds the slack T24 banked, say so and stop rather than spending the margin the browser proof needs
+- [x] `test/chrome.spec.tsx` and `test/drawingRail.spec.tsx` extended for the omitted-label path
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

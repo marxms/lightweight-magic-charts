@@ -12,7 +12,7 @@ import {
 
 import type { MagnetMode } from '../drawing/magnet';
 import { useChromeTheme } from './chrome/ChromeContext';
-import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
+import { DEFAULT_MAGNET_LABEL, DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { FlyoutMenu } from './chrome/FlyoutMenu';
 import { IconButton } from './chrome/IconButton';
 import { nextRovingIndex } from './chrome/rovingFocus';
@@ -41,8 +41,12 @@ export interface DrawingToolbarLabels {
   readonly cursor: string;
   readonly deleteSelection: string;
   readonly clearAll: string;
-  /** Names the placement toggle. See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
-  readonly magnet: string;
+  /** Names the placement toggle. OPTIONAL for compatibility: a rail written before the magnet
+   * existed hands over a full `DrawingToolbarLabels` — `DrawingVocabulary` picks the whole type and
+   * not a `Partial` — so a required word here would break every one of them to add a control they
+   * never asked for. Omitted, the toolbar falls back to `DEFAULT_MAGNET_LABEL`.
+   * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly magnet?: string;
   /** Names the single flyout a host gets when it declares no families at all. */
   readonly allTools: string;
   /** Names the family of last resort: entries the host did not group, or grouped under no `toolGroups` id. */
@@ -294,7 +298,7 @@ export function DrawingToolbar({
 
         <div style={{ [vertical ? 'height' : 'width']: 8, flexShrink: 0 }} />
         {magnet !== undefined &&
-          action(labels.magnet, '⌖', 'magnet', () => magnet.onChange(magnetOn ? 'off' : 'on'), {
+          action(labels.magnet ?? DEFAULT_MAGNET_LABEL, '⌖', 'magnet', () => magnet.onChange(magnetOn ? 'off' : 'on'), {
             kind: 'toggle',
             pressed: magnetOn,
           })}

@@ -18,10 +18,12 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 
 import {
+  DEFAULT_DRAWING_TOOLBAR_LABELS,
   DrawingToolbar,
   type DrawingTool,
   type DrawingToolGroup,
   type DrawingToolOption,
+  type DrawingToolbarLabels,
 } from '../src/react/DrawingToolbar';
 import type { MagnetMode } from '../src/drawing/magnet';
 import { HOVER_CLOSE_DELAY_MS, HOVER_OPEN_DELAY_MS } from '../src/react/hoverIntent';
@@ -637,5 +639,33 @@ describe('DrawingToolbar — the magnet is a two-state control the rail draws', 
     // the magnet being absent and not the rail failing to render its actions at all.
     expect(screen.getByTestId('drawing-delete')).toBeInTheDocument();
     expect(screen.getByTestId('drawing-clear')).toBeInTheDocument();
+  });
+
+  it('names the toggle from the published default when the host omits the word', () => {
+    // A HOST THAT PREDATES THE MAGNET hands over a FULL `DrawingToolbarLabels` — `DrawingVocabulary`
+    // picks the whole type, not a `Partial` — so demanding the word would have broken it to add a
+    // control it never asked for. It compiles without the field, and the control is still NAMED: an
+    // unnamed toggle is nothing to a screen reader, which is worse than the break it saved.
+    const legacy: DrawingToolbarLabels = {
+      group: 'Ferramentas',
+      cursor: 'Cursor',
+      deleteSelection: 'Apagar',
+      clearAll: 'Limpar',
+      allTools: 'Todas',
+      otherTools: 'Outras',
+      count: (drawings) => `${drawings}`,
+    };
+    mount({ labels: legacy, magnet: { mode: 'on', onChange: () => undefined } });
+
+    const toggle = screen.getByTestId('drawing-magnet');
+    // Against the PUBLISHED default, not against a word this test invented: the fallback is the
+    // object the library ships, so the two assertions below cannot drift apart from each other.
+    expect(DEFAULT_DRAWING_TOOLBAR_LABELS.magnet).toBe('Magnet');
+    expect(toggle).toHaveAccessibleName('Magnet');
+    // CONTROL POSITIVE: the words the host DID bring are the ones on screen, so the fallback is one
+    // field falling back and not the whole group being replaced by the default.
+    expect(screen.getByTestId('drawing-delete')).toHaveAccessibleName('Apagar');
+    // And the mode is still read from the group, not from the label channel.
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
   });
 });
