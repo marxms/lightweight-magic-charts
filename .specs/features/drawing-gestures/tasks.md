@@ -148,7 +148,7 @@ T12 → T13
 
 ---
 
-### T3: The axis lock
+### T3: The axis lock — DONE
 
 **What**: `attachAxisLock` — capture-phase press, the `applyOptions` pair, release on `mouseup`/`blur`, disposer that survives teardown.
 **Where**: `src/drawing/axisLock.ts`
@@ -162,18 +162,18 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] `mousedown` is registered in capture phase on the container
-- [ ] A press where `anchorAt` answers true calls `applyOptions({ handleScroll: false, handleScale: false })`
-- [ ] `mouseup` restores both to `true`
-- [ ] Release listeners are on `window`, so a `mouseup` outside the container still restores
-- [ ] `blur` restores both
-- [ ] A press where `anchorAt` answers false makes **no** `applyOptions` call at all
-- [ ] A non-left button makes no call
-- [ ] After the disposer runs, a late `mouseup` makes no call and no listener remains
-- [ ] `anchorAt` throwing costs one missed lock, not an exception out of the handler
-- [ ] `test/axisLock.spec.ts` written (`@jest-environment jsdom`), one case per bullet above
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥9 tests pass (no silent deletions)
+- [x] `mousedown` is registered in capture phase on the container
+- [x] A press where `anchorAt` answers true calls `applyOptions({ handleScroll: false, handleScale: false })`
+- [x] `mouseup` restores both to `true`
+- [x] Release listeners are on `window`, so a `mouseup` outside the container still restores
+- [x] `blur` restores both
+- [x] A press where `anchorAt` answers false makes **no** `applyOptions` call at all
+- [x] A non-left button makes no call
+- [x] After the disposer runs, a late `mouseup` makes no call and no listener remains
+- [x] `anchorAt` throwing costs one missed lock, not an exception out of the handler
+- [x] `test/axisLock.spec.ts` written (`@jest-environment jsdom`), one case per bullet above
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥9 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
