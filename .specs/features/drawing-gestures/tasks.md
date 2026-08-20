@@ -117,7 +117,7 @@ T12 → T13
 
 ---
 
-### T2: The snap rule
+### T2: The snap rule — DONE
 
 **What**: `MagnetMode` and `snapAnchorPrice` — pure, pixel-threshold, tie goes to the higher price.
 **Where**: `src/drawing/magnet.ts`
@@ -131,15 +131,15 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] `mode: 'off'` returns the input price without reading `bars`
-- [ ] `mode: 'on'` returns the nearest of open/high/low/close within `thresholdPx`
-- [ ] No candidate within threshold returns the input price
-- [ ] Zero bars returns the input price
-- [ ] Equidistant candidates resolve to the higher price
-- [ ] A `priceToCoordinate` returning `null` drops that candidate, not the snap
-- [ ] `test/magnet.spec.ts` written, one case per bullet above
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥6 tests pass (no silent deletions)
+- [x] `mode: 'off'` returns the input price without reading `bars`
+- [x] `mode: 'on'` returns the nearest of open/high/low/close within `thresholdPx`
+- [x] No candidate within threshold returns the input price
+- [x] Zero bars returns the input price
+- [x] Equidistant candidates resolve to the higher price
+- [x] A `priceToCoordinate` returning `null` drops that candidate, not the snap
+- [x] `test/magnet.spec.ts` written, one case per bullet above
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥6 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
