@@ -109,6 +109,17 @@ describe('the edge cases the spec decides', () => {
     expect(snapAnchorPrice(input({ bars: [], price: 103.7 }))).toBe(103.7);
   });
 
+  it('a time that matches no bar resolves to the pointer price, bars or no bars', () => {
+    // NOT THE SAME CASE AS AN EMPTY CHART, and that is why it needs its own. With bars present the
+    // lookup can miss and still have something to reach for, and reaching for the wrong bar snaps
+    // the anchor to a quartet the pointer was never near — a silent, user-visible misplacement.
+    // The pointer sits `3.7` px from this bar's close, well inside the threshold, so a fallback to
+    // `bars[0]` would answer the close rather than leave the price alone.
+    const price = snapAnchorPrice(input({ time: utcSeconds(1_700_000_600), price: 103.7 }));
+
+    expect(price).toBe(103.7);
+  });
+
   it('two equidistant candidates resolve to the HIGHER price', () => {
     // Low and open sit at 100, high and close at 110, and the pointer is exactly between them. The
     // outcome is decided rather than incidental: without the rule it is whichever the loop met last.

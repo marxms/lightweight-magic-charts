@@ -988,7 +988,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T30: A bar time that matches nothing places at the pointer
+### T30: A bar time that matches nothing places at the pointer — DONE
 
 **What**: Cover the lookup miss in `snapAnchorPrice`, which every existing call site avoids by passing `BARS[0].time`.
 **Where**: `test/magnet.spec.ts`
@@ -1002,11 +1002,11 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: mutant **M21** — make `src/drawing/magnet.ts:45` fall back to `bars[0]` when the time matches nothing — currently PASSES
-- [ ] A time matching no bar returns the pointer's own price
-- [ ] M21 dies; restore and verify `git status --porcelain`
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] Reproduce first: mutant **M21** — make `src/drawing/magnet.ts:45` fall back to `bars[0]` when the time matches nothing — currently PASSES
+- [x] A time matching no bar returns the pointer's own price
+- [x] M21 dies; restore and verify `git status --porcelain`
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥1 test passes (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
