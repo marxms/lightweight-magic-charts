@@ -2,25 +2,34 @@
 
 **Date**: 2026-08-20
 **Spec**: `.specs/features/drawing-gestures/spec.md`
-**Diff range**: `2817b49..1605923` (33 commits: spec, design, tasks and 30 implementation commits)
-**Verifier**: independent sub-agent (author ≠ verifier); coverage re-derived from the spec, not inherited
+**Diff range**: `2817b49..67cdda1` (38 commits; the fix round T27-T31 is `58d17e6..67cdda1`)
+**Verifier**: independent sub-agent, iteration 2 of 3 (author ≠ verifier; coverage re-derived from the
+spec, and the previous FAIL report read but not inherited)
 
 **Verdict: FAIL ❌**
 
-Twelve of the thirteen requirements are proven against the value the spec defines, and the
-discrimination sensor killed 25 of 28 injected faults — including all three of the defect shapes
-this feature has a documented history of. One requirement, **MAGNET-07**, has no discriminating
-evidence anywhere: its implementation can be reverted and `npm test` (1269) and `npm run e2e`
-(47/47) both stay green. One of the spec's three listed edge cases is untested. The traceability
-table's claim of 13/13 Done does not survive re-derivation.
+All thirteen requirements now assert the value the spec defines, including MAGNET-07, which had no
+evidence at iteration 1. All three edge cases are covered. Seventeen behaviour-level faults were
+injected in an isolated worktree and sixteen died. The one survivor is not a weak assertion but a
+missing one, and it is the fifth instance of this feature's signature defect: **the library-side
+wiring that hands the new pane guard to the lock (`src/react/surface/useDrawingSeam.ts:82`) can be
+deleted and `npm test` stays at 1274/1274 while `npm run e2e` stays at 48/48** — with the spec's
+third edge case silently reverted to broken. A second, smaller finding: the new published
+`pricePane` reader is the only callback in `axisLock.ts` with no throw guard, and a throw from it
+was measured escaping the capture-phase handler into the page.
 
 ---
 
 ## Task Completion
 
-All 26 task headings in `tasks.md` are marked DONE. Two of them — T10 and T19, the only two tasks
-carrying MAGNET-07 — declare `Tests: none` / `Gate: build`, which is why the requirement reaches
-`Done` in the traceability table with nothing asserting it. See Gap 1.
+| Task | Status | Notes |
+| --- | --- | --- |
+| T1-T26 | ✅ Done | Verified at iteration 1 |
+| T27 the preview's snap becomes provable | ✅ Done | `scripts/e2e-demo.mjs:837`; M22 re-injected and killed |
+| T28 the seam's ordering probe discriminates | ✅ Done | Two independent readings, both die under M20 |
+| T29 the axis lock leaves the other panes alone | ⚠️ Partial | Module implemented and sensed; the composition wiring is unsensed (Gap 1) |
+| T30 a bar time that matches nothing | ✅ Done | `test/magnet.spec.ts:120`; M21 killed |
+| T31 the CHANGELOG stops claiming one break too few | ✅ Done | `CHANGELOG.md:64-96`; accurate on re-derivation |
 
 ---
 
@@ -30,54 +39,59 @@ carrying MAGNET-07 — declare `Tests: none` / `Gate: build`, which is why the r
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
-| DRAG-01 WHILE a press has grabbed an anchor, hold `handleScroll`/`handleScale` at `false` | both exactly `false`, nothing else written | `test/axisLock.spec.ts:83` — `expect(it.calls).toEqual([{ handleScroll: false, handleScale: false }])`; capture-phase variant `test/axisLock.spec.ts:73`; through the seam `test/drawingSeam.spec.tsx:309`; in a real browser `scripts/e2e-demo.mjs:754` `drag.range-unchanged` paired with `:759` `drag.anchor-moved` | ✅ PASS |
-| DRAG-02 WHEN the press is released, restore both to `true` | both exactly `true` | `test/axisLock.spec.ts:96-99` — `expect(it.calls).toEqual([{…false},{ handleScroll: true, handleScale: true }])` | ✅ PASS |
-| DRAG-03 IF released outside the container, still restore both | both `true` | `test/axisLock.spec.ts:115` — `expect(it.calls[1]).toEqual({ handleScroll: true, handleScale: true })` (release dispatched on a sibling node outside the container) | ✅ PASS |
-| DRAG-04 IF the window loses focus mid-drag, restore both | both `true` | `test/axisLock.spec.ts:128` — `expect(it.calls[1]).toEqual({ handleScroll: true, handleScale: true })` after `window.dispatchEvent(new Event('blur'))` | ✅ PASS |
-| DRAG-05 IF the surface unmounts mid-drag, do not call the disposed chart and leave no listener | no third `applyOptions` call; zero stranded listeners | `test/axisLock.spec.ts:150-154` — `expect(it.calls).toEqual([…2 entries])` + `expect(it.hits).toHaveLength(1)` after a post-dispose `mouseup` and press; listener balance `test/axisLock.spec.ts:272` — `expect(stranded(add, remove)).toEqual([])` matched by type **and identity** | ✅ PASS |
-| DRAG-06 WHEN a press lands anywhere that is not an anchor, leave both untouched | **no `applyOptions` call at all** | `test/axisLock.spec.ts:165` — `expect(it.calls).toEqual([])`; non-left button `:175`; throwing hit-test `:196-197`; layer with no `anchorAt` `test/drawingSeam.spec.tsx:321` — `expect(log.applied).toEqual([])` | ✅ PASS |
+| DRAG-01 WHILE a press has grabbed an anchor, hold both at `false` | exactly `{handleScroll:false, handleScale:false}`, nothing else | `test/axisLock.spec.ts:107` — `expect(it.calls).toEqual([{ handleScroll: false, handleScale: false }])`; capture-phase variant `:97`; unregressed by the new pane guard `:248`; through the seam `test/drawingSeam.spec.tsx:322`; in a real browser `scripts/e2e-demo.mjs:754` `drag.range-unchanged` | ✅ PASS |
+| DRAG-02 WHEN released, restore both to `true` | exactly `{true, true}` as the second call | `test/axisLock.spec.ts:120-123` — `expect(it.calls).toEqual([{…false},{ handleScroll: true, handleScale: true }])` | ✅ PASS |
+| DRAG-03 IF released outside the container, still restore | both `true` | `test/axisLock.spec.ts:139` — `expect(it.calls[1]).toEqual({ handleScroll: true, handleScale: true })`, release dispatched on a sibling outside the container | ✅ PASS |
+| DRAG-04 IF the window blurs mid-drag, restore both | both `true` | `test/axisLock.spec.ts:152` — same expression after `window.dispatchEvent(new Event('blur'))` | ✅ PASS |
+| DRAG-05 IF the surface unmounts mid-drag, no call to the disposed chart, no listener left | exactly two calls, zero stranded listeners | `test/axisLock.spec.ts:174-178` — `expect(it.calls).toEqual([…2 entries])` + `expect(it.hits).toHaveLength(1)`; listener balance by identity `:335` — `expect(stranded(add, remove)).toEqual([])`; ordering through the seam `test/drawingSeam.spec.tsx:349` — `expect(log.order).toEqual(['lock', 'release', 'detach'])` and `:370` — `expect(log.duringDetach).toEqual(['applied 2 -> 2'])` | ✅ PASS |
+| DRAG-06 WHEN a press lands anywhere that is not an anchor, leave both untouched | **no `applyOptions` call at all** | `test/axisLock.spec.ts:189` — `expect(it.calls).toEqual([])`; non-left button `:199`; throwing hit-test `:220-221`; **a press outside the price pane** `:237` — `expect(it.calls).toEqual([])`; layer with no `anchorAt` `test/drawingSeam.spec.tsx:334` | ✅ PASS (module) / see Gap 1 for the composition |
 
 ### P2 — the magnet is a mode the user controls
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
-| MAGNET-01 a two-state mode `off`/`on`, defaulting to `off` | first read is `off`; both directions reachable | `test/drawingRailRegion.spec.tsx:378` — `expect(screen.getByTestId('magnet-probe')).toHaveTextContent('off')`; flip `:384`; both directions through the mounted composition `:420`, `:428`, `:434` — `expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off'\|'on'\|'off')` | ✅ PASS |
-| MAGNET-02 WHILE `off`, resolve to the pointer's own price, not any bar | the input price, unchanged | `test/magnet.spec.ts:67-69` — `expect(price).toBe(103.7)` **plus** `expect(watched.reads()).toBe(0)` and `expect(converted).toBe(0)` (the strongest reading: no bar is consulted at all); in a real browser `scripts/e2e-demo.mjs:800` `magnet.off-is-free` | ✅ PASS |
-| MAGNET-03 WHILE `on` and within the threshold of O/H/L/C, resolve to that bar value | that exact bar value, nearest wins | `test/magnet.spec.ts:77` — `expect(snapAnchorPrice(input({ price: 109 }))).toBe(110)`; a different quartet member `:83` `toBe(105)`; the pixel-vs-price discriminator at a 4 px/unit scale `:97` `expect(price).toBe(107.5)`; through the surface `test/chartSurface.spec.tsx:852` `toBe(110)`; browser `scripts/e2e-demo.mjs:818` `magnet.on-snaps` asserts `snapped.toFixed(2) === bar.high.toFixed(2)` | ✅ PASS (⚠ see Spec-precision 1) |
-| MAGNET-04 WHILE `on` with nothing in reach, resolve to the pointer's own price | the input price | `test/magnet.spec.ts:103` — `expect(snapAnchorPrice(input({ price: 102.5, thresholdPx: 1 }))).toBe(102.5)`; non-finite threshold `:151` `toBe(400)`; non-finite price `:155` `toBeNaN()`; throwing converter `:199` `toBe(103.7)` | ✅ PASS |
-| MAGNET-05a WHERE no control has flipped the mode, behave exactly as `off` | identical to `off` — the pointer's own price | `test/chartSurface.spec.tsx:836` — `expect(log.hosts[0].snapPrice({ time: BARS[0].time, price: 109 })).toBe(109)` with `drawing={{ binding }}` and no `magnet` field at all; provider default `test/drawingRailRegion.spec.tsx:378`; before any interaction through the workspace `test/canvasSurface.spec.tsx:370` — `expect(captured.at?.(2.9)).toBe(2.9)` | ✅ PASS |
-| MAGNET-05b a `DrawingToolbar` mounted without a magnet group draws no toggle | the toggle is absent; the other fixed controls are not | `test/drawingRail.spec.tsx:637` — `expect(screen.queryByTestId('drawing-magnet')).toBeNull()`, with control positives `:640-641` `expect(screen.getByTestId('drawing-delete')).toBeInTheDocument()` | ✅ PASS |
-| MAGNET-06 a mode changed mid-gesture applies to later anchors and moves none already placed | the already-resolved value is unchanged; the next call takes the new mode | `test/drawingSeam.spec.tsx:378-379` — `expect(placed).toBe(109)` and `expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(110)` across a re-render; no re-attach `:363` `expect(log.attaches.count).toBe(1)`; through the composition `test/drawingRailRegion.spec.tsx:417-435` | ✅ PASS |
+| MAGNET-01 a two-state mode `off`/`on`, defaulting to `off` | first read `off`; both directions reachable | `test/drawingRailRegion.spec.tsx:378` — `expect(screen.getByTestId('magnet-probe')).toHaveTextContent('off')`; through the mounted composition `:410-411`, `:420`, `:428`, `:434` — `expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off'\|'on'\|'off')`; at the surface `test/chartSurface.spec.tsx:836` / `:852` | ✅ PASS |
+| MAGNET-02 WHILE `off`, resolve to the pointer's own price, not any bar | the input price, unchanged | `test/magnet.spec.ts:67-69` — `expect(price).toBe(103.7)` **and** `expect(watched.reads()).toBe(0)` and `expect(converted).toBe(0)`: no bar is consulted at all; browser `scripts/e2e-demo.mjs:800` `magnet.off-is-free` | ✅ PASS |
+| MAGNET-03 WHILE `on` and within the threshold of O/H/L/C, resolve to that bar value | that exact bar value, nearest wins | `test/magnet.spec.ts:77` — `toBe(110)`; a different quartet member `:83` — `toBe(105)`; the pixel-vs-price discriminator at 4 px/unit `:97` — `expect(price).toBe(107.5)`; through the surface `test/chartSurface.spec.tsx:852` — `toBe(110)`; browser `scripts/e2e-demo.mjs:818` `magnet.on-snaps` asserts `snapped.toFixed(2) === bar.high.toFixed(2)` | ✅ PASS (⚠ Spec-precision 1) |
+| MAGNET-04 WHILE `on` with nothing in reach, resolve to the pointer's own price | the input price | `test/magnet.spec.ts:103` — `toBe(102.5)` at `thresholdPx: 1`; non-finite threshold `:162`; non-finite price `:166`; throwing converter `:210` | ✅ PASS |
+| MAGNET-05a WHERE no control flipped the mode, behave exactly as `off` | identical to `off` — the pointer's own price | `test/chartSurface.spec.tsx:836` — `expect(log.hosts[0].snapPrice({ time: BARS[0].time, price: 109 })).toBe(109)` with `drawing={{ binding }}` and no `magnet` field; provider default `test/drawingRailRegion.spec.tsx:378` | ✅ PASS |
+| MAGNET-05b a toolbar with no magnet group draws no toggle | the toggle absent, the other controls present | `test/drawingRail.spec.tsx:637` — `expect(screen.queryByTestId('drawing-magnet')).toBeNull()`, control positives `:640-641` | ✅ PASS |
+| MAGNET-06 a mode changed mid-gesture applies to later anchors and moves none already placed | the resolved value unchanged; the next call takes the new mode | `test/drawingSeam.spec.tsx:407-408` — `expect(placed).toBe(109)` then `expect(host.snapPrice({…price: 109})).toBe(110)` across a re-render; live bars `:423`; live threshold `:432`, `:438`; no re-attach `:382`/`:392`; through the composition `test/drawingRailRegion.spec.tsx:420-434` | ✅ PASS |
 
 ### P3 — the preview shows what the magnet will do
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
-| MAGNET-07 WHILE `on`, the preview SHALL trace to the snapped position rather than the raw pointer position | the preview cursor's price equals the snapped price, not the pointer's | **no evidence** — the only implementation is `example/drawing.ts:263-268`; its two tasks (T10, T19) both declare `Tests: none`; the sole browser check that touches the preview, `scripts/e2e-demo.mjs:502` `drawing.preview-visible-between-clicks`, is documented at `scripts/e2e-demo.mjs:210-211` as "not WHERE the preview is, only WHETHER something newly blue got painted", and runs with the magnet off | ❌ GAP |
+| MAGNET-07 WHILE `on`, the preview traces to the snapped position, not the raw pointer position | the traced cursor's price equals the snapped bar value and differs from the pointer's | `scripts/e2e-demo.mjs:837` `magnet.preview-traces-the-snap` — `traced.price.toFixed(2) === bar.high.toFixed(2) && traced.price !== freeNear`. Measured green at HEAD: trace 112.7117 vs the bar's high 112.71, against 113.3011 for the same point placed free. Re-injecting M22 turns it red with `the trace now sits at 113.30111282090232` | ✅ PASS |
 
-**Status**: ❌ 12/13 covered against the spec-defined outcome; **1 requirement (MAGNET-07) has no
-evidence**; 2 spec-precision gaps flagged below.
+**Status**: ✅ 13/13 covered against the spec-defined outcome. 3 spec-precision gaps flagged below
+(none is a coverage gap).
 
 ### Spec-precision gaps
 
-1. **MAGNET-03 does not define whether the threshold is inclusive.** "within the snap threshold" is
-   silent on `distance == thresholdPx`. `design.md:115` decides it (`<= thresholdPx`) and
-   `test/chartSurface.spec.tsx:882` pins it — `expect(…snapPrice({ price: 87 })).toBe(95)`, a
-   distance of exactly 8 on a 1 px/unit scale with the default threshold of 8, paired with `:883`
-   `toBe(86)` at 9. The behaviour is decided and asserted; the **spec** is the imprecise artifact.
-   The sensor confirms the boundary is sensed: M14 (`>` → `>=`) is killed by that case.
-2. **The tie rule is written in price units while the rule measures in pixels.** The edge case says
-   "IF two bar values are equidistant from the pointer"; `magnet.ts:59-61` compares *pixel*
-   distances and breaks the tie on price. The two coincide on a linear scale and part company on a
-   logarithmic one. Not a defect — AD-010 makes pixels the unit — but the spec sentence names the
-   wrong quantity.
+1. **MAGNET-03 is still silent on whether the threshold is inclusive.** `spec.md:89` says "within the
+   snap threshold"; `design.md` decides `<= thresholdPx`; `test/chartSurface.spec.tsx:882-884` pins
+   it — `toBe(95)` at a distance of exactly 8 with the default threshold, `toBe(86)` at 9, and
+   `toBe(95)` at 9 for a host asking for 9. Behaviour decided and asserted; the **spec** is the
+   imprecise artifact. Unchanged from iteration 1.
+2. **The tie edge case is written in price units while the rule measures pixels.** `spec.md:122-123`
+   says "two bar values equidistant from the pointer"; `src/drawing/magnet.ts:59-61` compares pixel
+   distances and breaks the tie on price. The two coincide on a linear scale and part on a
+   logarithmic one. AD-010 makes pixels the unit, so this is the sentence, not the code.
+3. **NEW — the third edge case names a mechanism the library cannot use.** `spec.md:124-125` says
+   the guard should match "the existing pane-index guard on placement". A raw `mousedown` carries no
+   `paneIndex`; the delivered guard is DOM containment of `PaneHandle.getHTMLElement()`
+   (`src/drawing/axisLock.ts:56-57`). The **outcome** the spec states is met — measured in a real
+   browser, `panes()[0]` and `panes()[1]` are distinct, disjoint `<TR>` elements — but the spec
+   sentence describes an implementation the library has no access to.
 
-### Traceability mislabels (no coverage impact)
+### Traceability mislabel (no coverage impact, unchanged from iteration 1)
 
 - `test/chartSurface.spec.tsx:855` is titled "MAGNET-05 — the threshold defaults to eight pixels".
-  The default threshold is not MAGNET-05; MAGNET-05 is the mode default and the absent toggle. The
-  case is valuable (it is the only assertion of the 8 px default and of the inclusive boundary) but
-  files under the wrong requirement.
+  The 8 px default is not MAGNET-05; MAGNET-05 is the mode default and the absent toggle.
+- `test/axisLock.spec.ts:252` is titled "a pane the chart cannot name yet costs no lock at all"
+  while its assertion `:261` requires the lock to be taken. The intent ("does not cost you the
+  lock") is right and the comment explains it; the title reads as its own opposite.
 
 ---
 
@@ -85,17 +99,16 @@ evidence**; 2 spec-precision gaps flagged below.
 
 - [x] **Zero bars → the pointer's own price.** `test/magnet.spec.ts:109` —
   `expect(snapAnchorPrice(input({ bars: [], price: 103.7 }))).toBe(103.7)`.
-- [x] **Two equidistant bar values → the HIGHER price.** `test/magnet.spec.ts:116` —
-  `expect(snapAnchorPrice(input({ bars: [tied], price: 105 }))).toBe(110)` with the higher pair
-  **last**, mirrored at `:127` with the higher pair **first**. Both orderings are required and both
-  are present; the sensor confirms neither one alone would do (M4 survives ordering 1 and dies on
-  ordering 2; M4b the reverse).
-- [ ] **An anchor drag beginning on a pane other than the price pane → the axes are untouched.**
-  **NOT COVERED.** `attachAxisLock` carries no pane guard (`src/drawing/axisLock.ts:47-48`
-  branches only on `event.button` and `anchorAt`), the listener is bound to the whole surface host
-  (`src/react/surface/useDrawingSeam.ts:49,79`), and the pane-index guard the spec points at exists
-  only on placement in the example (`example/drawing.ts:217`, `:246`), not on the drag. No test, no
-  e2e check and no task mentions it — `grep -rn "pane other"` finds the string only in `spec.md:124`.
+- [x] **Two equidistant bar values → the HIGHER price.** `test/magnet.spec.ts:127` — `toBe(110)`
+  with the higher pair **last**, mirrored at `:138` with the higher pair **first**. Both are
+  required: deleting the tie clause entirely leaves the first ordering green and kills only the
+  second (mutation S5).
+- [x] **A drag beginning on a pane other than the price pane → the axes untouched.** Implemented in
+  the fix round. `src/drawing/axisLock.ts:56-57` refuses when the answered pane does not contain the
+  press target; `test/axisLock.spec.ts:237` — `expect(it.calls).toEqual([])` for a press on a study
+  pane the hit-test says yes to. The library is live in the browser and the panes are genuinely
+  disjoint (probes L1, L2 and the direct DOM measurement below). **But the composition wiring that
+  supplies the pane is unsensed — see Gap 1.**
 
 ---
 
@@ -103,176 +116,111 @@ evidence**; 2 spec-precision gaps flagged below.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| Unit | `npm test` | ✅ exit 0 — **103 suites / 1269 tests passed**, 0 failed, 0 skipped |
-| Browser | `npm run e2e` | ✅ exit 0 — **47/47 checks passed** |
-| Size | `node scripts/size-gate.mjs` | ✅ exit 0 — 16 measurements under budget, entry `104809 / 104809` |
-| Package paths | `node scripts/verify-package-paths.mjs` | ✅ exit 0 — files[] and exports both resolve (7 entries) |
-| Generated docs | `node scripts/gen-reference.mjs` | ✅ 53 pages rewritten, `git status --porcelain` still empty — `docs/reference/**` is byte-identical to the current exported surface |
+| Unit | `npm test` | ✅ exit 0 — **103 suites / 1274 tests passed**, 0 failed, 0 skipped |
+| Browser | `npm run e2e` | ✅ exit 0 — **48/48 checks passed** (run at HEAD in the scratch worktree) |
+| Size | `node scripts/size-gate.mjs` | ✅ exit 0 — 16 measurements under budget, entry `104921 / 104921` |
+| Package paths | `node scripts/verify-package-paths.mjs` | ✅ exit 0 — files[] and exports resolve (7 entries) |
+| Generated docs | `test/gates/docReference.spec.ts` (inside `npm test`) | ✅ byte-for-byte; `AxisLockHost.pricePane` is published in `docs/reference/drawing/axisLock.md:25` |
 
-- **Test count before the feature**: 1255 (STATE.md handoff, measured at `b75e0a5`)
-- **Test count after**: 1269 — delta **+14** net across the range; no suite was deleted and no
-  assertion in scope was weakened.
+- **Test count before the feature**: 1255 · **after**: 1274 · delta **+19**. No suite deleted, no
+  assertion in scope weakened; the fix round added +5 (2 seam, 3 axis lock) and +1 magnet, and one
+  e2e check (47 → 48).
 - **Skipped**: none.
 
 **Known trap, pre-existing and out of scope:** `test/gates/sizeBudget.spec.ts` fails in a fresh
-worktree because `dist/` is absent (3 cases). Reproduced during the sensor run and confirmed
-unrelated to this feature — it is item 2 of the STATE.md "Open, not blocking" list.
+worktree because `dist/` is absent (3 cases). Reproduced during the sensor run; it is the scratch
+baseline, not a regression — every mutation below is scored against 1271 passed / 3 failed there.
+
+### CHANGELOG cross-check (numbers, not prose)
+
+| Claim | Source | Verdict |
+| --- | --- | --- |
+| entry 104,921 B | `size-gate.mjs` prints `104921 / 104921` | ✅ |
+| +1,914 B from 103,007 B | 104921 − 103007 = 1914; 103007 is the previous ledger pin | ✅ |
+| "the last of them the pane guard above, at 112 B" | 104809 → 104921; `test/gates/sizeBudget.spec.ts:86-90` names the same 112 B and the two shapes measured (131 B named helper, 112 B inlined) | ✅ |
+| "349 B of that came back out of this feature's own modules" | ledger `RE-PINNED DOWN … to 104618 (-349 B)` | ✅ |
+| hard cap 195,761 B | `size-budget.json:132` and asserted equal to the measured peer at `test/gates/sizeBudget.spec.ts:441` | ✅ |
+| `DrawingSurfaceHost.snapPrice` named as a second, direction-limited break | `CHANGELOG.md:79-96`, with the `Session.reseed` precedent and a before/after host double | ✅ — iteration 1's Gap 5 is answered correctly |
+| `AxisLockHost.pricePane` disclosed | `AxisLockHost` is **itself first published in this same unreleased 0.2.0 entry** (`CHANGELOG.md:48-49`, Added; only `v0.1.0` is tagged), and the full signature including `pricePane?` is in the generated reference | ✅ — a separate Added bullet would be redundant; keeping the behaviour under Fixed is right. One nit under Notes |
 
 ---
 
 ## Discrimination Sensor
 
-Isolated scratch: `git worktree add --detach` at HEAD, mutations applied to the copies only, torn
-down with `git worktree remove --force`. **No `git stash` was used.** Pre-sensor baseline
-`git status --porcelain` was empty; it is empty again after teardown, and HEAD is unchanged at
-`1605923`.
+Isolated scratch: `git worktree add --detach` at `67cdda1`, `node_modules` symlinked, mutations
+applied to the copies only, torn down with `git worktree remove --force`. **No `git stash` was
+used.** Pre-sensor baseline `git status --porcelain` was empty; it is empty again after teardown,
+`git worktree list` shows only the real tree, and HEAD is unchanged at `67cdda1`.
 
-### Composition-level faults — the three defect shapes this feature has a history of
-
-| # | File | Fault | Killed? |
-| --- | --- | --- | --- |
-| M1 | `src/react/workspace/DrawingRail.tsx:190` | Drop `magnet={{ mode, onChange }}` at the `DrawingToolbar` call site (re-injects the `b86aee1` defect) | ✅ Killed — `test/drawingRailRegion.spec.tsx:410` |
-| M2 | `src/react/workspace/DrawingRail.tsx:95` | Drop `anchorAt` from the provider's wrapper object (re-injects the `948f055` defect) | ✅ Killed — `test/drawingRailRegion.spec.tsx:322` |
-| M3 | `src/drawing/magnet.ts:59` | Measure the snap in **price units** instead of pixels (re-injects the `1b1b7a2` fixture defect) | ✅ Killed — `test/magnet.spec.ts:97` |
-| M18 | `src/react/workspace/CanvasSurface.tsx:90` | Drop `magnet: drawing.magnet` from `SurfaceDrawing` | ✅ Killed |
-| M13 | `src/react/surface/ChartSurface.tsx:165` | Default `SurfaceDrawing.magnet` to `'on'` instead of `'off'` | ✅ Killed |
-| M17 | `src/react/DrawingToolbar.tsx:300` | Draw the magnet toggle even with no magnet group (MAGNET-05b) | ✅ Killed |
-| M19 | `src/react/surface/useDrawingSeam.ts:62-64` | `snapPrice` reads mode/bars/threshold at **attach** time, not call time (MAGNET-06) | ✅ Killed |
-
-### Module-level faults
+### The four documented "green while broken" shapes, all re-injected
 
 | # | File | Fault | Killed? |
 | --- | --- | --- | --- |
-| M4 | `magnet.ts:61` | A tie takes the **last** candidate, not the higher price | ✅ Killed |
-| M4b | `magnet.ts:60-61` | A tie takes the **first** candidate (nearest-wins), not the higher price | ✅ Killed |
-| M5 | `axisLock.ts:62,72` | `mousedown` flipped from **capture** to bubble | ✅ Killed — `test/axisLock.spec.ts:64` |
-| M6 | `axisLock.ts:26` | Remove the `blur` release | ✅ Killed |
-| M7 | `usePriceAlertLayer.ts:107` | Remove the `blur` release | ✅ Killed — `test/priceAlertLayer.spec.tsx:406` |
-| M8a | `axisLock.ts:56` | Restore only `handleScroll`, never `handleScale` | ✅ Killed |
-| M8b | `usePriceAlertLayer.ts:85` | Restore only `handleScroll`, never `handleScale` | ✅ Killed |
-| M9 | `axisLock.ts:70-71` | Set `detached` **before** freeing pending releases (the T14 regression) | ✅ Killed |
-| M10 | `magnet.ts:40` | `snapAnchorPrice` ignores the mode — `off` snaps too | ✅ Killed |
-| M11 | `axisLock.ts:48` | Drop the `anchorAt` guard — every left press locks the axes (DRAG-06) | ✅ Killed |
-| M12 | `axisLock.ts:39` | Hit-test the **page** point, not the container-relative one | ✅ Killed — `test/axisLock.spec.ts:314` |
-| M14 | `magnet.ts:60` | Threshold boundary `>` → `>=` | ✅ Killed — `test/chartSurface.spec.tsx:882` |
-| M15 | `magnet.ts:44` | Drop the non-finite price/threshold refusal (**T24 byte-recovery regression probe**) | ✅ Killed |
-| M16 | `magnet.ts:58` | Candidate guard drops only `null`, keeps `NaN`/`Infinity` (**T24 probe**) | ✅ Killed |
-| M20 | `useDrawingSeam.ts:90-91` | `unlock?.()` **after** `layer.detach()` instead of before | ❌ **SURVIVED** |
-| M21 | `magnet.ts:45` | An unmatched bar time falls back to `bars[0]` instead of the pointer price | ❌ **SURVIVED** |
+| H1 | `src/react/workspace/DrawingRail.tsx:95` | Drop `anchorAt` from the provider's wrapper (the `948f055` defect) | ✅ Killed — `test/drawingRailRegion.spec.tsx:322-324` |
+| H2 | `src/react/workspace/DrawingRail.tsx:180,190` | Never forward the `magnet` group to `DrawingToolbar` (the `b86aee1` defect) | ✅ Killed — `test/drawingRailRegion.spec.tsx:410-411`, `:420` (2 cases) |
+| H3 | `src/drawing/magnet.ts:59` | Measure the snap in price units instead of pixels (the `1b1b7a2` fixture defect) | ✅ Killed — `test/magnet.spec.ts:97` (4 cases) |
+| M22 | `example/drawing.ts:277` | The crosshair preview goes back to the raw pointer price (the clause with no sensor at iteration 1) | ✅ Killed — `npm run e2e` 47/48, `magnet.preview-traces-the-snap` FAILS: "the trace now sits at 113.30111282090232 — the bar's high is 112.71" |
 
-### Browser-level faults — re-derived independently, not taken from the author's table
+### The fifth, found by mutating the same seam one level up
+
+| # | File | Fault | Killed? |
+| --- | --- | --- | --- |
+| U5 | `src/react/surface/useDrawingSeam.ts:82` | Delete `pricePane: () => chart.panes()[0]?.getHTMLElement() ?? null` from the `attachAxisLock` call | ❌ **SURVIVED** — `npm test` 1274/1274, `tsc --noEmit` clean, `npm run e2e` **48/48** |
+
+### The three claims made by the fix round, re-injected independently
+
+| # | File | Fault | Killed? |
+| --- | --- | --- | --- |
+| M20 | `src/react/surface/useDrawingSeam.ts:93-94` | `layer.detach()` before `unlock?.()` | ✅ Killed — twice: `test/drawingSeam.spec.tsx:349` (`['lock','detach','release']` received) and `:370` (`applied 1 -> 2` received) |
+| M21 | `src/drawing/magnet.ts:45` | An unmatched bar time falls back to `bars[0]` | ✅ Killed — `test/magnet.spec.ts:120`, received `105` (that bar's close) against the spec's `103.7` |
+| U3 | `src/drawing/axisLock.ts:56-57` | Remove the pane clause entirely | ✅ Killed — `test/axisLock.spec.ts:237` |
+| U4 | `src/drawing/axisLock.ts:57` | An unanswered pane (`null`) **disables** the lock instead of falling back to the container | ✅ Killed — 14 cases across `axisLock`, `drawingSeam`, incl. `test/axisLock.spec.ts:261` |
+
+The `applied=1` comment iteration 1 called false is gone. Its replacement
+(`test/drawingSeam.spec.tsx:368-369`, "Unlocking AFTER the detach instead reads `applied 1 -> 2`")
+is **empirically true**: M20 produced exactly `applied 1 -> 2`.
+
+### Module and composition faults, re-derived
+
+| # | File | Fault | Killed? |
+| --- | --- | --- | --- |
+| S1 | `axisLock.ts:66` | The release re-applies `false` — never restores | ✅ Killed — 7 cases (DRAG-02/03/04/05) |
+| S2 | `ChartSurface.tsx:165` | `SurfaceDrawing.magnet` defaults to `'on'` | ✅ Killed — `test/chartSurface.spec.tsx:836` |
+| S3 | `DrawingToolbar.tsx:300` | Draw the toggle even with no magnet group | ✅ Killed — `test/drawingRail.spec.tsx:637` |
+| S4 | `useDrawingSeam.ts:60-66` | `snapPrice` freezes mode/bars/threshold at **attach** time | ✅ Killed — 3 cases (MAGNET-06) |
+| S5 | `magnet.ts:61` | Delete the tie rule | ✅ Killed — only by the mirrored ordering at `test/magnet.spec.ts:138` |
+| S6 | `magnet.ts:40` | Ignore the mode — `off` snaps too | ✅ Killed — 2 cases (MAGNET-02, MAGNET-01) |
+
+### Browser-level probes for the new pane guard (liveness, re-derived not inherited)
 
 | # | Fault | Effect on `npm run e2e` |
 | --- | --- | --- |
-| E1 | Drop `anchorAt` from the provider wrapper | ❌→ **46/47.** `drag.range-unchanged` FAILS: `before=[1700115200,1700417600,1700720000] after=[1700291600,1700590400,1700892800]` — the chart panned. `drag.anchor-moved` stays green, so the pair isolates correctly. |
-| E3 | `attachAxisLock` also `stopPropagation()`/`preventDefault()`s the press | ❌→ **46/47.** `drag.anchor-moved` FAILS (anchors byte-identical before and after the pull) while `drag.range-unchanged` stays green — the mirror image of E1. The two checks are genuinely independent. |
-| E2 | `snapAnchorPrice` ignores the mode | ❌→ **45/47.** Both `magnet.off-is-free` and `magnet.on-snaps` FAIL. |
-| M23 | `example/drawing.ts:222` — the **click anchor** goes back to the raw pointer price | ❌→ **46/47.** `magnet.on-snaps` FAILS: "both read 113.30… — the bar's high is 112.71". |
-| M22 | `example/drawing.ts:266` — the **crosshair preview** goes back to the raw pointer price | ✅→ **47/47, and `npm test` green.** **SURVIVED.** |
+| L1 | `pricePane` answers a **foreign** element whenever the chart can name pane 0 | ❌→ **47/48.** `drag.range-unchanged` FAILS: `after=[1700291600,…]` — the chart panned. So the guard is **live** in the browser and `panes()[0].getHTMLElement()` is non-null there; it is not inert |
+| L2 | `pricePane` points at **pane 1** (the volume lane) | ❌→ **47/48.** Same failure. Pane 1's element does not contain the price pane's press target |
+| — | Direct DOM measurement through a scratch-only probe | `{"count":8,"p0":"TR","p1":"TR","same":false,"p0ContainsP1":false,"p0ContainsCanvas1":false,"p1ContainsCanvas0":false}` — the panes are disjoint `<TR>` elements, so pane 0's element genuinely excludes the other panes' targets. Edge case 3 is behaviourally correct in the composition |
 
-**Sensor depth**: P0-full (28 mutations across module, composition and browser layers)
-**Result**: **25/28 killed, 3 survived** — ❌ FAIL
-
----
-
-## Ranked Gaps
-
-### Gap 1 — MAGNET-07 is unproven end to end (Blocker)
-
-- **Evidence**: mutation **M22**. Reverting `example/drawing.ts:266` so the crosshair preview uses
-  the raw pointer price instead of `host.snapPrice(...)` leaves `npm test` green in every drawing
-  suite and `npm run e2e` at **47/47**. The whole of story P3 is inert to the test suite.
-- **Root cause**: MAGNET-07's only implementation lives in `example/drawing.ts`, which no unit test
-  loads; its two tasks (T10 at `tasks.md:415`, T19 at `tasks.md:726`) both declare `Tests: none`;
-  and the one browser check that observes the preview is a colour-presence probe by design
-  (`scripts/e2e-demo.mjs:210-211`), not a position probe. `spec.md:145` marks the requirement Done.
-- **Fix task**: add a browser check that reads the preview's traced price, the same way
-  `magnet.on-snaps` reads the placed anchor's price — extend the `__lmcDrawingProbe` in
-  `example/drawing.ts:161-178` with a read-only `previewCursor()`, then assert with the magnet on
-  that the crosshair-hovered preview cursor equals the bar's high while the pointer price does not.
-  M23 already proves that shape of check discriminates. Alternatively, make the preview path
-  library-owned so jsdom can reach it.
-- **Note**: the placement half of the same seam **is** sensed (M23 killed), so this is a genuine
-  single-clause gap and not an unwired seam.
-
-### Gap 2 — the seam's ordering probe does not discriminate the ordering it claims to prove (Major)
-
-- **Evidence**: mutation **M20**. Swapping `src/react/surface/useDrawingSeam.ts:90-91` to run
-  `layer.detach()` before `unlock?.()` leaves `test/drawingSeam.spec.tsx:324-342` green.
-- **Root cause**: the probe's `detach()` dispatches a `mouseup` on `window`
-  (`test/drawingSeam.spec.tsx:268`) and then records `applied=${log.applied.length}`. In the
-  mutated ordering the lock is *still listening*, so that very `mouseup` performs the release and
-  bumps the count to 2 **before** the length is read. Traced directly: `DURING_DETACH ["applied=2"]`
-  under the fault. The comment at `:334-336` asserts that `applied=1` would signal a silent
-  disposer — `applied=1` is unreachable in either ordering.
-- **Impact**: T5's Done-when "Cleanup unlocks **before** `layer.detach()`" (`tasks.md:265`) and the
-  design invariant at `design.md:89` are unverified. Low runtime risk (the chart is alive in both
-  orderings, since `chart.remove()` runs in a later cleanup), but the test advertises a proof it
-  does not deliver.
-- **Fix task**: make the probe record ordering rather than a derived count — e.g. have `detach()`
-  push a marker into a shared log and have the release push its own, then assert the sequence
-  `['release', 'detach']`; or assert the `window` `mouseup` listener is already unregistered at the
-  moment `detach()` runs.
-
-### Gap 3 — the spec's third edge case has no evidence at all (Major)
-
-- **Evidence**: "an anchor drag beginning on a pane other than the price pane" (`spec.md:124-125`)
-  appears nowhere outside the spec. `attachAxisLock` has no pane guard
-  (`src/drawing/axisLock.ts:47-48`) and is bound to the whole surface host, not the price pane
-  (`src/react/surface/useDrawingSeam.ts:49,79`). The pane-index guard the edge case says it matches
-  exists only on placement, in the example (`example/drawing.ts:217`, `:246`).
-- **Fix task**: either add a case to `test/axisLock.spec.ts` pinning what the library does for a
-  press below the price pane's height, or amend the spec to say the guard is the binding's
-  `anchorAt` and delete the edge case — but do not leave it claimed and untested.
-
-### Gap 4 — an unmatched bar time is uncovered (Minor)
-
-- **Evidence**: mutation **M21**. Making `src/drawing/magnet.ts:45` fall back to `input.bars[0]`
-  when no bar matches `input.time` leaves every test green. Every existing call site passes a time
-  that matches (`test/magnet.spec.ts` uses `TIME`; `test/drawingSeam.spec.tsx` and
-  `test/chartSurface.spec.tsx` all use `BARS[0].time`), and the zero-bars case at
-  `test/magnet.spec.ts:109` passes `bars: []`, where `bars[0]` is also `undefined`.
-- **Impact**: snapping to the wrong bar's values is a user-visible defect, and the "no bar at this
-  time" branch is the one that guards it. The spec names only the zero-bars case, so this is also a
-  spec-precision gap.
-- **Fix task**: add a case with a non-empty `bars` array and a `time` that matches none of them,
-  asserting `toBe(input.price)`.
-
-### Gap 5 — the CHANGELOG's "one break" claim is narrower than the diff (Minor)
-
-- **Evidence**: `CHANGELOG.md:62-77` declares the `DrawingToolbarProps` → `edits` regrouping as
-  "the one break in this release", and closes "Nothing else here is breaking by the rule below".
-  But `DrawingSurfaceHost` gained a **required** member, `snapPrice`
-  (`src/drawing/drawingLayer.ts:12-14`), and the rule at `CHANGELOG.md:222-224` counts "narrowing
-  what an exported type accepts" as breaking. A consumer that *implements* `DrawingBinding` is
-  unaffected — the library supplies the object — but one that *constructs* a `DrawingSurfaceHost`
-  (a wrapping binding, a test double built from the how-to snippet) stops compiling. T19 exists
-  precisely because three places in the repo still taught a three-member host (`tasks.md:710`).
-- **Assessment**: **not a version error.** The project's own rule (`CHANGELOG.md:209`) says a break
-  in `0.x` bumps the minor, which `0.2.0` does either way, and the new member is disclosed in full
-  under Added (`CHANGELOG.md:53-54`). The inaccuracy is the sentence, not the release.
-- **Fix task**: reword to name `DrawingSurfaceHost.snapPrice` as a second, migration-free break for
-  host-constructors, or state explicitly that the library-supplied direction is exempt (the
-  precedent `Session.reseed` set at `CHANGELOG.md:110-111`).
-
-**Verified clean, contrary to the brief's suspicion:** `src/index.ts` is purely additive across the
-range (5 new exports, 0 removals — `git diff 2817b49..HEAD -- src/index.ts` shows `+8/-0`), and
-the only public-surface deletions anywhere in `src/` are the three `DrawingToolbarProps` fields
-that the CHANGELOG declares. `DrawingRailValue` became module-exported but is **not** re-exported
-from the entry, so `useDrawingRail` stays unpublished as AD-017 requires.
+**Sensor depth**: P0-full — 17 behaviour mutations across module, composition and browser layers,
+plus two liveness probes and one direct DOM measurement.
+**Result**: **16/17 killed, 1 survived (U5)** — ❌ FAIL
 
 ---
 
-## T24 Byte-Recovery Regression Check
+## Additional finding, measured rather than mutated
 
-T24 claimed −349 B with no test edited. Confirmed it undid no fix, by reading and by mutation:
+`host.pricePane?.()` at `src/drawing/axisLock.ts:56` is called **unguarded** inside a capture-phase
+`mousedown` handler. Its sibling reader `host.anchorAt` is wrapped in `try/catch` at `:40-45` with
+the module's own reasoning — "A hit-test against a state the engine did not expect costs one missed
+lock, never a crash" — and that decision has a test: `test/axisLock.spec.ts:221` asserts
+`expect(escaped).toEqual([])` for a throwing hit-test. Measured with a scratch-only jsdom probe, a
+`pricePane` that throws escapes into the page:
 
-| Claim | Evidence | Sensor |
-| --- | --- | --- |
-| `magnet.ts` still refuses a non-finite price/threshold | `src/drawing/magnet.ts:44` — `if (!measurable(input.price) \|\| !measurable(input.thresholdPx)) return input.price;` | M15 killed |
-| `magnet.ts` still drops candidates on `Number.isFinite` | `src/drawing/magnet.ts:23` — `Number.isFinite(px)`; applied at `:58` | M16 killed |
-| `axisLock.ts` frees pending releases **before** going deaf | `src/drawing/axisLock.ts:70-71` — `for (const release of [...pendingReleases]) release();` then `detached = true;` | M9 killed |
-| `axisLock.ts` still holds them in a `Set` | `src/drawing/axisLock.ts:34` — `const pendingReleases = new Set<() => void>();`, iterated over a snapshot at `:70` | M5/M9 killed; `test/axisLock.spec.ts:272` matches listeners by identity, not by name |
+```
+ESCAPED= ["Object is disposed"] CALLS= []
+```
+
+`attachAxisLock` is a published export for hosts composing their own surface
+(`CHANGELOG.md:48-49`), and the in-repo implementation of the callback is `chart.panes()`, which the
+base library throws from once the chart is disposed. See Gap 2.
 
 ---
 
@@ -280,14 +228,81 @@ T24 claimed −349 B with no test edited. Confirmed it undid no fix, by reading 
 
 | Principle | Status |
 | --- | --- |
-| Minimum code | ✅ two new modules, 74 + 66 lines |
-| Surgical changes | ✅ every touched file traces to a task |
-| No scope creep | ⚠️ the price-alert `blur` fix (T23, commit `1605923`) is a separate defect folded into this feature; it is disclosed in the CHANGELOG and independently tested (`test/priceAlertLayer.spec.tsx:393-425`), so it is documented rather than smuggled |
-| Matches patterns | ✅ closure-over-refs mirrors `eventsRef`; optional seam members mirror `serialize`/`restore` |
-| Spec-anchored outcome check | ❌ MAGNET-07 has no asserted value |
+| Minimum code | ✅ the pane guard is two clauses and one optional member, 112 B measured against a 131 B alternative that was rejected |
+| Surgical changes | ✅ every touched file in `58d17e6..HEAD` traces to T27-T31 |
+| No scope creep | ✅ the fix round touches only what the five gaps named |
+| Matches patterns | ⚠️ the new optional reader mirrors `anchorAt`'s shape but not its throw contract (Gap 2) |
+| Spec-anchored outcome check | ✅ 13/13 assert the spec-defined value |
 | Per-layer coverage: domain 1:1 with ACs | ✅ for `magnet.ts` and `axisLock.ts` |
-| Every test maps to a spec requirement | ✅ suite titles carry requirement IDs; one mislabel noted (`chartSurface.spec.tsx:855`) |
-| Documented guidelines followed | ✅ AD-006 (zero runtime deps — neither new module imports the drawing engine), AD-009 (the gesture split), AD-010 (pixels not price units), AD-017 (the rail draws, the host names) |
+| Every test maps to a spec requirement | ✅ two title mislabels noted, no unclaimed tests |
+| Documented guidelines followed | ✅ AD-006 (the guard reads a port type, not the drawing engine), AD-009, AD-010, AD-017 |
+
+---
+
+## Ranked Gaps
+
+### Gap 1 — the pane guard is wired but the wiring is unsensed (Major, blocks PASS)
+
+- **Evidence**: mutation **U5**. Deleting `src/react/surface/useDrawingSeam.ts:82` leaves `npm test`
+  at 1274/1274, `tsc --noEmit` silent and `npm run e2e` at **48/48**. `AxisLockHost.pricePane` is
+  optional, so the deletion typechecks — the same property that let `anchorAt` be dropped by the
+  provider's wrapper in `948f055` and the magnet group be dropped by `DrawingRail` in `b86aee1`.
+- **Why the existing tests miss it**: `test/axisLock.spec.ts:227-264` supplies `pricePane` by hand,
+  so it proves the module honours a pane it is given, never that the seam gives it one. And the
+  guard is inert in **every** React composition test in the repo: each fake chart answers
+  `getHTMLElement: () => null` (`test/drawingSeam.spec.tsx:43`, `test/chartSurface.spec.tsx:138`,
+  `test/canvasSurface.spec.tsx:93`, and eleven more), while `seamHandles` answers `panes: () => []`
+  (`test/drawingSeam.spec.tsx:246`) — so `pricePane` resolves to `null` and falls back to the whole
+  container whether the line is there or not. No e2e check presses outside the price pane either,
+  and the demo carries 8 panes, so one is available.
+- **Impact**: with the line gone, `spec.md:124-125` reverts to broken through `ChartWorkspace` and
+  `ChartSurface` — a press on a study pane whose container coordinates happen to satisfy the
+  binding's hit-test freezes both axes, which is the defect this feature exists to remove. Nothing
+  turns red.
+- **Fix task**: extend `seamHandles` in `test/drawingSeam.spec.tsx` to answer a real pane element
+  from `panes()` and assert `expect(log.applied).toEqual([])` for a press dispatched outside it,
+  paired with the existing positive at `:322`. That case dies under U5. (An e2e check pressing the
+  volume lane would also work and would additionally cover the composition end to end.)
+
+### Gap 2 — the new published reader has no throw guard, unlike its sibling (Minor)
+
+- **Evidence**: measured, above — a throwing `pricePane` escapes the capture-phase handler
+  (`ESCAPED= ["Object is disposed"]`) while `anchorAt` in the same function does not
+  (`src/drawing/axisLock.ts:40-45`, asserted at `test/axisLock.spec.ts:221`).
+- **Impact**: an uncaught error out of a browser-dispatched press, reachable for a host that
+  composes its own surface with a disposed or half-built chart. No AC requires the guard; the
+  module's own written contract does.
+- **Fix task**: bring the `pricePane` call inside the same `try`/`catch` reading a throw as "cannot
+  answer" (which the code already treats as "the whole container"), and add the mirror of
+  `test/axisLock.spec.ts:203-224` for it. Cost is a handful of bytes against 73 B of headroom — see
+  the Note below before spending them.
+
+---
+
+## Notes and judgements requested
+
+**The 73 B margin under `PROVISIONAL_ENTRY_LIMIT` (104994) is a risk, not a finding.** Nothing in
+this feature breaks a rule: the entry is pinned at its measurement, every step is named in both
+ledgers, the ratchet assertion at `test/gates/sizeBudget.spec.ts:424` passes, and the hard cap is
+untouched at 47% used. But the marker's own docblock (`:41-48`) calls it a historical record of
+"the highest the entry limit was ever allowed to reach", and with 73 B left it now behaves as a
+live budget — the next feature that adds a line to the entry graph must either find a real
+shrinkage or rewrite a number the docblock says is a fact about the past. Worth stating in the
+handoff so the next author meets it deliberately rather than at a red gate. It does not affect this
+verdict.
+
+**`AxisLockHost.pricePane` under Fixed rather than Added is correct.** `AxisLockHost` is itself
+first published in this same unreleased 0.2.0 entry (`CHANGELOG.md:48-49`; the only tag in the repo
+is `v0.1.0`), so the member is not an addition to anything a consumer has ever compiled against,
+and the generated reference prints its full signature. One nit: the Fixed bullet's sentence "so is a
+press outside the price pane" states package behaviour, and a host calling `attachAxisLock` directly
+only gets it by supplying `pricePane` — which the type's own comment explains
+(`src/drawing/axisLock.ts:13`) but the entry does not.
+
+**Iteration 1's Gap 5 was rightly answered with prose.** `DrawingSurfaceHost.snapPrice` is
+constructed only at `src/react/surface/useDrawingSeam.ts:60` and consumed by the binding; the
+rewrite at `CHANGELOG.md:79-96` names it as a break for host-constructors only, cites the
+`Session.reseed` precedent, and shows the one-line migration. No code change was owed.
 
 ---
 
@@ -295,35 +310,38 @@ T24 claimed −349 B with no test edited. Confirmed it undid no fix, by reading 
 
 | Requirement | Table says | Re-derived |
 | --- | --- | --- |
-| DRAG-01 … DRAG-06 | Done | ✅ Verified |
+| DRAG-01 … DRAG-05 | Done | ✅ Verified |
+| DRAG-06 | Done | ⚠️ Verified at the module; the composition wiring of its new pane clause is unsensed (Gap 1) |
 | MAGNET-01 … MAGNET-06 | Done | ✅ Verified |
-| MAGNET-07 | Done | ❌ **Needs Fix** — no evidence; M22 survives both gates |
+| MAGNET-07 | Done | ✅ Verified — `scripts/e2e-demo.mjs:837`, M22 killed |
 
-`spec.md:149` reads "13 total, 13 mapped to tasks, 0 unmapped, 13 Done". Re-derived: **12 Done,
-1 unproven**. `spec.md:17` ("Both proven in a real browser") holds for P1 and P2 and not for P3.
+`spec.md:149` reads "13 total, 13 mapped to tasks, 0 unmapped, 13 Done". Re-derived: **13 asserted
+against the spec-defined outcome**, with one of them resting on an unsensed wire.
 
 ---
 
 ## Summary
 
-**Overall**: ❌ Not Ready
+**Overall**: ❌ Not Ready — one Major, one Minor, both cheap
 
-**Spec-anchored check**: 12/13 ACs match the spec-defined outcome; 1 with no evidence; 2
-spec-precision gaps
-**Sensor**: 25/28 mutations killed; 3 survived (M20, M21, M22)
-**Gate**: `npm test` 1269 passed · `npm run e2e` 47/47 · size-gate exit 0 (entry 104809) ·
-verify-package-paths exit 0 · `gen-reference.mjs` byte-clean
+**Spec-anchored check**: 13/13 ACs match the spec-defined outcome; 3 spec-precision gaps (all in the
+spec text, none in the code)
+**Sensor**: 17 mutations, 16 killed, 1 survived (U5)
+**Gate**: `npm test` 1274 passed · `npm run e2e` 48/48 · size-gate exit 0 (entry 104921) ·
+verify-package-paths exit 0 · generated docs byte-clean
 
-**What works**: The axis lock is the strongest-sensed code in the range — capture phase, the
-container-relative point contract, both release events, the disposer's free-then-deaf ordering and
-the `Set` of pending releases each have a case that dies when the behaviour is inverted. The
-magnet's pixel threshold, its inclusive boundary, both tie orderings and all four unmeasurable
-readings (`null`, `NaN`, `Infinity`, throw) are pinned to values a reader can check by hand. Every
-one of the three historical "green while broken" defects was re-injected and every one was caught —
-including through the composition, which is where they escaped the first time. The two DRAG-01
-browser checks were independently shown to fail for opposite reasons.
+**What works**: Every claim the fix round made survived independent re-injection. MAGNET-07 went
+from inert to the sharpest check in the browser suite — the preview probe reads the object the
+preview was handed, so it reports a price and not a colour, and M22 fails it with the raw pointer
+value printed in the message. The seam's ordering probe now records order and is killed twice over,
+and its replacement comment was verified true by running the fault. The pane guard is real code
+doing real work: it is live in Chromium (L1), the panes are genuinely disjoint (L2 plus a direct DOM
+read), a `null` pane falls back to the whole container rather than disabling the lock (U4 kills 14
+cases), and neither DRAG-01 nor DRAG-06 regressed. All four of this feature's historical
+"green while broken" shapes were re-injected and all four died.
 
-**Issues found**: 5, ranked above. One blocker: MAGNET-07 can be deleted without turning anything
-red.
+**Issues found**: 2. The fifth instance of the recurring shape is the new pane guard's own wiring —
+proven implemented, proven live, and provably untested at the seam.
 
-**Next steps**: route Gaps 1-3 to fix tasks; Gaps 4-5 are cheap and can ride along. Re-verify after.
+**Next steps**: one test for Gap 1 and one guard-plus-test for Gap 2, then re-verify. Both are
+inside a single task's worth of work.

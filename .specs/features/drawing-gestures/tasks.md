@@ -139,6 +139,16 @@ T29 → T30
 T30 → T31
 ```
 
+### Phase 10: Iteration 2 of the fix loop — the last one before escalation
+
+16 of 17 mutants dead. The survivor is this feature's signature for the FIFTH time: an optional
+member vanishes with no type error and nothing notices. The guard works; its WIRING is unsensed,
+because every chart fake in the repo answers `getHTMLElement: () => null`.
+
+```
+T32 → T33
+```
+
 ---
 
 ## Task Breakdown
@@ -1041,6 +1051,63 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
+### T32: The seam's pane wiring becomes sensed
+
+**What**: A chart fake that answers a REAL pane element, so deleting the line that supplies `pricePane` fails a test instead of passing everything.
+**Where**: `test/drawingSeam.spec.tsx`
+**Depends on**: None
+**Reuses**: the fake chart already in the file; the pane-guard cases already in `test/axisLock.spec.ts`
+**Requirement**: DRAG-06
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: delete `src/react/surface/useDrawingSeam.ts:82` (the line supplying `pricePane`) and confirm the CURRENT suite stays at 1274/1274 with `tsc` clean and e2e at 48/48 — that is the defect
+- [ ] The fake's `panes()[0].getHTMLElement()` returns a real element instead of `null`, and a press outside it makes NO `applyOptions` call
+- [ ] With the wiring line deleted, that new case FAILS. Restore the line and verify `git status --porcelain`
+- [ ] This is the FIFTH time an optional member vanished unsensed on this feature — the docblock says so, so the next reader of this file knows why the fake answers an element rather than `null`
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(drawing): the seam proves it supplies the price pane`
+
+---
+
+### T33: The pane reader gets the throw guard its sibling already has
+
+**What**: Wrap `host.pricePane()` the way `host.anchorAt()` is wrapped, so a reader that throws costs one missed lock rather than escaping the capture handler.
+**Where**: `src/drawing/axisLock.ts`
+**Depends on**: T32
+**Reuses**: the `try { … } catch` at `src/drawing/axisLock.ts:40-45` and its written rationale; the sibling test at `test/axisLock.spec.ts:221`
+**Requirement**: DRAG-06
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: a `pricePane` that throws currently escapes the capture-phase handler — measured by the Verifier as `ESCAPED = ["Object is disposed"]`. The test must fail before the fix
+- [ ] After the fix, a throwing reader behaves like a missed lock, never an exception out of the handler — `chart.panes()` throws on a disposed chart and `attachAxisLock` is a published export
+- [ ] Decide and state whether a throwing reader falls back to the whole container or refuses the lock, and say why in the docblock — do not leave it incidental
+- [ ] The byte cost is measured and named in both ledgers. **The entry is at 104921 with 73 B under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised.** If the guard does not fit, recover the bytes inside this feature's own modules the way T24 did, and report what you took
+- [ ] `test/axisLock.spec.ts` extended
+- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(drawing): a pane reader that throws costs one lock, not the gesture`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
@@ -1075,6 +1142,7 @@ Phase 9:  T27 → T28
           T28 → T29
           T29 → T30
           T30 → T31
+Phase 10: T32 → T33
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -1107,6 +1175,8 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T29: pane guard | 1 module | ✅ Granular |
 | T30: lookup miss case | 1 test file | ✅ Granular |
 | T31: changelog precision | 1 file | ✅ Granular |
+| T32: wiring sensed | 1 test file | ✅ Granular |
+| T33: reader throw guard | 1 module | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
 | T14: disposer release order | 1 module | ✅ Granular |
@@ -1144,6 +1214,8 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T29 | T28 | T28 → T29 | ✅ Match |
 | T30 | T29 | T29 → T30 | ✅ Match |
 | T31 | T30 | T30 → T31 | ✅ Match |
+| T32 | None | (phase head) | ✅ Match |
+| T33 | T32 | T32 → T33 | ✅ Match |
 | T23 | T12 | T12 → T23 | ✅ Match |
 | T12 | T22 | T22 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
@@ -1185,6 +1257,8 @@ No dependency points at a later phase.
 | T29 | Pure library module | unit | unit | ✅ OK |
 | T30 | Pure library module | unit | unit | ✅ OK |
 | T31 | Docs and ledgers | none | none | ✅ OK |
+| T32 | Surface hook | unit | unit | ✅ OK |
+| T33 | Pure library module | unit | unit | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
 | T14 | Pure library module | unit | unit | ✅ OK |

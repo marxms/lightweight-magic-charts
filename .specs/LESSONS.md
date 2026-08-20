@@ -44,6 +44,24 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: MAGNET-03 spec.md:89-90 (boundary silent) and spec.md:122-123 (tie named in price units while magnet.ts:59 measures pixels) (.specs/,thresholds)
 - last seen: 2026-08-20T12:59:33Z
 
+### L-006 - An OPTIONAL member wired at one call site is unsensed unless a composition test supplies a non-default value for it; when every test double answers the inert default, deleting the wiring typechecks and every gate stays green.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `src/react/,composition-wiring` · harmful: 0
+- features: drawing-gestures
+- evidence: src/react/surface/useDrawingSeam.ts:82 (mutant U5) (src/react/,composition-wiring)
+- last seen: 2026-08-20T13:53:11Z
+
+### L-007 - When a module decides that one host-supplied callback may throw and guards it, every later callback added to the same host type inherits that obligation; an unguarded sibling throws out of a browser-dispatched event.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `src/drawing/,published-callbacks` · harmful: 0
+- features: drawing-gestures
+- evidence: src/drawing/axisLock.ts:56 (measured: a throwing pricePane escapes the mousedown handler) (src/drawing/,published-callbacks)
+- last seen: 2026-08-20T13:53:11Z
+
+### L-008 - An edge case must state the OUTCOME, not the mechanism it should copy; naming an implementation the layer cannot reach ('matching the pane-index guard') makes the criterion unverifiable against the code that has to satisfy it.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `.specs/,edge-cases` · harmful: 0
+- features: drawing-gestures
+- evidence: .specs/features/drawing-gestures/spec.md:124-125 (.specs/,edge-cases)
+- last seen: 2026-08-20T13:53:11Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
