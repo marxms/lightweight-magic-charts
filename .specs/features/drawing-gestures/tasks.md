@@ -533,7 +533,7 @@ T19 → T20
 
 ---
 
-### T16: The lock's coordinate contract becomes assertable
+### T16: The lock's coordinate contract becomes assertable — DONE
 
 **What**: Stub the container rect with non-zero `top`/`left` and dispatch presses carrying real `clientX`/`clientY`, then assert `anchorAt` received the container-relative point.
 **Where**: `test/axisLock.spec.ts`
@@ -547,10 +547,10 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] The recorded hit equals the offset point, not `{x: 0, y: 0}`
-- [ ] Prove the assertion discriminates: dropping `- rect.left` / `- rect.top` in `axisLock.ts` fails this test; transposing x and y fails it. Restore the source afterwards and verify with `git status --porcelain`
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] The recorded hit equals the offset point, not `{x: 0, y: 0}`
+- [x] Prove the assertion discriminates: dropping `- rect.left` / `- rect.top` in `axisLock.ts` fails this test; transposing x and y fails it. Restore the source afterwards and verify with `git status --porcelain`
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥1 test passes (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

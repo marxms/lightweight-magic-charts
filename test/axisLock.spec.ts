@@ -292,3 +292,26 @@ describe('DRAG-05 — overlapping presses cannot strand a release listener', () 
     ]);
   });
 });
+
+const pressAt = (target: Element, clientX: number, clientY: number): void => {
+  target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, clientX, clientY }));
+};
+
+describe('DRAG-01, DRAG-06 — the hit-test is asked about a point inside the container', () => {
+  it('subtracts the container origin, so the point is container-relative and not page-relative', () => {
+    // WHY THE RECT IS STUBBED AT ALL. jsdom does no layout, so every rect reads zeros — and at an
+    // origin of 0,0 the page point and the container point are the same number. That is how a wrong
+    // coordinate contract survives a green suite: the subtraction can be dropped, or the two axes
+    // transposed, and nothing here would ever have noticed. The offsets differ from each other and
+    // from the deltas on purpose, so each of those mistakes lands on a different wrong answer.
+    const it = harness(ON_ANCHOR);
+    it.container.getBoundingClientRect = () =>
+      ({ top: 30, left: 12, width: 800, height: 400 }) as DOMRect;
+    const dispose = attachAxisLock(it.host);
+
+    pressAt(it.canvas, 212, 130);
+
+    expect(it.hits).toEqual([{ x: 200, y: 100 }]);
+    dispose();
+  });
+});
