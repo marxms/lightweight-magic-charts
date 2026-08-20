@@ -4,6 +4,35 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.1 — 2026-08-20
+
+The magnet shipped as a mode the user controls, and the cursor was never told. With the magnet off
+the anchor landed exactly where it was aimed — measured, and asserted in the browser — while the
+crosshair on screen stuck to the candle's close. So the user aimed at one price, saw another, and
+got a third, and free placement read as broken when it was working.
+
+### Fixed
+
+- **The crosshair follows the magnet.** Not a regression of `0.2.0`: `CrosshairMode.Magnet` is
+  `lightweight-charts`' own default, and nothing in this package or its example had ever set
+  `crosshair`, so the cursor had been sticking to the close since the first deploy. What `0.2.0`
+  changed is that it gave the anchor a choice and left the cursor out of it, which is what turned a
+  quiet default into a visible contradiction. A surface with a drawing layer attached now applies
+  `CrosshairMode.Normal` while the magnet is `off` and `CrosshairMode.MagnetOHLC` while it is `on` —
+  `MagnetOHLC` and not `Magnet`, because `snapAnchorPrice` chooses among open, high, low and close
+  while `Magnet` takes the close alone, and a cursor magnetised to a smaller set is the same
+  disagreement in a better disguise. Read in a real browser off `chart.options()`, the resolved
+  option rather than the one passed in: `1` before this release with the toggle off, on and off
+  again; `0`, `3`, `0` after it.
+
+  **Where a host supplies its own `crosshair`, the library's mode wins** — but only where a drawing
+  layer is attached. `ChartEngine` passes options through verbatim and the port publishes no reader,
+  so a host's value cannot be read, remembered or given back; honouring one would rest the promise
+  on a value the library cannot see. A surface mounted with no drawing binding is left exactly as
+  the host configured it, because with no anchor to place there is nothing to disagree about.
+
+No API changed, nothing was added and nothing was removed.
+
 ## 0.2.0 — 2026-08-20
 
 Two gestures a chart user arrives already knowing did not work. Resizing a drawing was impossible —

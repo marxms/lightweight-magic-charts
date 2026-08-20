@@ -2,6 +2,15 @@
 
 ## Problem Statement
 
+> **Reopened after release.** `0.2.0` shipped and the demo showed the very defect this spec exists to
+> remove: with the magnet OFF the crosshair still snapped to the candle's close, because
+> `CrosshairMode.Magnet` is the base library's DEFAULT and nothing here ever overrode it. The anchor
+> landed free — measured — while the pointer said otherwise, so the two disagreed and free placement
+> read as broken. Every requirement below is about where an anchor LANDS; not one was about what the
+> user SEES, and no amount of mutation testing on anchor prices could have found it. MAGNET-08
+> closes that.
+
+
 Two gestures a chart user arrives already knowing do not work. Resizing a drawing is impossible —
 pulling an anchor pans the chart underneath it, so the shape never reaches where it is being taken.
 And every anchor lands on a bar boundary whether or not that is wanted, because the anchor takes the
@@ -94,6 +103,9 @@ to the bar, so that I can mark an exact level or an arbitrary one.
    `DrawingToolbar` mounted without a magnet group SHALL draw no toggle.
 6. WHEN the magnet mode changes mid-gesture, the library SHALL apply the new mode to anchors placed
    after the change and SHALL NOT move anchors already placed.
+7. WHILE the magnet is `off`, the chart's crosshair SHALL move freely with the pointer; WHILE it is
+   `on`, the crosshair SHALL stick to a bar value. The pointer and the anchor SHALL never disagree
+   about where the anchor will land.
 
 **Independent Test**: with the magnet off, place an anchor between two bars' closes and read a price
 that equals neither; turn it on, place near a high, and read exactly that high.
@@ -143,10 +155,11 @@ recorded.
 | MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11, T26 | Done |
 | MAGNET-06 | P2: the magnet is a mode | T5, T8, T22 | Done |
 | MAGNET-07 | P3: the preview shows the magnet | T10, T19, T27 | Done |
+| MAGNET-08 | P2: the magnet is a mode | T34, T35 | Done |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
-**Coverage:** 13 total, 13 mapped to tasks, 0 unmapped, 13 Done
+**Coverage:** 14 total, 14 mapped to tasks, 0 unmapped, 14 Done
 
 ---
 

@@ -29,7 +29,7 @@ const listen = (op: 'addEventListener' | 'removeEventListener', release: () => v
 };
 
 export function attachAxisLock(host: AxisLockHost): () => void {
-  const { container } = host;
+  const { container, chart } = host;
   let detached = false;
   // A SET AND NOT A SLOT: `blur` without a `mouseup` and the button down again puts two releases in
   // flight, and one slot can only ever reach the newer — the older pair outlived the disposer.
@@ -66,14 +66,14 @@ export function attachAxisLock(host: AxisLockHost): () => void {
   // CAPTURE PHASE: the only place this lands before the base library reads the same press in bubble.
   const onDown = (event: MouseEvent): void => {
     if (event.button !== 0 || !grabsAnchor(event)) return;
-    host.chart.applyOptions(axes(false));
+    chart.applyOptions(axes(false));
     const release = (): void => {
       listen('removeEventListener', release);
       pendingReleases.delete(release);
       // A gesture can outlive the component. Unlocking a chart the base library already disposed
       // means nothing, so the orphaned gesture just dissolves.
       if (detached) return;
-      host.chart.applyOptions(axes(true));
+      chart.applyOptions(axes(true));
     };
     pendingReleases.add(release);
     listen('addEventListener', release);

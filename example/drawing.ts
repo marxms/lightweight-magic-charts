@@ -165,7 +165,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
    * labels, never either of those. `scripts/e2e-demo.mjs` reads both through here, so the magnet
    * check asserts a price the anchor actually landed on rather than a class or an attribute.
    *
-   * Both members only READ, and the whole thing is taken back in `detach()`.
+   * Every member only READS, and the whole thing is taken back in `detach()`.
    */
   const probe = {
     anchors: (): readonly { readonly time: unknown; readonly price: number }[] =>
@@ -179,6 +179,10 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     /** Where the dashed trace is drawn RIGHT NOW. The preview paints on a canvas, so a colour count
      * can say something blue appeared and never say at which price — this reads the price. */
     previewCursor: (): PreviewAnchor | null => traced,
+    /** The RESOLVED crosshair mode, read off the chart rather than off what was passed in — the
+     * defect it exists to sense was a default nobody had overridden, so what the host sent says
+     * nothing. `0` Normal, `1` Magnet (the close alone), `2` Hidden, `3` MagnetOHLC. */
+    crosshairMode: (): number => chart.options().crosshair.mode,
   };
   (globalThis as Record<string, unknown>).__lmcDrawingProbe = probe;
 

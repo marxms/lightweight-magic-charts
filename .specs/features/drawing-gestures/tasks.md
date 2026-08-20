@@ -149,6 +149,18 @@ because every chart fake in the repo answers `getHTMLElement: () => null`.
 T32 → T33
 ```
 
+### Phase 11: The defect that shipped
+
+`0.2.0` is released, tagged and live on the demo, and it snaps the crosshair to the close with the
+magnet off. Not a regression — `CrosshairMode.Magnet` is the base library's default and this repo
+never set `crosshair`, so it has been there since the first deploy. But the feature that added a
+magnet MODE left the cursor magnetising regardless of it, which is what makes free placement read as
+broken. Ships as `0.2.1`.
+
+```
+T34 → T35
+```
+
 ---
 
 ## Task Breakdown
@@ -1108,6 +1120,64 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
+### T34: The crosshair follows the magnet — DONE
+
+**What**: The library applies the chart's crosshair mode from the magnet mode — free when `off`, stuck to a bar value when `on` — so the pointer and the anchor never disagree.
+**Where**: `src/react/surface/useDrawingSeam.ts`
+**Depends on**: None
+**Reuses**: `WorkspaceChartHandle.applyOptions`, already on the port; the ordinal-union precedent the port documents for `LineWidth` and `lineStyle`, which is why a numeric mode is allowed to cross the seam
+**Requirement**: MAGNET-08
+**Skills**: `ecc:react-patterns`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:react-patterns`
+
+**Done when**:
+- [x] **Reproduce first, in the browser.** At HEAD, with the magnet OFF, `chart.options().crosshair.mode` reads `1` (`CrosshairMode.Magnet`, the base library default, which sticks the horizontal line to the CLOSE). The check must fail before the fix — MEASURED: `1` off, `1` on, `1` off again; after the fix `0`, `3`, `0`
+- [x] With the magnet `off` the library applies mode `0` (`Normal`); with it `on`, mode `3` (`MagnetOHLC`) — **3, not 1**, because this feature's snap targets open, high, low OR close, and `1` sticks to the close alone. A crosshair that magnetises to a different set than the anchor is the same defect wearing the other mask
+- [x] The mode is applied on mount AND on every change, through the same live-ref path the snap closure uses — no new effect dependency on the mode, or a bar arriving re-attaches the drawing layer. The push effect carries NO dependency array and reads `snapRef.current`
+- [x] The numeric values are named in a comment with their enum names, because the library cannot import the enum and a bare `3` is unreadable
+- [x] A host that supplies its own `crosshair` option keeps it while the magnet is `off`? **Decided: the LIBRARY wins wherever a drawing layer is attached, and the host keeps its own wherever none is.** The port publishes `applyOptions` and no reader, so a host's value cannot be read, remembered or given back — honouring one would rest MAGNET-08's promise on a value the library cannot see, and an unoverridden default is exactly what shipped the defect. With no layer there is no anchor to place and nothing to disagree about
+- [x] The byte cost is measured and named in both ledgers. The entry is at 104932 with **62 B** under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised. If it does not fit, recover from this feature's own modules as T24 did — TAKEN: 90 B back from this feature's own modules, so the entry moved 104932 -> 104973 (+41 B) and sits 21 B under the untouched ceiling
+- [x] `test/drawingSeam.spec.tsx` extended
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(drawing): the crosshair follows the magnet, so aim matches outcome`
+
+---
+
+### T35: The browser proves the cursor and the anchor agree — DONE
+
+**What**: A browser check that reads the resolved crosshair mode with the toggle off and on, and closes the release.
+**Where**: `scripts/e2e-demo.mjs`
+**Depends on**: T34
+**Reuses**: the read-only probe in `example/drawing.ts` that T12 and T27 built
+**Requirement**: MAGNET-08
+**Skills**: `ecc:e2e-testing`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:e2e-testing`
+
+**Done when**:
+- [x] The probe reads `chart.options().crosshair.mode` — the RESOLVED option, not what was passed in, so a default that was never overridden is visible
+- [x] With the toggle off the check reads `0`; pressing it reads `3`; pressing again returns to `0`
+- [x] The check FAILS against the pre-T34 code — prove it by reverting T34 in a scratch, watching it fail, restoring, and confirming `git status --porcelain`. MEASURED: with `src/react/surface/useDrawingSeam.ts` at `HEAD~1` the suite read 48/49 and `magnet.cursor-follows-the-mode` reported `1` off, `1` on and `1` off again; restored, the file shows no diff and the suite reads 49/49
+- [x] `package.json` goes to `0.2.1` and the CHANGELOG names the defect plainly: what a user saw, why it was the base library's default rather than a regression, and that the feature which added the mode left the cursor out of it
+- [x] Gate check passes: `npm test && npm run e2e`
+- [x] e2e count: 48 baseline + 1 = 49
+
+**Tests**: e2e
+**Gate**: full
+
+**Commit**: `test(e2e): the crosshair mode answers to the magnet toggle`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
@@ -1143,6 +1213,7 @@ Phase 9:  T27 → T28
           T29 → T30
           T30 → T31
 Phase 10: T32 → T33
+Phase 11: T34 → T35
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -1177,6 +1248,8 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T31: changelog precision | 1 file | ✅ Granular |
 | T32: wiring sensed | 1 test file | ✅ Granular |
 | T33: reader throw guard | 1 module | ✅ Granular |
+| T34: crosshair follows mode | 1 hook | ✅ Granular |
+| T35: browser proof + release | 1 file | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
 | T14: disposer release order | 1 module | ✅ Granular |
@@ -1216,6 +1289,8 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T31 | T30 | T30 → T31 | ✅ Match |
 | T32 | None | (phase head) | ✅ Match |
 | T33 | T32 | T32 → T33 | ✅ Match |
+| T34 | None | (phase head) | ✅ Match |
+| T35 | T34 | T34 → T35 | ✅ Match |
 | T23 | T12 | T12 → T23 | ✅ Match |
 | T12 | T22 | T22 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
@@ -1259,6 +1334,8 @@ No dependency points at a later phase.
 | T31 | Docs and ledgers | none | none | ✅ OK |
 | T32 | Surface hook | unit | unit | ✅ OK |
 | T33 | Pure library module | unit | unit | ✅ OK |
+| T34 | Surface hook | unit | unit | ✅ OK |
+| T35 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
 | T14 | Pure library module | unit | unit | ✅ OK |
