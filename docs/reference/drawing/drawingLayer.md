@@ -21,10 +21,10 @@ export const binding: DrawingBinding = (host, _events) => layerOver(host.contain
 ## Exports
 
 - **`DrawingBinding`** · type · `type DrawingBinding = (host: DrawingSurfaceHost, events: DrawingLayerEvents) => DrawingLayer`
-- **`DrawingLayer`** · type · `interface DrawingLayer { setActiveTool: (toolId: string | null) => void; deleteSelection: () => void; clearAll: () => void; serialize?: (() => DrawingSnapshot) | undefined; restore?: ((state: DrawingSnapshot) => void) | undefined; detach: () => void }`
+- **`DrawingLayer`** · type · `interface DrawingLayer { setActiveTool: (toolId: string | null) => void; deleteSelection: () => void; clearAll: () => void; serialize?: (() => DrawingSnapshot) | undefined; restore?: ((state: DrawingSnapshot) => void) | undefined; anchorAt?: ((point: { readonly x: number; readonly y: number; }) => boolean) | undefined; detach: () => void }`
 - **`DrawingLayerEvents`** · type · `interface DrawingLayerEvents { onCountChange: (count: number) => void; onToolFinished: () => void }`
 - **`DrawingSnapshot`** · type · `type DrawingSnapshot = unknown`
-- **`DrawingSurfaceHost`** · type · `interface DrawingSurfaceHost { chart: WorkspaceChartHandle; series: SeriesHandle; container: HTMLElement }`
+- **`DrawingSurfaceHost`** · type · `interface DrawingSurfaceHost { chart: WorkspaceChartHandle; series: SeriesHandle; container: HTMLElement; snapPrice: (at: { readonly time: UtcSeconds; readonly price: number; }) => number }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).

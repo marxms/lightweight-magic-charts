@@ -182,7 +182,7 @@ T12 → T13
 
 ---
 
-### T4: Open the seam for both halves
+### T4: Open the seam for both halves — DONE
 
 **What**: Add optional `anchorAt` to `DrawingLayer` and required `snapPrice` to `DrawingSurfaceHost`.
 **Where**: `src/drawing/drawingLayer.ts`
@@ -196,11 +196,11 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] `DrawingLayer.anchorAt?(point): boolean` declared optional, so an existing binding still compiles
-- [ ] `DrawingSurfaceHost.snapPrice(at): number` declared
-- [ ] `test/renderBoundary.spec.ts` still pins the port and passes
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline tests pass (no silent deletions)
+- [x] `DrawingLayer.anchorAt?(point): boolean` declared optional, so an existing binding still compiles
+- [x] `DrawingSurfaceHost.snapPrice(at): number` declared
+- [x] `test/renderBoundary.spec.ts` still pins the port and passes
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

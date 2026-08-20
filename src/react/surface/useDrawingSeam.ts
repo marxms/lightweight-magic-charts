@@ -37,7 +37,7 @@ export function useDrawingSeam(
     const anchor = handles?.candle ?? null;
     if (binding === undefined || host === null || chart === null || anchor === null) return;
     const layer = binding(
-      { chart, series: anchor, container: host },
+      { chart, series: anchor, container: host, snapPrice: (at) => at.price },
       {
         onCountChange: (count) => eventsRef.current.onCountChange?.(count),
         onToolFinished: () => eventsRef.current.onToolFinished?.(),
