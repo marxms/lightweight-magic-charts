@@ -762,6 +762,35 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
+### T23: The alert drag survives a tab switch
+
+**What**: The price-alert layer releases its axis lock on `blur`, as the drawing axis lock already does.
+**Where**: `src/react/surface/usePriceAlertLayer.ts`
+**Depends on**: T20
+**Reuses**: the `blur` release the drawing lock already uses (`src/drawing/axisLock.ts`), and this layer's own paired lock at `usePriceAlertLayer.ts:73` and `:83`
+**Requirement**: DRAG-02
+**Skills**: `ecc:react-patterns`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:react-patterns`
+
+**Done when**:
+- [ ] Reproduce first. Already done read-only against this layer's own harness: press a level at y=100, then `window.dispatchEvent(new Event('blur'))`, and the chart's `applyOptions` log ends at `{handleScroll: false, handleScale: false}` with `levels` reporting `[]` — the lock is written, never released, and the drag never settles. Re-establish that failing test in the suite before fixing
+- [ ] After the fix the same sequence restores both options and the drag ends
+- [ ] The listener is removed by the effect's cleanup, so no `blur` handler outlives the mount
+- [ ] Reachable with NO drawing layer mounted — the test proves it, so the defect is filed where it belongs
+- [ ] `test/priceAlertLayer.spec.tsx` extended
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `fix(surface): an abandoned alert drag gives the axes back`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
