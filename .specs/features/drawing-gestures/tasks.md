@@ -559,7 +559,7 @@ T19 → T20
 
 ---
 
-### T17: The snap rule refuses an unmeasurable threshold
+### T17: The snap rule refuses an unmeasurable threshold — DONE
 
 **What**: Return the pointer price when `price` or `thresholdPx` is not finite, and drop a candidate whose coordinate is not finite rather than only when it is `null`.
 **Where**: `src/drawing/magnet.ts`
@@ -573,12 +573,12 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: `thresholdPx: NaN` with a pointer far from every bar value currently snaps to the highest OHLC — the test must fail before the fix
-- [ ] After the fix a non-finite `thresholdPx` or `price` returns the pointer's own price
-- [ ] A candidate whose `priceToCoordinate` returns `NaN` or `Infinity` is dropped, and the snap survives it
-- [ ] `test/magnet.spec.ts` extended
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥3 tests pass (no silent deletions)
+- [x] Reproduce first: `thresholdPx: NaN` with a pointer far from every bar value currently snaps to the highest OHLC — the test must fail before the fix
+- [x] After the fix a non-finite `thresholdPx` or `price` returns the pointer's own price
+- [x] A candidate whose `priceToCoordinate` returns `NaN` or `Infinity` is dropped, and the snap survives it
+- [x] `test/magnet.spec.ts` extended
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥3 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

@@ -115,3 +115,42 @@ describe('the edge cases the spec decides', () => {
     expect(price).toBe(100);
   });
 });
+
+describe('MAGNET-04 — an unmeasurable gesture places at the pointer, never at a bar', () => {
+  // WHY THESE FAIL LOUDLY RATHER THAN QUIETLY. Every comparison against `NaN` is false, so
+  // `distancePx > thresholdPx` stopped rejecting anything the moment either side stopped being a
+  // number: the tolerance switched off instead of the magnet, every candidate qualified, and the
+  // anchor landed on a bar value the user never aimed at. A threshold nobody can measure has to
+  // mean "do not snap", which is the same reading `observePrice` takes of a non-finite price.
+  it('a threshold that is not a number returns the pointer price, far from every bar value', () => {
+    expect(snapAnchorPrice(input({ price: 400, thresholdPx: Number.NaN }))).toBe(400);
+  });
+
+  it('a pointer price that is not a number resolves to itself, not to a bar value', () => {
+    expect(snapAnchorPrice(input({ price: Number.NaN }))).toBeNaN();
+  });
+
+  it('a candidate whose coordinate is NaN is dropped, and the snap survives it', () => {
+    // The same shape as the `null` case above, and the close is again the nearest at `1.3` px. The
+    // open at `3.7` px is the only other candidate inside the threshold, so the answer is the open.
+    const price = snapAnchorPrice(
+      input({
+        price: 103.7,
+        priceToCoordinate: (value) => (value === 105 ? Number.NaN : scale(value)),
+      }),
+    );
+
+    expect(price).toBe(100);
+  });
+
+  it('a candidate whose coordinate is Infinity is dropped, and the snap survives it', () => {
+    const price = snapAnchorPrice(
+      input({
+        price: 103.7,
+        priceToCoordinate: (value) => (value === 105 ? Number.POSITIVE_INFINITY : scale(value)),
+      }),
+    );
+
+    expect(price).toBe(100);
+  });
+});
