@@ -124,14 +124,16 @@ function bindingOf(log: Recorded, seed = 'two-drawings'): DrawingBinding {
 
 /** Stands in for the canvas: it is what calls the binding and, on the way out, `detach`. */
 function FakeCanvas(): ReactElement {
-  const { bind, onCount } = useDrawingRail();
+  const { bind, onCount, magnet } = useDrawingRail();
   useEffect(() => {
     if (bind === undefined) return;
     const layer = bind({} as DrawingSurfaceHost, { onCountChange: onCount, onToolFinished: () => {} });
     handed = layer;
     return () => layer.detach();
   }, [bind, onCount]);
-  return <div data-testid="canvas" />;
+  // The mode WHERE THE SURFACE READS IT: `CanvasSurface` takes `magnet` off `useDrawingRail()` and
+  // hands it to the surface, so publishing it here is the canvas doing what the real one does.
+  return <div data-testid="canvas" data-magnet={magnet} />;
 }
 
 /** The wrapper the canvas actually holds — which is not the layer the binding built. */
@@ -387,5 +389,48 @@ describe('the rail provider holds the magnet mode', () => {
     expect(view.container.innerHTML).toBe(
       '<button type="button" data-testid="magnet-probe">off</button>',
     );
+  });
+});
+
+describe('the magnet reaches the toolbar through the composition a host mounts', () => {
+  /**
+   * MAGNET-01 and MAGNET-06, ASSERTED THROUGH THE REAL COMPOSITION — and that is the whole point of
+   * these two cases. Every other magnet test either mounts `DrawingToolbar` in isolation with a
+   * hand-built group, or reads the context through a probe of its own; both skip `DrawingRail`,
+   * which is the one component that has to hand the mode over. It did not, the prop is optional so
+   * it typechecked, and the toggle simply never existed on a rail any host actually mounts. This is
+   * the same shape as the defect that left `anchorAt` dropped by the provider's wrapper: a seam
+   * proven everywhere except where it is joined.
+   */
+  it('draws the toggle in the rail, under the word the host brought', () => {
+    render(<Harness />);
+
+    // BY ROLE AND BY THE HOST'S WORD: a toggle the composition never mounted cannot be found at
+    // all, so this query is what fails when the rail stops forwarding the mode.
+    const toggle = screen.getByRole('button', { name: 'Ímã' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    // CONTROL POSITIVE: the two fixed controls beside it are drawn, so a failure above is the
+    // magnet missing and not the toolbar failing to render its actions at all.
+    expect(screen.getByRole('button', { name: 'Apagar seleção' })).toBeInTheDocument();
+  });
+
+  it('presses it, and the mode changes for the toggle AND for the canvas that reads it', () => {
+    render(<Harness />);
+    // The mode starts OFF everywhere: the library never defaults to the behaviour complained of.
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ímã' }));
+
+    // The toggle holds NO COPY: it reports `on` only because the provider's state came back to it.
+    expect(screen.getByRole('button', { name: 'Ímã' })).toHaveAttribute('aria-pressed', 'true');
+    // And the same press reached the canvas, which is where the surface takes the mode from. A test
+    // that only asserted the prop was passed would prove neither half of this.
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'on');
+
+    // AND BACK: a control that only ever turns the magnet on is not the two-state mode MAGNET-01
+    // asks for, and it is the one direction the reported defect never offered.
+    fireEvent.click(screen.getByRole('button', { name: 'Ímã' }));
+    expect(screen.getByRole('button', { name: 'Ímã' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off');
   });
 });

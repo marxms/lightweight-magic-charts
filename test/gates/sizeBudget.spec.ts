@@ -83,6 +83,8 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `measured` lowers `limit` with it, by the equality asserted just below, and the probe fails on the
  * spot if the bundle does not fit. Down is the safe direction, and it is the direction a legitimate
  * shrinkage writes.
+ * RE-PINNED 2026-08-20 to 104716 (+48 B): the rail region hands the mode to the toggle, which it
+ * had never done — the control existed in every unit test and in no composition a host mounts.
  * RE-PINNED 2026-08-20 to 104668 (+10 B): the magnet's label became optional, so a host that
  * hand-built the full label group before the magnet existed compiles again. Also from the bank.
  * RE-PINNED 2026-08-20 to 104658 (+40 B) out of the 349 banked just below: the snap rule stopped
@@ -100,7 +102,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104668,
+  '*': 104716,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

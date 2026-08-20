@@ -141,7 +141,7 @@ recorded.
 | MAGNET-03 | P2: the magnet is a mode | T2, T10, T12, T18, T19 | Pending |
 | MAGNET-04 | P2: the magnet is a mode | T2, T17, T25 | Done |
 | MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11 | Pending |
-| MAGNET-06 | P2: the magnet is a mode | T5, T8 | Done |
+| MAGNET-06 | P2: the magnet is a mode | T5, T8, T22 | Done |
 | MAGNET-07 | P3: the preview shows the magnet | T10, T19 | Pending |
 
 **ID format:** `[CATEGORY]-[NUMBER]`

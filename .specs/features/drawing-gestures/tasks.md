@@ -484,7 +484,7 @@ and the first shape measured 105005. The lean shape measures 104967.
 
 ---
 
-### T22: The rail region wires the mode to the toggle
+### T22: The rail region wires the mode to the toggle — DONE
 
 **What**: `DrawingRail` passes the mode and setter straight from `useDrawingRail()` into the toolbar's magnet group, and passes the regrouped `edits`.
 **Where**: `src/react/workspace/DrawingRail.tsx`
@@ -498,13 +498,13 @@ and the first shape measured 105005. The lean shape measures 104967.
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] The toggle holds no copy of the mode — it reads and writes the provider's state
-- [ ] `src/react/workspace/ChartWorkspace.tsx` is NOT touched; it sits at 347 of 350 code lines
-- [ ] **Asserted through the REAL composition, not a probe.** `test/drawingRailRegion.spec.tsx:174-184` already mounts `<DrawingRailProvider><DrawingRail/></DrawingRailProvider>`; extend THAT harness. Two independent specialist reviews found this defect precisely because every existing magnet test either mounts `DrawingToolbar` in isolation with a hand-built group, or reads the context through a bespoke probe that skips `DrawingRail`
-- [ ] The toggle is found by role, pressed, and the mode observed to change — a test that only asserts the prop was passed would have missed nothing and caught nothing
-- [ ] `test/drawingRailRegion.spec.tsx` extended
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] The toggle holds no copy of the mode — it reads and writes the provider's state
+- [x] `src/react/workspace/ChartWorkspace.tsx` is NOT touched; it sits at 347 of 350 code lines
+- [x] **Asserted through the REAL composition, not a probe.** `test/drawingRailRegion.spec.tsx:174-184` already mounts `<DrawingRailProvider><DrawingRail/></DrawingRailProvider>`; extend THAT harness. Two independent specialist reviews found this defect precisely because every existing magnet test either mounts `DrawingToolbar` in isolation with a hand-built group, or reads the context through a bespoke probe that skips `DrawingRail`
+- [x] The toggle is found by role, pressed, and the mode observed to change — a test that only asserts the prop was passed would have missed nothing and caught nothing
+- [x] `test/drawingRailRegion.spec.tsx` extended
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

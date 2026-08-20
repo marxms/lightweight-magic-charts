@@ -172,7 +172,11 @@ export interface DrawingRailProps {
 
 export const DrawingRail = memo(function DrawingRail({ heightPx }: DrawingRailProps): ReactElement {
   const { labels, testIdPrefix } = useWorkspaceChrome();
-  const { vocabulary, activeTool, arm, count, deleteSelection, clearAll } = useDrawingRail();
+  // THE MODE IS FORWARDED, NEVER COPIED. `magnet` is an optional prop of the toolbar, so a rail
+  // that dropped it typechecked and simply drew no toggle — the control existed in every unit test
+  // and in no composition a host mounts. Same shape as the wrapper that dropped `anchorAt`.
+  const { vocabulary, activeTool, arm, count, deleteSelection, clearAll, magnet, setMagnet } =
+    useDrawingRail();
 
   return (
     <div data-testid={`${testIdPrefix}-tools`} style={COLUMN}>
@@ -183,6 +187,7 @@ export const DrawingRail = memo(function DrawingRail({ heightPx }: DrawingRailPr
         activeToolId={activeTool}
         onSelect={arm}
         edits={{ onDelete: deleteSelection, onClear: clearAll, count }}
+        magnet={{ mode: magnet, onChange: setMagnet }}
         heightPx={heightPx}
         orientation="vertical"
         labels={vocabulary.labels ?? labels.drawingToolbar}
