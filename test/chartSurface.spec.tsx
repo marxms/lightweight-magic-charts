@@ -192,7 +192,10 @@ function fakeEngine(): Recording {
             handles.splice(at, 1);
             record.priceLines.splice(at, 1);
           },
-          priceToCoordinate: () => null,
+          // A LINEAR SCALE, one pixel per price unit: the magnet is a screen tolerance, so a
+          // converter that always answered null would make every snap case pass for the wrong
+          // reason. The axis points down, like every price scale.
+          priceToCoordinate: (price) => 200 - price,
           coordinateToPrice: () => null,
           attachPrimitive: () => undefined,
           detachPrimitive: () => {
@@ -813,6 +816,72 @@ describe('B1/B2 — the drawing seam', () => {
     // And the teardown crosses the port in the same order, with no drawing layer to detach.
     inert.unmount();
     expect(recording.teardown[recording.teardown.length - 1]).toBe('chart.remove');
+  });
+
+  it('MAGNET-01, MAGNET-05 — a host that says nothing about the magnet gets free placement', () => {
+    // The reported pain is being stuck ON with no way out, so the absent prop cannot mean "on".
+    // The bar under the pointer has its high at 110 and its close at 105; the answer is neither.
+    const { binding, log } = fakeBinding();
+    render(
+      <ChartSurface
+        engine={fakeEngine().engine}
+        convention={CONVENTION}
+        data={{ bars: BARS, panes: [view(RATE)], read, pricePane: PRICE }}
+        layout={{ heightPx: 480 }}
+        a11y={{ label: 'workspace', describedBy: 'state' }}
+        drawing={{ binding }}
+      />,
+    );
+
+    expect(log.hosts[0].snapPrice({ time: BARS[0].time, price: 109 })).toBe(109);
+  });
+
+  it('MAGNET-01 — with the magnet on, the anchor resolves to the bar value under the pointer', () => {
+    const { binding, log } = fakeBinding();
+    render(
+      <ChartSurface
+        engine={fakeEngine().engine}
+        convention={CONVENTION}
+        data={{ bars: BARS, panes: [view(RATE)], read, pricePane: PRICE }}
+        layout={{ heightPx: 480 }}
+        a11y={{ label: 'workspace', describedBy: 'state' }}
+        drawing={{ binding, magnet: 'on' }}
+      />,
+    );
+
+    expect(log.hosts[0].snapPrice({ time: BARS[0].time, price: 109 })).toBe(110);
+  });
+
+  it('MAGNET-05 — the threshold defaults to eight pixels, measured against its own sentence', () => {
+    // THE NUMBER, NOT A NUMBER. The low is 95; eight price units below it is eight pixels on this
+    // scale and must snap, nine must not, and a host asking for nine gets the nine. Without all
+    // three the default could be any value at all and nothing here would say so.
+    const wide = fakeBinding();
+    render(
+      <ChartSurface
+        engine={fakeEngine().engine}
+        convention={CONVENTION}
+        data={{ bars: BARS, panes: [view(RATE)], read, pricePane: PRICE }}
+        layout={{ heightPx: 480 }}
+        a11y={{ label: 'workspace', describedBy: 'state' }}
+        drawing={{ binding: wide.binding, magnet: 'on', snapThresholdPx: 9 }}
+      />,
+    );
+    const byDefault = fakeBinding();
+    render(
+      <ChartSurface
+        engine={fakeEngine().engine}
+        convention={CONVENTION}
+        data={{ bars: BARS, panes: [view(RATE)], read, pricePane: PRICE }}
+        layout={{ heightPx: 480 }}
+        a11y={{ label: 'workspace', describedBy: 'state' }}
+        drawing={{ binding: byDefault.binding, magnet: 'on' }}
+      />,
+    );
+
+    expect(byDefault.log.hosts[0].snapPrice({ time: BARS[0].time, price: 87 })).toBe(95);
+    expect(byDefault.log.hosts[0].snapPrice({ time: BARS[0].time, price: 86 })).toBe(86);
+    expect(wide.log.hosts[0].snapPrice({ time: BARS[0].time, price: 86 })).toBe(95);
   });
 
   it('refuses to attach without the price pane — drawings are priced off the candle scale', () => {

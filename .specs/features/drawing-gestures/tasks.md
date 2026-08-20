@@ -238,7 +238,7 @@ T12 → T13
 
 ---
 
-### T6: Publish the magnet on the surface prop group
+### T6: Publish the magnet on the surface prop group — DONE
 
 **What**: `SurfaceDrawing` gains `magnet` and `snapThresholdPx`; the surface passes bars, mode and threshold to the seam hook.
 **Where**: `src/react/surface/ChartSurface.tsx`
@@ -252,13 +252,13 @@ T12 → T13
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] `magnet` absent behaves exactly as `'off'`
-- [ ] `snapThresholdPx` absent defaults to 8
-- [ ] Both are destructured at the door, never passed as a group into a dependency list
-- [ ] `test/gates/propCount.spec.ts` still passes (the fields go inside the existing group)
-- [ ] `test/chartSurface.spec.tsx` extended for the default and the on case
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] `magnet` absent behaves exactly as `'off'`
+- [x] `snapThresholdPx` absent defaults to 8
+- [x] Both are destructured at the door, never passed as a group into a dependency list
+- [x] `test/gates/propCount.spec.ts` still passes (the fields go inside the existing group)
+- [x] `test/chartSurface.spec.tsx` extended for the default and the on case
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
