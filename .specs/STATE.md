@@ -17,35 +17,48 @@
 
 ## Handoff
 
-**Branch:** `feat/standalone-library`. PR #1 open against master. **Tree is NOT clean** — see below.
+**Branch:** `feat/standalone-library`, tree clean at `b75e0a5`. PR #1 open against master.
+**Green, measured:** `npm test` 103 suites / 1255 tests · `node scripts/size-gate.mjs` exit 0 ·
+`node scripts/verify-package-paths.mjs` exit 0 · `npm run e2e` 41/41 (baseline; the feature's own
+e2e checks are T12, unrun).
 
-**Uncommitted, and not mine:** a complete, green `0.1.1` reseed fix is sitting unstaged —
-`src/port/seedTransaction.ts`, `src/port/scopeMachine.ts`, `src/react/CompactCell.tsx`,
-`src/react/useCandleLane.ts`, `test/reseed.spec.ts` (untracked), plus CHANGELOG, two docs and the
-version bump. `npx jest test/reseed.spec.ts` is 8/8. It belongs to a session that ended before
-committing. **It must be committed or stashed before drawing-gestures executes** — the Verifier's
-discrimination sensor needs a porcelain baseline it can restore to.
+**The 0.1.1 reseed work is COMMITTED** (`2817b49`). It had been left unstaged AND unmeasured — its
+own 8 tests passed while the size gate was red, because the repair grew the bundle and neither
+ledger was re-pinned. Both re-pinned with named reasons in the same commit.
 
-**drawing-gestures is through DESIGN and TASKS.** `spec.md` amended (MAGNET-02/03/04 now say
-"resolve the anchor's price to", because the library owns the rule and the binding owns the
-placement — the old wording asked for something the architecture forbids). `design.md` written,
-`tasks.md` written: 13 tasks / 5 phases, `validate_spec` exit 0, `validate_tasks` exit 0.
+**drawing-gestures: 17 of 20 tasks done.** T1-T10 and T14-T20 are committed. Phase 6 (T14-T20) came
+out of an adversarial review of batch 1 that raised 16 findings and confirmed 12.
 
-**Next step:** owner approval of `tasks.md`, then Execute in 2 batches (T1-T7, T8-T13), then the
-Verifier. Skills declared per task: `ecc:react-patterns` (T5, T6, T8, T9), `ecc:e2e-testing` (T12).
+**The review's headline, and it is a method lesson:** `DrawingRailProvider`'s wrapper silently
+dropped `anchorAt`, so `attachAxisLock` never attached through `ChartWorkspace` — DRAG-01, the whole
+reason the feature exists, was inert with 1234 tests green and every gate passing. Fixed in
+`948f055`. The suite tests these modules in isolation and almost never through the composition a
+host actually mounts. **T12's browser check is load-bearing, not a formality.**
 
-**Two gates constrain every task and are easy to trip:** `commentBudget.spec.ts` fails any
-`docs/<file>.md#<anchor>` written in `src/` that does not resolve to a real heading — which is why
-T1 writes the prose first — and `fileSize.spec.ts` caps a `src/` file at 350 code lines.
+**BLOCKED: T11, and it needs the owner.** The magnet's control cannot reach a host as designed.
+`example/App.tsx` would need `useDrawingRail()`, the demo imports the package BY NAME through the
+`exports` map, and publishing that hook fails `test/chartWorkspace.spec.tsx:1109`
+(`composedExports(indexText)` must equal `['ChartWorkspace']`). A judge panel scored four routes and
+recommends the rail drawing the magnet itself, with the host supplying only the word through
+`DrawingToolbarLabels` — the pattern the rail already uses for cursor, delete-selection and
+clear-all. It is BREAKING for a published type, which is why it waits.
 
-**Open, not blocking, and belonging to the library rather than the example:**
+**Correct an error before reusing it:** the entry DOES publish hooks — `useHoverDismiss` and
+`useHoverIntent` (`src/index.ts:277-282`), under a written principle at
+`entry.md#pointer-intent-is-published`. A grep for `^export {.*use[A-Z]` misses them because the
+export spans lines.
 
-1. The price legend labels overlay studies `Study` and shows `—` for unoccupied slots.
-   `resolveSources` fills a labels map that `laneViews` applies through `relabelled`; the price pane
-   gets no such pass.
-2. A lane series is always `shape: 'line'` (`src/catalogue/lanes.ts:38`), so a source's declared
-   shape and colour never reach a lane.
-3. The `ecc-tools/lightweight-magic-charts-1786905841474` branch is still on the remote. PR #2 is
-   closed; the branch deletion was refused by the tool classifier and needs the owner.
-4. After `0.1.0` publishes, move to npm trusted publishing and revoke the token — it can only be
-   configured once the package exists.
+**Open, not blocking:**
+
+1. **New defect, tested and deliberately not fixed:** the axis lock releases on `blur`, the price
+   alert layer does not. A tab switch mid-gesture frees the axes with an alert drag still in flight.
+   Reachable with no drawing layer at all, so it is the alert layer's defect and deserves its own
+   task. Recorded in `test/priceAlertLayer.spec.tsx`.
+2. `test/gates/sizeBudget.spec.ts` fails in a fresh worktree because `dist/` is absent — three
+   reviewers hit it independently. A real CI trap nobody has filed.
+3. The gates cite AD-011, AD-012 and AD-016, but this table stops at AD-010. The decision log and
+   the gates disagree about what has been decided.
+4. The price legend labels overlay studies `Study` and shows `—` for unoccupied slots.
+5. A lane series is always `shape: 'line'` (`src/catalogue/lanes.ts:38`).
+6. The `ecc-tools/lightweight-magic-charts-1786905841474` branch is still on the remote.
+7. After publish, move to npm trusted publishing and revoke the token.
