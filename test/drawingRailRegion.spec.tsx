@@ -298,3 +298,49 @@ describe('the drawing rail region', () => {
     noise.mockRestore();
   });
 });
+
+/**
+ * THE MAGNET IS A MODE, AND THE MODE HAS ONE HOME.
+ *
+ * The provider is asserted to hold it and to render nothing about it. A provider that grew its own
+ * toggle would put the library's words on a host's screen, and a second copy of the mode anywhere
+ * would disagree with this one the first time a keyboard shortcut wrote to it.
+ */
+function MagnetProbe(): ReactElement {
+  const { magnet, setMagnet } = useDrawingRail();
+  return (
+    <button type="button" data-testid="magnet-probe" onClick={() => setMagnet('on')}>
+      {magnet}
+    </button>
+  );
+}
+
+function MagnetHarness(): ReactElement {
+  return (
+    <WorkspaceChromeProvider>
+      <DrawingRailProvider vocabulary={VOCABULARY} market="BTCUSDT">
+        <MagnetProbe />
+      </DrawingRailProvider>
+    </WorkspaceChromeProvider>
+  );
+}
+
+describe('the rail provider holds the magnet mode', () => {
+  it('reads OFF on the first render, because the library never defaults to the complaint', () => {
+    render(<MagnetHarness />);
+    expect(screen.getByTestId('magnet-probe')).toHaveTextContent('off');
+  });
+
+  it('flips to ON when a consumer writes it, and the consumer sees the new value', () => {
+    render(<MagnetHarness />);
+    fireEvent.click(screen.getByTestId('magnet-probe'));
+    expect(screen.getByTestId('magnet-probe')).toHaveTextContent('on');
+  });
+
+  it('renders no control and no glyph of its own: the whole DOM belongs to the consumer', () => {
+    const view = render(<MagnetHarness />);
+    expect(view.container.innerHTML).toBe(
+      '<button type="button" data-testid="magnet-probe">off</button>',
+    );
+  });
+});

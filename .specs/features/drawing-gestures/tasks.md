@@ -294,7 +294,7 @@ T12 → T13
 
 ---
 
-### T8: The mode's home in the rail provider
+### T8: The mode's home in the rail provider — DONE
 
 **What**: `DrawingRailProvider` holds `magnet` state and exposes `magnet` + `setMagnet` on `DrawingRailValue`, defaulting to `'off'`.
 **Where**: `src/react/workspace/DrawingRail.tsx`
@@ -308,13 +308,14 @@ T12 → T13
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] `useDrawingRail().magnet` is `'off'` on first render
-- [ ] `setMagnet('on')` flips it and re-renders consumers
-- [ ] The provider renders no control and no label of its own
-- [ ] `test/gates/memoisation.spec.tsx` and `test/gates/wording.spec.ts` still pass
-- [ ] `test/drawingRail.spec.tsx` extended for the default and the flip
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] `useDrawingRail().magnet` is `'off'` on first render
+- [x] `setMagnet('on')` flips it and re-renders consumers
+- [x] The provider renders no control and no label of its own
+- [x] `test/gates/memoisation.spec.tsx` and `test/gates/wording.spec.ts` still pass
+- [x] `test/drawingRailRegion.spec.tsx` extended for the default and the flip — the provider's own
+      suite, where `DrawingRailProvider` already lives; `test/drawingRail.spec.tsx` is the toolbar's
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + 3 tests pass (1234 -> 1237, no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
