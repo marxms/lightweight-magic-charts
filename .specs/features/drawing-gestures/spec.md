@@ -36,7 +36,7 @@ expressed at all.
 | An anchor can hold a time that is not a bar's time | **MEASURED — it cannot.** Free placement applies to PRICE only; the time axis stays quantised to bars | Probed against `lightweight-charts` in isolation, 10 bars one hour apart: `timeToCoordinate(bar)` = 258 px, `timeToCoordinate(bar + 30min)` = `null`, `timeToCoordinate(bar + 60s)` = `null`, and `coordinateToTime` at x, x+10 and x+20 all answer the same bar time. An off-bar anchor has no coordinate, so it would not render | y |
 | The magnet is OFF by default | Off | The reported pain is being stuck ON with no way out; a library that defaults to the complained-of behaviour has not fixed it | n |
 | What the magnet snaps to | The nearest bar's open, high, low or close — whichever is nearest in price | This is what TradingView's magnet does, and it is the behaviour the report names by comparison | n |
-| Where the mode lives | Library state, exposed on the drawing seam; the host renders its own control | The library owns composition and chrome, not vocabulary — consistent with `chrome.labels` and the drawing binding | n |
+| Where the mode lives | **DECIDED — library state on the drawing seam; the library DRAWS the control and the host NAMES it** | The rail already draws three fixed controls it authors entirely — cursor, delete-selection, clear-all — each with its glyph from the library and its word from `DrawingToolbarLabels`. The magnet is that same shape. Publishing `useDrawingRail` instead would freeze ten members of `DrawingRailValue` as public API to hand a host one boolean, and the hook throws outside a provider the host cannot mount. See AD-017 | y |
 | Axis lock trigger | The anchor hit-test the package already exposes | The package publishes no drag-start event; `_isDragging` is private and `drawing:updated` arrives only after the first movement | n |
 | How the snap threshold is expressed | **DESIGN — screen pixels, default 8** | A price-unit tolerance means something different at 60 000 than at 0.4, and different again after a zoom. The gesture is a screen gesture. `SeriesHandle.priceToCoordinate` is already on the port, so no new port surface | y |
 | How the engine-specific half reaches the library | **DESIGN — one optional predicate, `DrawingLayer.anchorAt`** | The lock is engine-agnostic except for the hit-test. Importing `lightweight-charts-drawing` to get it would break the zero-dependency manifest and AD-006 | y |
@@ -90,7 +90,8 @@ to the bar, so that I can mark an exact level or an arbitrary one.
    high, low or close, the library SHALL resolve the anchor's price to that bar value.
 4. WHILE the magnet is `on`, IF no bar value lies within the snap threshold, THEN the library SHALL
    resolve the anchor's price to the pointer's own price.
-5. WHERE a host supplies no magnet control, the library SHALL behave exactly as `off`.
+5. WHERE no control has flipped the mode, the library SHALL behave exactly as `off`; a
+   `DrawingToolbar` mounted without a magnet group SHALL draw no toggle.
 6. WHEN the magnet mode changes mid-gesture, the library SHALL apply the new mode to anchors placed
    after the change and SHALL NOT move anchors already placed.
 

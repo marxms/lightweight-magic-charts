@@ -78,8 +78,10 @@ T8 → T9
 
 ```
 T9 → T10
-T10 → T11
-T11 → T12
+T10 → T21
+T21 → T11
+T11 → T22
+T22 → T12
 ```
 
 ### Phase 5: The ledger
@@ -102,6 +104,16 @@ T14 → T17
 T17 → T18
 T18 → T19
 T19 → T20
+```
+
+### Phase 7: The defect Phase 6 surfaced and refused to smuggle
+
+T20 measured the two axis locks together and found them benign, but it uncovered a second thing it
+declined to fix inside another task's commit. Reachable with no drawing layer at all, so it is the
+price-alert layer's defect, not this feature's.
+
+```
+T20 → T23
 ```
 
 ---
@@ -397,13 +409,13 @@ T19 → T20
 
 ---
 
-### T11: The host's magnet control
+### T21: The labels contract names the magnet
 
-**What**: The example renders its own magnet toggle wired to `useDrawingRail().setMagnet`.
-**Where**: `example/App.tsx`
+**What**: `DrawingToolbarLabels` gains `magnet: string`, defaulted in the chrome labels object so a host that overrides nothing still gets a word.
+**Where**: `src/react/chrome/labels.ts`
 **Depends on**: T10
-**Reuses**: the existing `drawing={{ ... }}` prop and the chrome toggle primitive the demo already mounts
-**Requirement**: MAGNET-01, MAGNET-05
+**Reuses**: the existing `drawingToolbar` group and its default object
+**Requirement**: MAGNET-01
 **Skills**: none
 
 **Tools**:
@@ -411,14 +423,76 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] The toggle reads and writes the library's mode — it holds no copy of its own
-- [ ] It carries a `data-testid` the e2e scene can drive
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [ ] `DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar.magnet` supplies a default word
+- [ ] A host overriding through `chrome.labels` overrides only that field — `WorkspaceLabelOverrides` stays per-group `Partial`
+- [ ] `src/react/chrome/labels.ts` stays under 350 code lines
+- [ ] `test/chrome.spec.tsx` extended for the default and the override
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
 
-**Tests**: none
-**Gate**: build
+**Tests**: unit
+**Gate**: quick
 
-**Commit**: `feat(example): the demo offers the magnet as a control the host owns`
+**Commit**: `feat(chrome): the drawing toolbar labels name the magnet`
+
+---
+
+### T11: The rail draws the magnet
+
+**What**: `DrawingToolbar` renders the magnet as a two-state toggle beside delete-selection and clear-all. To make room under the 12-prop ceiling, the three drawing-edit props group into one `edits` group.
+**Where**: `src/react/DrawingToolbar.tsx`
+**Depends on**: T21
+**Reuses**: the `action()` helper and `IconButton` the rail already draws its three fixed controls with; `ChromeState { kind: 'toggle', pressed }`, which `chromeState.ts` already maps to `aria-pressed`
+**Requirement**: MAGNET-01, MAGNET-05
+**Skills**: `ecc:react-patterns`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:react-patterns`
+
+**Done when**:
+- [ ] `onDeleteSelection`, `onClearAll` and `drawingCount` group into one `edits` group: 12 → 10 top-level props
+- [ ] A `magnet?: { mode; onChange }` group is added: 11 declared, under the ceiling, and `test/gates/propCount.spec.ts` keeps its EMPTY baseline — do not touch `LIMIT`
+- [ ] The toggle carries `aria-pressed` reflecting the mode, and its accessible name comes from `labels.magnet` — no sentence enters `src/react`, so `test/gates/wording.spec.ts` stays green
+- [ ] The glyph is passed as a positional argument exactly as `⌫` and `🗑` are
+- [ ] **A `DrawingToolbar` mounted with no `magnet` group draws NO toggle** — this is MAGNET-05's second clause and it must have its own test
+- [ ] Every existing call site of the three regrouped props is updated
+- [ ] `test/drawingRail.spec.tsx` extended for the pressed state, the wiring and the absent group
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥3 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(drawing): the rail draws the magnet, and the host names it`
+
+---
+
+### T22: The rail region wires the mode to the toggle
+
+**What**: `DrawingRail` passes the mode and setter straight from `useDrawingRail()` into the toolbar's magnet group, and passes the regrouped `edits`.
+**Where**: `src/react/workspace/DrawingRail.tsx`
+**Depends on**: T11
+**Reuses**: the region already calls `useDrawingRail()` and already renders the toolbar
+**Requirement**: MAGNET-01, MAGNET-06
+**Skills**: `ecc:react-patterns`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:react-patterns`
+
+**Done when**:
+- [ ] The toggle holds no copy of the mode — it reads and writes the provider's state
+- [ ] `src/react/workspace/ChartWorkspace.tsx` is NOT touched; it sits at 347 of 350 code lines
+- [ ] Flipping the toggle changes what `ChartSurface` receives as `SurfaceDrawing.magnet`, asserted through the composed root
+- [ ] `test/drawingRailRegion.spec.tsx` extended
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `feat(drawing): the rail region wires the magnet toggle to the mode`
 
 ---
 
@@ -426,7 +500,7 @@ T19 → T20
 
 **What**: Two e2e scenes — a 200 px anchor drag that leaves the visible bar range unchanged, and an anchor placed with the magnet off then on.
 **Where**: `scripts/e2e-demo.mjs`
-**Depends on**: T11
+**Depends on**: T22
 **Reuses**: the `check()` helper, `freshPage`, `canvasChecksum` and the existing scene structure
 **Requirement**: DRAG-01, MAGNET-02, MAGNET-03
 **Skills**: ecc:e2e-testing
@@ -697,8 +771,10 @@ Phase 2:  T2 → T4
 Phase 3:  T7 → T8
           T8 → T9
 Phase 4:  T9 → T10
-          T10 → T11
-          T11 → T12
+          T10 → T21
+          T21 → T11
+          T11 → T22
+          T22 → T12
 Phase 5:  T12 → T13
 Phase 6:  T14 → T15
           T15 → T16
@@ -706,6 +782,7 @@ Phase 6:  T14 → T15
           T17 → T18
           T18 → T19
           T19 → T20
+Phase 7:  T20 → T23
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -726,7 +803,10 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T8: rail provider state | 1 provider | ✅ Granular |
 | T9: workspace forwarding | 1 component | ✅ Granular |
 | T10: binding halves | 1 file | ✅ Granular |
-| T11: host control | 1 file | ✅ Granular |
+| T21: labels field | 1 file | ✅ Granular |
+| T11: rail toggle | 1 component | ✅ Granular |
+| T22: region wiring | 1 component | ✅ Granular |
+| T23: alert blur release | 1 hook | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
 | T14: disposer release order | 1 module | ✅ Granular |
@@ -753,8 +833,11 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T8 | T7 | T7 → T8 | ✅ Match |
 | T9 | T8 | T8 → T9 | ✅ Match |
 | T10 | T9 | T9 → T10 | ✅ Match |
-| T11 | T10 | T10 → T11 | ✅ Match |
-| T12 | T11 | T11 → T12 | ✅ Match |
+| T21 | T10 | T10 → T21 | ✅ Match |
+| T11 | T21 | T21 → T11 | ✅ Match |
+| T22 | T11 | T11 → T22 | ✅ Match |
+| T23 | T20 | T20 → T23 | ✅ Match |
+| T12 | T22 | T22 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
 | T14 | None | (phase head) | ✅ Match |
 | T15 | T14 | T14 → T15 | ✅ Match |
@@ -782,7 +865,10 @@ No dependency points at a later phase.
 | T8 | Workspace component | unit | unit | ✅ OK |
 | T9 | Workspace component | unit | unit | ✅ OK |
 | T10 | Example / host binding | none | none | ✅ OK |
-| T11 | Example / host binding | none | none | ✅ OK |
+| T21 | Surface component (chrome) | unit | unit | ✅ OK |
+| T11 | Surface component | unit | unit | ✅ OK |
+| T22 | Workspace component | unit | unit | ✅ OK |
+| T23 | Surface hook | unit | unit | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
 | T14 | Pure library module | unit | unit | ✅ OK |
