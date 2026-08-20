@@ -331,9 +331,14 @@ describe('DRAG-05 — the surface attaches the lock and releases it before the l
 
     view.unmount();
 
-    // The release the layer fired on its way out reached nothing: one call in the log, the lock.
-    expect(log.duringDetach).toEqual(['applied=1']);
-    expect(log.applied).toEqual([{ handleScroll: false, handleScale: false }]);
+    // TWO CALLS BY THE TIME `detach()` RUNS, and that count is the ordering proof: the lock had
+    // already freed the axes on a chart still alive. `applied=1` here would mean the disposer went
+    // quiet and left the host a chart that can no longer be panned or zoomed.
+    expect(log.duringDetach).toEqual(['applied=2']);
+    expect(log.applied).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+    ]);
   });
 });
 

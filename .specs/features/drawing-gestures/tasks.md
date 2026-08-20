@@ -476,7 +476,7 @@ T19 → T20
 
 ---
 
-### T14: The disposer releases a live gesture before it stops listening
+### T14: The disposer releases a live gesture before it stops listening — DONE
 
 **What**: Invoke `pendingRelease` while `detached` is still false, so a disposer that runs on a live chart restores the axes; keep the guard for events arriving after teardown.
 **Where**: `src/drawing/axisLock.ts`
@@ -490,13 +490,13 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: press an anchor, run the disposer with the chart still alive, and assert the CURRENT code leaves `handleScroll`/`handleScale` at `false` — the test must fail before the fix
-- [ ] After the fix the same sequence records `[LOCKED, FREE]`
-- [ ] DRAG-05 still holds: a release arriving AFTER teardown makes no call on the disposed chart
-- [ ] Confirm and note in the docblock that `useChartTeardown` runs the seam cleanup while the chart is still alive — if it does not, say so and stop
-- [ ] `test/axisLock.spec.ts` extended for both directions
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] Reproduce first: press an anchor, run the disposer with the chart still alive, and assert the CURRENT code leaves `handleScroll`/`handleScale` at `false` — the test must fail before the fix
+- [x] After the fix the same sequence records `[LOCKED, FREE]`
+- [x] DRAG-05 still holds: a release arriving AFTER teardown makes no call on the disposed chart
+- [x] Confirm and note in the docblock that `useChartTeardown` runs the seam cleanup while the chart is still alive — if it does not, say so and stop
+- [x] `test/axisLock.spec.ts` extended for both directions
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

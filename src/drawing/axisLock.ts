@@ -52,8 +52,12 @@ export function attachAxisLock(host: AxisLockHost): () => void {
   host.container.addEventListener('mousedown', onDown, true);
 
   return () => {
-    detached = true;
+    // FREED FIRST, THEN DEAF. The seam's cleanup runs while the chart is STILL ALIVE: `ChartSurface`
+    // declares `useDrawingSeam` before `useChartTeardown`, React destroys cleanups in that order,
+    // and `chart.remove()` exists nowhere else. Setting `detached` first made the release a no-op,
+    // so a re-bind mid-press handed the host a chart whose axes never came back.
     pendingRelease?.();
+    detached = true;
     host.container.removeEventListener('mousedown', onDown, true);
   };
 }

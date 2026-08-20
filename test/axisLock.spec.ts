@@ -134,6 +134,10 @@ describe('DRAG-05 — a gesture that outlives the surface touches no disposed ch
   it('after the disposer, a late mouseup calls nothing and no listener is left behind', () => {
     // Going full screen unmounts the surface while the button is still down. The mouseup lands
     // afterwards against a chart the base library has already removed, which answers by throwing.
+    //
+    // THE DISPOSER ITSELF IS NOT THAT LATE EVENT. It runs one step ahead of `chart.remove()`, so it
+    // frees the axes on a live chart — the pair below. What DRAG-05 forbids is a THIRD call, and the
+    // exact-length match is what forbids it: the post-dispose mouseup and press add nothing.
     const it = harness(ON_ANCHOR);
     const dispose = attachAxisLock(it.host);
     press(it.canvas);
@@ -143,7 +147,10 @@ describe('DRAG-05 — a gesture that outlives the surface touches no disposed ch
     window.dispatchEvent(new MouseEvent('mouseup'));
     press(it.canvas);
 
-    expect(it.calls).toEqual([{ handleScroll: false, handleScale: false }]);
+    expect(it.calls).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+    ]);
     expect(it.hits).toHaveLength(1);
   });
 });
@@ -190,5 +197,41 @@ describe('DRAG-06 — a press that is not on an anchor leaves panning alone', ()
     expect(escaped).toEqual([]);
     window.removeEventListener('error', onError);
     dispose();
+  });
+});
+
+describe('DRAG-02 — the disposer frees a chart that is still alive', () => {
+  // WHY THE DISPOSER IS A LIVE-CHART PATH, not a disposed-chart one. `ChartSurface` calls
+  // `useDrawingSeam` at line 238 and `useChartTeardown` at line 277, and React destroys effect
+  // cleanups in declaration order — the reason `useChartTeardown.ts:1` says it is declared last.
+  // `chart.remove()` for this chart exists nowhere else, and that teardown effect depends only on
+  // a ref and a `useCallback([])`, so it never re-runs. The seam's cleanup therefore always fires
+  // while the chart is alive, and a disposer that skips the release freezes the axes for good.
+  it('a press still held when the seam re-binds ends free, not frozen', () => {
+    const it = harness(ON_ANCHOR);
+    const dispose = attachAxisLock(it.host);
+    press(it.canvas);
+
+    dispose();
+
+    expect(it.calls).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+    ]);
+  });
+
+  it('has already stopped listening by the time it has freed the chart', () => {
+    const it = harness(ON_ANCHOR);
+    const dispose = attachAxisLock(it.host);
+    press(it.canvas);
+
+    dispose();
+    window.dispatchEvent(new MouseEvent('mouseup'));
+    window.dispatchEvent(new Event('blur'));
+
+    expect(it.calls).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+    ]);
   });
 });
