@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
 import type { PriceAlert } from '../../alerts/priceAlerts';
+import { axes } from '../../drawing/axisLock';
 import type { Bar } from '../../domain/types';
 import type { ChartHandles, LiveHandles } from './chartHandles';
 
@@ -70,7 +71,7 @@ export function usePriceAlertLayer(
       if (lines === null || !lines.beginDrag(yOf(event))) return;
       event.preventDefault();
       event.stopPropagation();
-      live.current?.chart.applyOptions({ handleScroll: false, handleScale: false });
+      live.current?.chart.applyOptions(axes(false));
     };
     const onMove = (event: MouseEvent): void => {
       const lines = live.current?.alerts ?? null;
@@ -80,7 +81,7 @@ export function usePriceAlertLayer(
       const lines = live.current?.alerts ?? null;
       if (lines === null || !lines.isDragging()) return;
       lines.endDrag(outside(event));
-      live.current?.chart.applyOptions({ handleScroll: true, handleScale: true });
+      live.current?.chart.applyOptions(axes(true));
       changeRef.current?.(lines.all().map((alert) => alert.price));
     };
 

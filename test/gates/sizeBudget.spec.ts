@@ -83,13 +83,19 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `measured` lowers `limit` with it, by the equality asserted just below, and the probe fails on the
  * spot if the bundle does not fit. Down is the safe direction, and it is the direction a legitimate
  * shrinkage writes.
+ * RE-PINNED DOWN 2026-08-20, entry 104967 -> 104618 (-349 B), and DOWN is the direction this
+ * paragraph says is safe: the gesture modules gave their own bytes back so the magnet control could
+ * be wired without anything being raised. Every candidate was measured one at a time and every one
+ * paid; the per-candidate deltas are written in `size-budget.json`'s entry note. On a ZERO-SLACK row
+ * the limit descends with the measurement, which is the ratchet closing behind the shrinkage rather
+ * than banking it as slack.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104967,
+  '*': 104618,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

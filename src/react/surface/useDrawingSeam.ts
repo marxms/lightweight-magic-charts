@@ -55,13 +55,13 @@ export function useDrawingSeam(
         chart,
         series: anchor,
         container: host,
+        // SPREAD, and read at CALL time: `bars` and `thresholdPx` carry their own names across, and
+        // `magnet` is the one field the rule spells differently.
         snapPrice: (at) =>
           snapAnchorPrice({
+            ...snapRef.current,
+            ...at,
             mode: snapRef.current.magnet,
-            bars: snapRef.current.bars,
-            thresholdPx: snapRef.current.thresholdPx,
-            time: at.time,
-            price: at.price,
             priceToCoordinate: (price) => anchor.priceToCoordinate(price),
           }),
       },

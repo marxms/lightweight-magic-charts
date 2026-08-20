@@ -802,7 +802,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T24: The feature's own modules give the bytes back
+### T24: The feature's own modules give the bytes back — DONE
 
 **What**: Shrink `magnet.ts`, `axisLock.ts` and `useDrawingSeam.ts` without changing one observable behaviour, until the entry has room for the rest of the feature.
 **Where**: `src/drawing/magnet.ts`
@@ -816,13 +816,13 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Every candidate is MEASURED with `npm run build:esm && node scripts/size-gate.mjs`, one at a time, and the ones that measure at or near zero are reverted rather than kept. Estimates count for nothing
-- [ ] `npm test` stays at 103 suites / 1260 tests with **no test edited, weakened, skipped or deleted** — this is a refactor, and a test that had to change means behaviour changed
-- [ ] **No fix is undone.** `magnet.ts`'s finiteness guards and `axisLock.ts`'s release-before-deaf ordering and release `Set` each exist because an adversarial review found a real defect. Read the docblocks; they say what each guard prevents
-- [ ] The entry measures **at least 130 B below** its current 104967, leaving room for T25, T26, T22 and T23 with margin
-- [ ] Both ledgers move DOWN, named: `size-budget.json` and `MEASURED_AT_PIN` in `test/gates/sizeBudget.spec.ts`. A descending re-pin is what the ratchet is for
-- [ ] Report the measured delta per candidate in the commit body — the ones that measured nothing are the useful finding
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] Every candidate is MEASURED with `npm run build:esm && node scripts/size-gate.mjs`, one at a time, and the ones that measure at or near zero are reverted rather than kept. Estimates count for nothing
+- [x] `npm test` stays at 103 suites / 1260 tests with **no test edited, weakened, skipped or deleted** — this is a refactor, and a test that had to change means behaviour changed
+- [x] **No fix is undone.** `magnet.ts`'s finiteness guards and `axisLock.ts`'s release-before-deaf ordering and release `Set` each exist because an adversarial review found a real defect. Read the docblocks; they say what each guard prevents
+- [x] The entry measures **at least 130 B below** its current 104967, leaving room for T25, T26, T22 and T23 with margin
+- [x] Both ledgers move DOWN, named: `size-budget.json` and `MEASURED_AT_PIN` in `test/gates/sizeBudget.spec.ts`. A descending re-pin is what the ratchet is for
+- [x] Report the measured delta per candidate in the commit body — the ones that measured nothing are the useful finding
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: unit
 **Gate**: build

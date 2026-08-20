@@ -12,17 +12,29 @@ export interface AxisLockHost {
   readonly anchorAt: (point: { readonly x: number; readonly y: number }) => boolean;
 }
 
-const LOCKED = { handleScroll: false, handleScale: false };
-const FREE = { handleScroll: true, handleScale: true };
+/** The pair, written once. Both axes always move together, so one flag decides both. */
+export const axes = (free: boolean) => ({ handleScroll: free, handleScale: free });
+
+/**
+ * BOTH RELEASE EVENTS, registered and revoked through one call so the pair can never drift apart.
+ *
+ * On `window`, not the container: the drag that ends outside the chart is the common one, and `blur`
+ * covers the gesture abandoned by a tab switch. A frozen axis is worse than the defect being fixed.
+ */
+const listen = (op: 'addEventListener' | 'removeEventListener', release: () => void): void => {
+  window[op]('mouseup', release);
+  window[op]('blur', release);
+};
 
 export function attachAxisLock(host: AxisLockHost): () => void {
+  const { container } = host;
   let detached = false;
   // A SET AND NOT A SLOT: `blur` without a `mouseup` and the button down again puts two releases in
   // flight, and one slot can only ever reach the newer — the older pair outlived the disposer.
   const pendingReleases = new Set<() => void>();
 
   const grabsAnchor = (event: MouseEvent): boolean => {
-    const rect = host.container.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     try {
       return host.anchorAt({ x: event.clientX - rect.left, y: event.clientY - rect.top });
     } catch {
@@ -34,24 +46,20 @@ export function attachAxisLock(host: AxisLockHost): () => void {
   // CAPTURE PHASE: the only place this lands before the base library reads the same press in bubble.
   const onDown = (event: MouseEvent): void => {
     if (event.button !== 0 || !grabsAnchor(event)) return;
-    host.chart.applyOptions(LOCKED);
+    host.chart.applyOptions(axes(false));
     const release = (): void => {
-      window.removeEventListener('mouseup', release);
-      window.removeEventListener('blur', release);
+      listen('removeEventListener', release);
       pendingReleases.delete(release);
       // A gesture can outlive the component. Unlocking a chart the base library already disposed
       // means nothing, so the orphaned gesture just dissolves.
       if (detached) return;
-      host.chart.applyOptions(FREE);
+      host.chart.applyOptions(axes(true));
     };
     pendingReleases.add(release);
-    // On `window`, not the container: the drag that ends outside the chart is the common one, and
-    // `blur` covers the gesture abandoned by a tab switch. A frozen axis is worse than the defect.
-    window.addEventListener('mouseup', release);
-    window.addEventListener('blur', release);
+    listen('addEventListener', release);
   };
 
-  host.container.addEventListener('mousedown', onDown, true);
+  container.addEventListener('mousedown', onDown, true);
 
   return () => {
     // FREED FIRST, THEN DEAF. The seam's cleanup runs while the chart is STILL ALIVE: `ChartSurface`
@@ -61,6 +69,6 @@ export function attachAxisLock(host: AxisLockHost): () => void {
     // Over a SNAPSHOT: each release deletes itself from the set as it runs.
     for (const release of [...pendingReleases]) release();
     detached = true;
-    host.container.removeEventListener('mousedown', onDown, true);
+    container.removeEventListener('mousedown', onDown, true);
   };
 }
