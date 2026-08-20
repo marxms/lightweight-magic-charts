@@ -89,7 +89,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104485,
+  '*': 104528,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

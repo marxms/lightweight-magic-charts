@@ -200,6 +200,14 @@ export type {
   DrawingSurfaceHost,
 } from './drawing/drawingLayer';
 
+// The two halves of a drawing gesture the library owns. The binding brings the hit-test and the
+// moment; everything engine-agnostic ships here.
+// See docs/explanation/drawing.md#the-axis-lock-is-the-librarys-half-of-the-drag
+export type { AxisLockHost } from './drawing/axisLock';
+export { attachAxisLock } from './drawing/axisLock';
+export type { MagnetMode, SnapInput } from './drawing/magnet';
+export { snapAnchorPrice } from './drawing/magnet';
+
 // The one module-scope cache this package keeps, with its ceiling and its discard policy declared.
 export type { DrawingMemory } from './drawing/drawingMemory';
 export {

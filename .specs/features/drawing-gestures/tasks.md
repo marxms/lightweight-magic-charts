@@ -267,7 +267,7 @@ T12 → T13
 
 ---
 
-### T7: Export the new public surface
+### T7: Export the new public surface — DONE
 
 **What**: Export `MagnetMode`, `snapAnchorPrice`, `attachAxisLock` and `AxisLockHost` from the entry point.
 **Where**: `src/index.ts`
@@ -281,11 +281,11 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] Each symbol is importable from the package root
-- [ ] `test/boundary.spec.ts` passes
-- [ ] `node scripts/verify-package-paths.mjs` exits 0
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline tests pass (no silent deletions)
+- [x] Each symbol is importable from the package root
+- [x] `test/boundary.spec.ts` passes
+- [x] `node scripts/verify-package-paths.mjs` exits 0
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

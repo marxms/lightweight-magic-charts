@@ -111,6 +111,32 @@ export const pane: PaneSpec = {
 export const firstClose: number = bar.close;`,
   },
 
+  'drawing/axisLock': {
+    title: 'the axis lock, so pulling an anchor does not pan the chart',
+    summary: `The base library's pan handler and the drawing engine's drag handler hear the same press
+and both act, which makes a shape impossible to resize. \`attachAxisLock\` catches the press in capture
+phase and holds \`handleScroll\` and \`handleScale\` while an anchor is being pulled. The one thing it
+cannot know is whether a point is on an anchor, so the binding brings that predicate.`,
+    example: `import { attachAxisLock, type AxisLockHost } from 'lightweight-magic-charts';
+
+declare const host: AxisLockHost;
+
+export const unlock: () => void = attachAxisLock(host);`,
+  },
+
+  'drawing/magnet': {
+    title: 'where an anchor lands: the pointer, or the bar under it',
+    summary: `A pure rule, not a placement. Off resolves an anchor to the pointer's own price; on
+resolves it to the nearest of the bar's open, high, low or close within the threshold. The threshold
+is a SCREEN distance, because a price tolerance means one thing at 60 000 and another at 0.4.`,
+    example: `import { snapAnchorPrice, type MagnetMode, type SnapInput } from 'lightweight-magic-charts';
+
+declare const pointer: SnapInput;
+declare const mode: MagnetMode;
+
+export const price: number = snapAnchorPrice({ ...pointer, mode });`,
+  },
+
   'drawing/drawingLayer': {
     title: 'the seam a drawing library is plugged into',
     summary: `Five types and no implementation: the library owns the rail and the tool buttons, and the
