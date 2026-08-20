@@ -437,7 +437,7 @@ T20 → T23
 
 ---
 
-### T11: The rail draws the magnet
+### T11: The rail draws the magnet — DONE
 
 **What**: `DrawingToolbar` renders the magnet as a two-state toggle beside delete-selection and clear-all. To make room under the 12-prop ceiling, the three drawing-edit props group into one `edits` group.
 **Where**: `src/react/DrawingToolbar.tsx`
@@ -451,18 +451,24 @@ T20 → T23
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] `onDeleteSelection`, `onClearAll` and `drawingCount` group into one `edits` group: 12 → 10 top-level props
-- [ ] A `magnet?: { mode; onChange }` group is added: 11 declared, under the ceiling, and `test/gates/propCount.spec.ts` keeps its EMPTY baseline — do not touch `LIMIT`
-- [ ] The toggle carries `aria-pressed` reflecting the mode, and its accessible name comes from `labels.magnet` — no sentence enters `src/react`, so `test/gates/wording.spec.ts` stays green
-- [ ] The glyph is passed as a positional argument exactly as `⌫` and `🗑` are
-- [ ] **A `DrawingToolbar` mounted with no `magnet` group draws NO toggle** — this is MAGNET-05's second clause and it must have its own test
-- [ ] Every existing call site of the three regrouped props is updated
-- [ ] `test/drawingRail.spec.tsx` extended for the pressed state, the wiring and the absent group
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥3 tests pass (no silent deletions)
+- [x] `onDeleteSelection`, `onClearAll` and `drawingCount` group into one `edits` group: 12 → 10 top-level props
+- [x] A `magnet?: { mode; onChange }` group is added: 11 declared, under the ceiling, and `test/gates/propCount.spec.ts` keeps its EMPTY baseline — do not touch `LIMIT`
+- [x] The toggle carries `aria-pressed` reflecting the mode, and its accessible name comes from `labels.magnet` — no sentence enters `src/react`, so `test/gates/wording.spec.ts` stays green
+- [x] The glyph is passed as a positional argument exactly as `⌫` and `🗑` are
+- [x] **A `DrawingToolbar` mounted with no `magnet` group draws NO toggle** — this is MAGNET-05's second clause and it must have its own test
+- [x] Every existing call site of the three regrouped props is updated
+- [x] `test/drawingRail.spec.tsx` extended for the pressed state, the wiring and the absent group
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥3 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
+
+**Measured, and it changed the shape.** The magnet group's field names are `mode` and `onChange`
+as specified; the `edits` group's are `onDelete`, `onClear` and `count` rather than the three old
+prop names. The rename is not cosmetic: the entry's own ratchet
+(`test/gates/sizeBudget.spec.ts:404`) forbids the limit reaching `PROVISIONAL_ENTRY_LIMIT` = 104994,
+and the first shape measured 105005. The lean shape measures 104967.
 
 **Commit**: `feat(drawing): the rail draws the magnet, and the host names it`
 

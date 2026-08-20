@@ -235,6 +235,10 @@ describe('LMC-24 — a ceiling of 12 top-level props per component under src/rea
 
     // And the real example is still measured at the top level, under the same predicate.
     expect(real.find((c) => c.name === 'SeriesMenu')?.props).toBe(10);
+    // THE RAIL, for the same reason and by the same count. Its three edit props became one nested
+    // `edits` group, which is what freed the slot the magnet took: what a caller pays is eleven
+    // names, and the six fields inside the two groups are not among them.
+    expect(real.find((c) => c.name === 'DrawingToolbar')?.props).toBe(11);
   });
 
   it('fails any component outside the baseline that is over the ceiling', () => {

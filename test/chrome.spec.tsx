@@ -175,8 +175,7 @@ describe('DrawingToolbar', () => {
         tools={TOOLS}
         activeToolId={null}
         onSelect={() => undefined}
-        onClearAll={() => undefined}
-        drawingCount={3}
+        edits={{ onClear: () => undefined, count: 3 }}
       />,
     );
 

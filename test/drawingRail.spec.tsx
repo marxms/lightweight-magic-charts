@@ -23,6 +23,7 @@ import {
   type DrawingToolGroup,
   type DrawingToolOption,
 } from '../src/react/DrawingToolbar';
+import type { MagnetMode } from '../src/drawing/magnet';
 import { HOVER_CLOSE_DELAY_MS, HOVER_OPEN_DELAY_MS } from '../src/react/hoverIntent';
 
 const TOOLS: readonly DrawingTool[] = [
@@ -575,5 +576,66 @@ describe("DrawingToolbar — the flyout follows the rail's scrolling", () => {
     } finally {
       restore();
     }
+  });
+});
+
+
+describe('DrawingToolbar — the magnet is a two-state control the rail draws', () => {
+  /**
+   * The state has to be READABLE, not merely held. A toggle that flips a mode and looks identical
+   * either way tells a screen reader nothing and tells a sighted reader only what they remember
+   * doing, which is the same absence of a magnet the feature exists to remove.
+   */
+  it('reports the mode as `aria-pressed`, and takes its name from the label channel', () => {
+    const { view } = mount({ magnet: { mode: 'on', onChange: () => undefined } });
+
+    const toggle = screen.getByTestId('drawing-magnet');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    // The NAME is the host's word, never a sentence the component holds.
+    expect(toggle).toHaveAccessibleName('Magnet');
+
+    // CONTROL POSITIVE: the same control with the mode off reports the other value, so the
+    // attribute tracks the mode instead of being painted on.
+    view.rerender(
+      <DrawingToolbar
+        tools={TOOLS}
+        activeToolId={null}
+        onSelect={() => undefined}
+        magnet={{ mode: 'off', onChange: () => undefined }}
+      />,
+    );
+    expect(screen.getByTestId('drawing-magnet')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('asks for the OTHER mode on click, and holds no copy of the one it was given', () => {
+    const asked: MagnetMode[] = [];
+    const { view } = mount({ magnet: { mode: 'off', onChange: (mode) => asked.push(mode) } });
+
+    fireEvent.click(screen.getByTestId('drawing-magnet'));
+    expect(asked).toEqual(['on']);
+    // Still off: the control is told, and the mode is the caller's to change. A local copy would
+    // have flipped here and disagreed with the provider on the next render.
+    expect(screen.getByTestId('drawing-magnet')).toHaveAttribute('aria-pressed', 'false');
+
+    view.rerender(
+      <DrawingToolbar
+        tools={TOOLS}
+        activeToolId={null}
+        onSelect={() => undefined}
+        magnet={{ mode: 'on', onChange: (mode) => asked.push(mode) }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('drawing-magnet'));
+    expect(asked).toEqual(['on', 'off']);
+  });
+
+  it('draws NO toggle when the host brings no magnet group — the rail it had is the rail it keeps', () => {
+    mount();
+
+    expect(screen.queryByTestId('drawing-magnet')).toBeNull();
+    // CONTROL POSITIVE: the two fixed controls beside it are still drawn, so the absence above is
+    // the magnet being absent and not the rail failing to render its actions at all.
+    expect(screen.getByTestId('drawing-delete')).toBeInTheDocument();
+    expect(screen.getByTestId('drawing-clear')).toBeInTheDocument();
   });
 });

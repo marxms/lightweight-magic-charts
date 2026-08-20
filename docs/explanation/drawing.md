@@ -172,6 +172,22 @@ else again after a zoom. The gesture the user is performing is a screen gesture,
 a screen distance: eight pixels by default. `SeriesHandle.priceToCoordinate` is already on the chart
 port, so pixels cost no new port surface.
 
+**Where the control lives, and why the rail draws it.** The rail already authors three fixed
+controls end to end — cursor, delete-selection and clear-all — each with its glyph from the library
+and its word from `DrawingToolbarLabels`. The magnet is that same shape, so it goes in the same
+place: `DrawingToolbar` draws a two-state `IconButton`, `ChromeState { kind: 'toggle' }` turns the
+mode into `aria-pressed`, and `labels.magnet` supplies the name. Publishing `useDrawingRail` instead
+would have frozen ten members of `DrawingRailValue` as public API to hand a host one boolean, and
+that hook throws outside a provider a host cannot mount. A `DrawingToolbar` mounted with no `magnet`
+group draws no toggle at all, which is how a host that never asked for the magnet keeps the rail it
+had. See AD-017.
+
+**What the ceiling cost, and what it bought.** `DrawingToolbarProps` sat at exactly twelve top-level
+props, which is the ceiling `test/gates/propCount.spec.ts` holds. The magnet did not get a
+thirteenth: `onDeleteSelection`, `onClearAll` and `drawingCount` became one `edits` group — twelve
+down to ten — and the magnet took a slot that had to be freed rather than granted. The gate forced a
+better shape than the one being asked for, which is the gate working.
+
 **Why a tie goes to the higher price.** Two candidates equidistant from the pointer have to resolve
 somewhere, and "whichever the loop saw first" is an outcome nobody decided. The higher price wins,
 written down here so the next reader can rely on it instead of measuring it.

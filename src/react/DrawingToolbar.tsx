@@ -10,11 +10,13 @@ import {
   useState,
 } from 'react';
 
+import type { MagnetMode } from '../drawing/magnet';
 import { useChromeTheme } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { FlyoutMenu } from './chrome/FlyoutMenu';
 import { IconButton } from './chrome/IconButton';
 import { nextRovingIndex } from './chrome/rovingFocus';
+import type { ChromeState } from './chrome/slots';
 import { bucketDrawingTools } from './drawingToolBuckets';
 import type { DrawingToolGroup, DrawingToolOption } from './drawingToolBuckets';
 import { useHoverIntent } from './hoverIntent';
@@ -62,9 +64,22 @@ export interface DrawingToolbarProps {
   /** `null` = nothing armed, which is a state and not an absence. */
   readonly activeToolId: string | null;
   readonly onSelect: (id: string | null) => void;
-  readonly onDeleteSelection?: () => void;
-  readonly onClearAll?: () => void;
-  readonly drawingCount?: number;
+  /**
+   * The three edits, as ONE name: `onDeleteSelection`, `onClearAll` and `count` were three of the
+   * twelve top-level props the ceiling allows, and the magnet needed a slot the rail did not have.
+   */
+  readonly edits?: {
+    readonly onDelete?: () => void;
+    readonly onClear?: () => void;
+    /** Absent draws no readout; a rail with no count is not a rail counting zero. */
+    readonly count?: number;
+  };
+  /** Absent draws NO toggle: a host that never asked for the magnet gets the rail it had.
+   * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly magnet?: {
+    readonly mode: MagnetMode;
+    readonly onChange: (mode: MagnetMode) => void;
+  };
   /**
    * The height of the box the rail lives in — MEASURED by the host, never guessed here.
    * See docs/explanation/react.md#height-scrolling-and-the-flyout-anchor
@@ -89,9 +104,8 @@ export function DrawingToolbar({
   toolGroups,
   activeToolId,
   onSelect,
-  onDeleteSelection,
-  onClearAll,
-  drawingCount,
+  edits,
+  magnet,
   heightPx,
   orientation = 'vertical',
   labels = DEFAULT_DRAWING_TOOLBAR_LABELS,
@@ -135,6 +149,7 @@ export function DrawingToolbar({
     });
   }, [hover]);
 
+  const magnetOn = magnet?.mode === 'on';
   const armedId = (tool: DrawingTool): boolean =>
     tool.id === CURSOR_ID ? activeToolId === null : activeToolId === tool.id;
   /**
@@ -164,13 +179,20 @@ export function DrawingToolbar({
   const nameOf = (tool: DrawingTool): string =>
     tool.shortcut === undefined ? tool.label : `${tool.label} (${tool.shortcut})`;
 
-  const action = (label: string, glyph: string, id: string, onClick?: () => void): ReactElement => (
+  const action = (
+    label: string,
+    glyph: string,
+    id: string,
+    onClick?: () => void,
+    state?: ChromeState,
+  ): ReactElement => (
     // Disabled rather than hidden: a rail that changes size moves the control under the pointer.
     <IconButton
       label={label}
       theme={theme}
       disabled={onClick === undefined}
       onSelect={onClick}
+      state={state}
       testId={`${testIdPrefix}-${id}`}
     >
       {glyph}
@@ -271,14 +293,19 @@ export function DrawingToolbar({
         )}
 
         <div style={{ [vertical ? 'height' : 'width']: 8, flexShrink: 0 }} />
-        {action(labels.deleteSelection, '⌫', 'delete', onDeleteSelection)}
-        {action(labels.clearAll, '🗑', 'clear', onClearAll)}
-        {drawingCount === undefined ? null : (
+        {magnet !== undefined &&
+          action(labels.magnet, '⌖', 'magnet', () => magnet.onChange(magnetOn ? 'off' : 'on'), {
+            kind: 'toggle',
+            pressed: magnetOn,
+          })}
+        {action(labels.deleteSelection, '⌫', 'delete', edits?.onDelete)}
+        {action(labels.clearAll, '🗑', 'clear', edits?.onClear)}
+        {edits?.count === undefined ? null : (
           <div
             data-testid={`${testIdPrefix}-count`}
             style={{ fontSize: 10, opacity: 0.6, paddingTop: 4 }}
           >
-            {labels.count(drawingCount)}
+            {labels.count(edits.count)}
           </div>
         )}
       </div>
