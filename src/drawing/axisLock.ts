@@ -17,7 +17,9 @@ const FREE = { handleScroll: true, handleScale: true };
 
 export function attachAxisLock(host: AxisLockHost): () => void {
   let detached = false;
-  let pendingRelease: (() => void) | null = null;
+  // A SET AND NOT A SLOT: `blur` without a `mouseup` and the button down again puts two releases in
+  // flight, and one slot can only ever reach the newer — the older pair outlived the disposer.
+  const pendingReleases = new Set<() => void>();
 
   const grabsAnchor = (event: MouseEvent): boolean => {
     const rect = host.container.getBoundingClientRect();
@@ -36,13 +38,13 @@ export function attachAxisLock(host: AxisLockHost): () => void {
     const release = (): void => {
       window.removeEventListener('mouseup', release);
       window.removeEventListener('blur', release);
-      pendingRelease = null;
+      pendingReleases.delete(release);
       // A gesture can outlive the component. Unlocking a chart the base library already disposed
       // means nothing, so the orphaned gesture just dissolves.
       if (detached) return;
       host.chart.applyOptions(FREE);
     };
-    pendingRelease = release;
+    pendingReleases.add(release);
     // On `window`, not the container: the drag that ends outside the chart is the common one, and
     // `blur` covers the gesture abandoned by a tab switch. A frozen axis is worse than the defect.
     window.addEventListener('mouseup', release);
@@ -56,7 +58,8 @@ export function attachAxisLock(host: AxisLockHost): () => void {
     // declares `useDrawingSeam` before `useChartTeardown`, React destroys cleanups in that order,
     // and `chart.remove()` exists nowhere else. Setting `detached` first made the release a no-op,
     // so a re-bind mid-press handed the host a chart whose axes never came back.
-    pendingRelease?.();
+    // Over a SNAPSHOT: each release deletes itself from the set as it runs.
+    for (const release of [...pendingReleases]) release();
     detached = true;
     host.container.removeEventListener('mousedown', onDown, true);
   };

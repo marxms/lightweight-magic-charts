@@ -235,3 +235,60 @@ describe('DRAG-02 — the disposer frees a chart that is still alive', () => {
     ]);
   });
 });
+
+/**
+ * The `window` listeners added and not yet taken back, matched by type AND identity: two presses
+ * register two distinct `release` closures under the same two names, so counting names alone would
+ * report a leak as balanced.
+ */
+function stranded(add: jest.SpyInstance, remove: jest.SpyInstance): string[] {
+  const takenBack = remove.mock.calls as ReadonlyArray<readonly unknown[]>;
+  const matched = new Set<number>();
+  const live: string[] = [];
+  for (const call of add.mock.calls as ReadonlyArray<readonly unknown[]>) {
+    const at = takenBack.findIndex(
+      (back, index) => !matched.has(index) && back[0] === call[0] && back[1] === call[1],
+    );
+    if (at === -1) live.push(String(call[0]));
+    else matched.add(at);
+  }
+  return live;
+}
+
+describe('DRAG-05 — overlapping presses cannot strand a release listener', () => {
+  it('the disposer takes back the listeners of every press still held, not just the last', () => {
+    // A SLOT LOSES THE FIRST PRESS. `blur` fires without a `mouseup`, the button comes back down,
+    // and now two releases are live; a single-slot handle can only ever reach the newer one, so the
+    // older pair outlives the disposer and keeps a closure over a chart the host has finished with.
+    const it = harness(ON_ANCHOR);
+    const add = jest.spyOn(window, 'addEventListener');
+    const remove = jest.spyOn(window, 'removeEventListener');
+    const dispose = attachAxisLock(it.host);
+
+    press(it.canvas);
+    press(it.canvas);
+    dispose();
+
+    expect(stranded(add, remove)).toEqual([]);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
+  it('frees the chart once per press held, and never again after teardown', () => {
+    const it = harness(ON_ANCHOR);
+    const dispose = attachAxisLock(it.host);
+
+    press(it.canvas);
+    press(it.canvas);
+    dispose();
+    window.dispatchEvent(new MouseEvent('mouseup'));
+    window.dispatchEvent(new Event('blur'));
+
+    expect(it.calls).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+      { handleScroll: true, handleScale: true },
+    ]);
+  });
+});

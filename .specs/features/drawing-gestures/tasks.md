@@ -505,7 +505,7 @@ T19 → T20
 
 ---
 
-### T15: Overlapping presses cannot orphan a listener pair
+### T15: Overlapping presses cannot orphan a listener pair — DONE
 
 **What**: Hold the pending releases in a `Set` rather than one slot, so a second qualifying press cannot strand the first press's `mouseup`/`blur` pair past the disposer.
 **Where**: `src/drawing/axisLock.ts`
@@ -519,12 +519,12 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: two qualifying `mousedown`s with no release between them, then dispose; assert the CURRENT code leaves a `window` listener pair attached — the test must fail before the fix
-- [ ] After the fix, `window` listener count returns to its pre-attach value immediately after `dispose()`, asserted by spying `window.addEventListener`/`removeEventListener`
-- [ ] No `applyOptions` call reaches the chart after teardown on any of these paths
-- [ ] `test/axisLock.spec.ts` extended
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] Reproduce first: two qualifying `mousedown`s with no release between them, then dispose; assert the CURRENT code leaves a `window` listener pair attached — the test must fail before the fix
+- [x] After the fix, `window` listener count returns to its pre-attach value immediately after `dispose()`, asserted by spying `window.addEventListener`/`removeEventListener`
+- [x] No `applyOptions` call reaches the chart after teardown on any of these paths
+- [x] `test/axisLock.spec.ts` extended
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
