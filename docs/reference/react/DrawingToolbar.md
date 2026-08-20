@@ -43,7 +43,7 @@ changes in the code changes here.
 - **`DEFAULT_DRAWING_TOOLBAR_LABELS`** · value · `DrawingToolbarLabels`
 - **`DrawingTool`** · type · `interface DrawingTool { id: string; label: string; glyph: string; shortcut?: string | undefined }`
 - **`DrawingToolbar`** · value · `({ tools, allTools, toolGroups, activeToolId, onSelect, onDeleteSelection, onClearAll, drawingCount, heightPx, orientation, labels, testIdPrefix, }: DrawingToolbarProps) => ReactElement`
-- **`DrawingToolbarLabels`** · type · `interface DrawingToolbarLabels { group: string; cursor: string; deleteSelection: string; clearAll: string; allTools: string; otherTools: string; count: (drawings: number) => string }`
+- **`DrawingToolbarLabels`** · type · `interface DrawingToolbarLabels { group: string; cursor: string; deleteSelection: string; clearAll: string; magnet: string; allTools: string; otherTools: string; count: (drawings: number) => string }`
 - **`DrawingToolbarProps`** · type · `interface DrawingToolbarProps { tools: readonly DrawingTool[]; allTools?: readonly DrawingToolOption[] | undefined; toolGroups?: readonly DrawingToolGroup[] | undefined; activeToolId: string | null; onSelect: (id: string | null) => void; onDeleteSelection?: (() => void) | undefined; onClearAll?: (() => void) | undefined; drawingCount?: number | undefined; heightPx?: number | undefined; orientation?: 'vertical' | 'horizontal' | undefined; labels?: DrawingToolbarLabels | undefined; testIdPrefix?: string | undefined }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under

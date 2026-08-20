@@ -46,6 +46,8 @@ const VOCABULARY: DrawingVocabulary = {
     // non-english-fixture: a host label in another language — English here would prove nothing
     allTools: 'Todas as ferramentas',
     otherTools: 'Outras',
+    // non-english-fixture: a host label in another language — English here would prove nothing
+    magnet: 'Ímã',
     count: (drawings) => `${drawings} desenhos`,
   },
   shortcuts: { KeyT: 'trend-line' },

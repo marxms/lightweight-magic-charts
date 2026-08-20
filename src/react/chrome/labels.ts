@@ -243,6 +243,7 @@ export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
       cursor: 'Cursor',
       deleteSelection: 'Delete selected',
       clearAll: 'Clear all',
+      magnet: 'Magnet',
       allTools: 'All tools',
       otherTools: 'Other tools',
       count: (drawings) => `${drawings}`,

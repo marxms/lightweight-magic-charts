@@ -39,6 +39,8 @@ export interface DrawingToolbarLabels {
   readonly cursor: string;
   readonly deleteSelection: string;
   readonly clearAll: string;
+  /** Names the placement toggle. See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly magnet: string;
   /** Names the single flyout a host gets when it declares no families at all. */
   readonly allTools: string;
   /** Names the family of last resort: entries the host did not group, or grouped under no `toolGroups` id. */

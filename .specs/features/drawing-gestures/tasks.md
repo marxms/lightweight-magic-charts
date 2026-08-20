@@ -409,7 +409,7 @@ T20 → T23
 
 ---
 
-### T21: The labels contract names the magnet
+### T21: The labels contract names the magnet — DONE
 
 **What**: `DrawingToolbarLabels` gains `magnet: string`, defaulted in the chrome labels object so a host that overrides nothing still gets a word.
 **Where**: `src/react/chrome/labels.ts`
@@ -423,12 +423,12 @@ T20 → T23
 - Skill: NONE
 
 **Done when**:
-- [ ] `DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar.magnet` supplies a default word
-- [ ] A host overriding through `chrome.labels` overrides only that field — `WorkspaceLabelOverrides` stays per-group `Partial`
-- [ ] `src/react/chrome/labels.ts` stays under 350 code lines
-- [ ] `test/chrome.spec.tsx` extended for the default and the override
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] `DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar.magnet` supplies a default word
+- [x] A host overriding through `chrome.labels` overrides only that field — `WorkspaceLabelOverrides` stays per-group `Partial`
+- [x] `src/react/chrome/labels.ts` stays under 350 code lines
+- [x] `test/chrome.spec.tsx` extended for the default and the override
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
