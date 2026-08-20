@@ -38,6 +38,8 @@ expressed at all.
 | What the magnet snaps to | The nearest bar's open, high, low or close — whichever is nearest in price | This is what TradingView's magnet does, and it is the behaviour the report names by comparison | n |
 | Where the mode lives | Library state, exposed on the drawing seam; the host renders its own control | The library owns composition and chrome, not vocabulary — consistent with `chrome.labels` and the drawing binding | n |
 | Axis lock trigger | The anchor hit-test the package already exposes | The package publishes no drag-start event; `_isDragging` is private and `drawing:updated` arrives only after the first movement | n |
+| How the snap threshold is expressed | **DESIGN — screen pixels, default 8** | A price-unit tolerance means something different at 60 000 than at 0.4, and different again after a zoom. The gesture is a screen gesture. `SeriesHandle.priceToCoordinate` is already on the port, so no new port surface | y |
+| How the engine-specific half reaches the library | **DESIGN — one optional predicate, `DrawingLayer.anchorAt`** | The lock is engine-agnostic except for the hit-test. Importing `lightweight-charts-drawing` to get it would break the zero-dependency manifest and AD-006 | y |
 
 **Open questions:** none — all resolved or logged above.
 
@@ -82,12 +84,12 @@ to the bar, so that I can mark an exact level or an arbitrary one.
 **Acceptance Criteria**:
 
 1. The library SHALL expose the magnet as a two-state mode, `off` and `on`, defaulting to `off`.
-2. WHILE the magnet is `off`, WHEN an anchor is placed, the library SHALL use the pointer's own
-   price, not the price of any bar.
+2. WHILE the magnet is `off`, WHEN an anchor is placed, the library SHALL resolve the anchor's
+   price to the pointer's own price, not to the price of any bar.
 3. WHILE the magnet is `on`, WHEN an anchor is placed within the snap threshold of a bar's open,
-   high, low or close, the library SHALL use that bar value as the anchor's price.
+   high, low or close, the library SHALL resolve the anchor's price to that bar value.
 4. WHILE the magnet is `on`, IF no bar value lies within the snap threshold, THEN the library SHALL
-   use the pointer's own price.
+   resolve the anchor's price to the pointer's own price.
 5. WHERE a host supplies no magnet control, the library SHALL behave exactly as `off`.
 6. WHEN the magnet mode changes mid-gesture, the library SHALL apply the new mode to anchors placed
    after the change and SHALL NOT move anchors already placed.
@@ -127,18 +129,18 @@ recorded.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| DRAG-01 | P1: anchor drag does not pan | Design | Pending |
-| DRAG-02 | P1: anchor drag does not pan | Design | Pending |
-| DRAG-03 | P1: anchor drag does not pan | Design | Pending |
-| DRAG-04 | P1: anchor drag does not pan | Design | Pending |
-| DRAG-05 | P1: anchor drag does not pan | Design | Pending |
-| DRAG-06 | P1: anchor drag does not pan | Design | Pending |
-| MAGNET-01 | P2: the magnet is a mode | Design | Pending |
-| MAGNET-02 | P2: the magnet is a mode | Design | Pending |
-| MAGNET-03 | P2: the magnet is a mode | Design | Pending |
-| MAGNET-04 | P2: the magnet is a mode | Design | Pending |
-| MAGNET-05 | P2: the magnet is a mode | Design | Pending |
-| MAGNET-06 | P2: the magnet is a mode | Design | Pending |
+| DRAG-01 | P1: anchor drag does not pan | Tasks | Pending |
+| DRAG-02 | P1: anchor drag does not pan | Tasks | Pending |
+| DRAG-03 | P1: anchor drag does not pan | Tasks | Pending |
+| DRAG-04 | P1: anchor drag does not pan | Tasks | Pending |
+| DRAG-05 | P1: anchor drag does not pan | Tasks | Pending |
+| DRAG-06 | P1: anchor drag does not pan | Tasks | Pending |
+| MAGNET-01 | P2: the magnet is a mode | Tasks | Pending |
+| MAGNET-02 | P2: the magnet is a mode | Tasks | Pending |
+| MAGNET-03 | P2: the magnet is a mode | Tasks | Pending |
+| MAGNET-04 | P2: the magnet is a mode | Tasks | Pending |
+| MAGNET-05 | P2: the magnet is a mode | Tasks | Pending |
+| MAGNET-06 | P2: the magnet is a mode | Tasks | Pending |
 | MAGNET-07 | P3: the preview shows the magnet | - | Pending |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
