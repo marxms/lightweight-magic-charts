@@ -41,8 +41,8 @@ Seen once or not yet corroborated. Tracked, not trusted.
 ### L-005 - A threshold criterion must name its UNIT and whether the boundary is inclusive; 'within X' leaves the equality case to the implementation and lets a unit mismatch pass review.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `.specs/,thresholds` · harmful: 0
 - features: drawing-gestures
-- evidence: MAGNET-03 spec.md:89-90 (boundary silent) and spec.md:122-123 (tie named in price units while magnet.ts:59 measures pixels) (.specs/,thresholds)
-- last seen: 2026-08-20T12:59:33Z
+- evidence: MAGNET-03 spec.md:89-90 (boundary silent) and spec.md:122-123 (tie named in price units while magnet.ts:59 measures pixels) (.specs/,thresholds) (+1 more)
+- last seen: 2026-08-20T14:47:02Z
 
 ### L-006 - An OPTIONAL member wired at one call site is unsensed unless a composition test supplies a non-default value for it; when every test double answers the inert default, deleting the wiring typechecks and every gate stays green.
 - signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `src/react/,composition-wiring` · harmful: 0
@@ -59,8 +59,26 @@ Seen once or not yet corroborated. Tracked, not trusted.
 ### L-008 - An edge case must state the OUTCOME, not the mechanism it should copy; naming an implementation the layer cannot reach ('matching the pane-index guard') makes the criterion unverifiable against the code that has to satisfy it.
 - signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `.specs/,edge-cases` · harmful: 0
 - features: drawing-gestures
-- evidence: .specs/features/drawing-gestures/spec.md:124-125 (.specs/,edge-cases)
-- last seen: 2026-08-20T13:53:11Z
+- evidence: .specs/features/drawing-gestures/spec.md:124-125 (.specs/,edge-cases) (+1 more)
+- last seen: 2026-08-20T14:47:03Z
+
+### L-009 - A threshold criterion must name its UNIT and whether the boundary is inclusive; 'within X' leaves the equality case to the implementation and lets a unit swap pass review.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/acceptance-criteria` · harmful: 0
+- features: drawing-gestures
+- evidence: spec.md:89 vs src/drawing/magnet.ts:60 (spec/acceptance-criteria)
+- last seen: 2026-08-20T14:46:29Z
+
+### L-010 - An edge case must state the OUTCOME, not the mechanism it should copy; naming an implementation the layer cannot reach makes the sentence unverifiable even when the behaviour is right.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/edge-cases` · harmful: 0
+- features: drawing-gestures
+- evidence: spec.md:124-125 vs src/drawing/axisLock.ts:57-58 (spec/edge-cases)
+- last seen: 2026-08-20T14:46:29Z
+
+### L-011 - A tie-breaking rule must be written in the same unit the code compares in; a rule stated in domain units but measured in screen units agrees only on a linear scale and parts silently on a logarithmic one.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/edge-cases` · harmful: 0
+- features: drawing-gestures
+- evidence: spec.md:121-122 vs src/drawing/magnet.ts:59-61 (spec/edge-cases)
+- last seen: 2026-08-20T14:46:29Z
 
 ## Quarantined (failed when applied - ignore)
 

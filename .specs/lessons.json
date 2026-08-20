@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 9,
+  "next_id": 12,
   "lessons": [
     {
       "id": "L-001",
@@ -90,10 +90,11 @@
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        "MAGNET-03 spec.md:89-90 (boundary silent) and spec.md:122-123 (tie named in price units while magnet.ts:59 measures pixels) (.specs/,thresholds)"
+        "MAGNET-03 spec.md:89-90 (boundary silent) and spec.md:122-123 (tie named in price units while magnet.ts:59 measures pixels) (.specs/,thresholds)",
+        "spec.md:89 vs src/drawing/magnet.ts:60; test/chartSurface.spec.tsx:882-884 (spec/acceptance-criteria)"
       ],
       "created": "2026-08-20T12:59:33Z",
-      "last_seen": "2026-08-20T12:59:33Z"
+      "last_seen": "2026-08-20T14:47:02Z"
     },
     {
       "id": "L-006",
@@ -144,10 +145,65 @@
       "recurrence": 1,
       "harmful": 0,
       "evidence": [
-        ".specs/features/drawing-gestures/spec.md:124-125 (.specs/,edge-cases)"
+        ".specs/features/drawing-gestures/spec.md:124-125 (.specs/,edge-cases)",
+        "spec.md:124-125 vs src/drawing/axisLock.ts:57-58 (spec/edge-cases)"
       ],
       "created": "2026-08-20T13:53:11Z",
-      "last_seen": "2026-08-20T13:53:11Z"
+      "last_seen": "2026-08-20T14:47:03Z"
+    },
+    {
+      "id": "L-009",
+      "key": "spec_precision_gap::a threshold criterion must name its unit and whether the boundary is inclusive within x leaves the equality case to the implementation and lets a unit swap pass review",
+      "text": "A threshold criterion must name its UNIT and whether the boundary is inclusive; 'within X' leaves the equality case to the implementation and lets a unit swap pass review.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/acceptance-criteria",
+      "status": "candidate",
+      "features": [
+        "drawing-gestures"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:89 vs src/drawing/magnet.ts:60 (spec/acceptance-criteria)"
+      ],
+      "created": "2026-08-20T14:46:29Z",
+      "last_seen": "2026-08-20T14:46:29Z"
+    },
+    {
+      "id": "L-010",
+      "key": "spec_precision_gap::an edge case must state the outcome not the mechanism it should copy naming an implementation the layer cannot reach makes the sentence unverifiable even when the behaviour is right",
+      "text": "An edge case must state the OUTCOME, not the mechanism it should copy; naming an implementation the layer cannot reach makes the sentence unverifiable even when the behaviour is right.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/edge-cases",
+      "status": "candidate",
+      "features": [
+        "drawing-gestures"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:124-125 vs src/drawing/axisLock.ts:57-58 (spec/edge-cases)"
+      ],
+      "created": "2026-08-20T14:46:29Z",
+      "last_seen": "2026-08-20T14:46:29Z"
+    },
+    {
+      "id": "L-011",
+      "key": "spec_precision_gap::a tie breaking rule must be written in the same unit the code compares in a rule stated in domain units but measured in screen units agrees only on a linear scale and parts silently on a logarithmic one",
+      "text": "A tie-breaking rule must be written in the same unit the code compares in; a rule stated in domain units but measured in screen units agrees only on a linear scale and parts silently on a logarithmic one.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/edge-cases",
+      "status": "candidate",
+      "features": [
+        "drawing-gestures"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:121-122 vs src/drawing/magnet.ts:59-61 (spec/edge-cases)"
+      ],
+      "created": "2026-08-20T14:46:29Z",
+      "last_seen": "2026-08-20T14:46:29Z"
     }
   ]
 }
