@@ -277,7 +277,13 @@ const FREE = { handleScroll: true, handleScale: true };
 function locksOn(
   ledger: Ledger,
   binding: DrawingBinding | undefined,
-): { press: (y: number) => void; release: () => void } {
+  onLevelsChange?: (levels: readonly number[]) => void,
+): {
+  press: (y: number) => void;
+  release: () => void;
+  blur: () => void;
+  unmount: () => void;
+} {
   const view = render(
     <ChartSurface
       engine={draggableEngine(ledger)}
@@ -285,7 +291,7 @@ function locksOn(
       data={{ bars: BARS, panes: [], read, pricePane: PRICE }}
       layout={{ heightPx: 400 }}
       a11y={{ label: 'workspace', describedBy: 'state' }}
-      alerts={{ levels: [100] }}
+      alerts={{ levels: [100], onChange: onLevelsChange }}
       drawing={{ binding }}
     />,
   );
@@ -302,6 +308,17 @@ function locksOn(
     release: () => {
       act(() => {
         window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      });
+    },
+    /** The tab switch: the window loses focus with the button still down. */
+    blur: () => {
+      act(() => {
+        window.dispatchEvent(new Event('blur'));
+      });
+    },
+    unmount: () => {
+      act(() => {
+        view.unmount();
       });
     },
   };
@@ -361,5 +378,81 @@ describe('DRAG-02 — the two axis locks, measured together', () => {
     release();
 
     expect(axisWrites(ledger)).toEqual([LOCKED, LOCKED, FREE, FREE]);
+  });
+});
+
+/**
+ * DRAG-02 — THE ALERT DRAG SURVIVES A TAB SWITCH, and this is the defect the case above named and
+ * deliberately left standing: the drawing lock has released on `blur` since it was written and this
+ * layer had not, so a tab switch mid-gesture wrote the lock and never took it back.
+ *
+ * FILED WHERE IT BELONGS. Every case below mounts with NO drawing binding, so nothing but the alert
+ * layer is listening. A frozen axis reached with no drawing layer present is the alert layer's
+ * defect, whatever the two locks do when they overlap.
+ */
+describe('DRAG-02 — an abandoned alert drag gives the axes back', () => {
+  it('frees both axes when the window loses focus with the drag still in flight', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const reported: number[][] = [];
+    const { press, blur } = locksOn(ledger, undefined, (levels) => reported.push([...levels]));
+
+    press(100);
+    // The press engaged the lock, so what follows is about the RELEASE and not about the grab.
+    expect(axisWrites(ledger)).toEqual([LOCKED]);
+
+    blur();
+
+    // Before this fix the log ended right there, at LOCKED, with the drag still running.
+    expect(axisWrites(ledger)).toEqual([LOCKED, FREE]);
+    // And the drag ENDED: the level settled where it was left and was reported once. A release that
+    // freed the axes without settling would leave the layer dragging a level nobody is holding.
+    expect(reported).toEqual([[100]]);
+  });
+
+  it('SETTLES rather than discards, because the pointer never left the pane', () => {
+    // The distinction is not cosmetic: `endDrag(true)` REMOVES the level, and removal is the one
+    // outcome of this gesture a user cannot undo. A window losing focus is not a level being
+    // thrown off the pane.
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const reported: number[][] = [];
+    const { press, blur } = locksOn(ledger, undefined, (levels) => reported.push([...levels]));
+
+    press(100);
+    blur();
+
+    expect(reported).toEqual([[100]]);
+    expect(ledger.removed).toBe(0);
+  });
+
+  it('takes the blur listener back on unmount, so no handler outlives the mount', () => {
+    // Counted rather than inferred: after teardown `live.current` is null and every call the
+    // handler could make is already a no-op, so a leaked listener would leave no trace in the
+    // ledger at all. The registration is what has to be watched.
+    const added: unknown[] = [];
+    const removed: unknown[] = [];
+    const realAdd = window.addEventListener;
+    const realRemove = window.removeEventListener;
+    window.addEventListener = function patched(type: string, handler: never, options: never) {
+      if (type === 'blur') added.push(handler);
+      return realAdd.call(window, type, handler, options);
+    } as typeof window.addEventListener;
+    window.removeEventListener = function patched(type: string, handler: never, options: never) {
+      if (type === 'blur') removed.push(handler);
+      return realRemove.call(window, type, handler, options);
+    } as typeof window.removeEventListener;
+
+    try {
+      const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+      const { press, unmount } = locksOn(ledger, undefined);
+      press(100);
+      unmount();
+    } finally {
+      window.addEventListener = realAdd;
+      window.removeEventListener = realRemove;
+    }
+
+    // CONTROL POSITIVE: one was registered, so the equality below is not two empty lists agreeing.
+    expect(added).toHaveLength(1);
+    expect(removed).toEqual(added);
   });
 });

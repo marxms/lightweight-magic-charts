@@ -77,23 +77,37 @@ export function usePriceAlertLayer(
       const lines = live.current?.alerts ?? null;
       if (lines?.isDragging() === true) lines.dragTo(yOf(event), outside(event));
     };
-    const onUp = (event: MouseEvent): void => {
+    const settle = (discard: boolean): void => {
       const lines = live.current?.alerts ?? null;
       if (lines === null || !lines.isDragging()) return;
-      lines.endDrag(outside(event));
+      lines.endDrag(discard);
       live.current?.chart.applyOptions(axes(true));
       changeRef.current?.(lines.all().map((alert) => alert.price));
     };
+    const onUp = (event: MouseEvent): void => settle(outside(event));
+    /**
+     * THE GESTURE ABANDONED BY A TAB SWITCH, which used to end nowhere: the lock was written on the
+     * press and no `mouseup` ever arrived, so the axes stayed frozen with a drag still in flight.
+     * The drawing lock has released on `blur` since it was written; this layer had not, and it is
+     * reachable with no drawing layer mounted at all.
+     *
+     * It SETTLES rather than discards. The pointer never left the pane — the window lost focus —
+     * and reading that as "dragged off the pane" would delete a level the user merely stopped
+     * touching, which is the one outcome of this gesture that cannot be undone.
+     */
+    const onBlur = (): void => settle(false);
 
     // TRUE, and it is the feature's whole line: without it the chart wins and the drag becomes a pan.
     host.addEventListener('mousedown', onDown, true);
     // On WINDOW, not on the host: a drag that leaves the canvas must still track and still end.
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
+    window.addEventListener('blur', onBlur);
     return () => {
       host.removeEventListener('mousedown', onDown, true);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('blur', onBlur);
     };
     // Wired ONCE: the inputs are refs of stable identity, and the linter refuses refs in the list.
   }, [hostRef, live]);

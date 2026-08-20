@@ -20,6 +20,12 @@ turn off, so freehand placement between bars could not be expressed at all.
   A press that lands anywhere other than an anchor is left alone, so panning stays the default
   gesture. Proven in a real browser: a 200 px horizontal pull leaves the visible bar range
   byte-identical while the drawing's anchors move.
+- **An abandoned price-alert drag gives the axes back.** The drawing lock released on `blur` from
+  the day it was written and the alert layer did not, so a tab switch with a level still held wrote
+  the lock and never took it back — a frozen chart with a drag in flight, reachable with no drawing
+  layer mounted at all. The level SETTLES where it was left rather than being discarded: the pointer
+  never left the pane, and reading a lost focus as a level thrown off the pane would delete
+  something the user merely stopped touching.
 
 ### Added
 
@@ -72,7 +78,7 @@ optional prop, or a new optional label with a default.
 
 ### Size
 
-The entry moves from 103,007 B to **104,716 B** (+1,709 B), re-pinned in both ledgers with a named
+The entry moves from 103,007 B to **104,809 B** (+1,802 B), re-pinned in both ledgers with a named
 reason per step. 349 B of that came back out of this feature's own modules rather than out of
 unrelated code, measured one candidate at a time: the snap winner held in two scalars, one factory
 for the axis pair, one call for the release listeners, and the snap input built by spread. The hard

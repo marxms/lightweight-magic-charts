@@ -773,7 +773,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T23: The alert drag survives a tab switch
+### T23: The alert drag survives a tab switch — DONE
 
 **What**: The price-alert layer releases its axis lock on `blur`, as the drawing axis lock already does.
 **Where**: `src/react/surface/usePriceAlertLayer.ts`
@@ -787,13 +787,13 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] Reproduce first. Already done read-only against this layer's own harness: press a level at y=100, then `window.dispatchEvent(new Event('blur'))`, and the chart's `applyOptions` log ends at `{handleScroll: false, handleScale: false}` with `levels` reporting `[]` — the lock is written, never released, and the drag never settles. Re-establish that failing test in the suite before fixing
-- [ ] After the fix the same sequence restores both options and the drag ends
-- [ ] The listener is removed by the effect's cleanup, so no `blur` handler outlives the mount
-- [ ] Reachable with NO drawing layer mounted — the test proves it, so the defect is filed where it belongs
-- [ ] `test/priceAlertLayer.spec.tsx` extended
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] Reproduce first. Already done read-only against this layer's own harness: press a level at y=100, then `window.dispatchEvent(new Event('blur'))`, and the chart's `applyOptions` log ends at `{handleScroll: false, handleScale: false}` with `levels` reporting `[]` — the lock is written, never released, and the drag never settles. Re-establish that failing test in the suite before fixing
+- [x] After the fix the same sequence restores both options and the drag ends
+- [x] The listener is removed by the effect's cleanup, so no `blur` handler outlives the mount
+- [x] Reachable with NO drawing layer mounted — the test proves it, so the defect is filed where it belongs
+- [x] `test/priceAlertLayer.spec.tsx` extended
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
