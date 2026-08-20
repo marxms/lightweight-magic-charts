@@ -83,6 +83,13 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `measured` lowers `limit` with it, by the equality asserted just below, and the probe fails on the
  * spot if the bundle does not fit. Down is the safe direction, and it is the direction a legitimate
  * shrinkage writes.
+ * RE-PINNED 2026-08-20 to 104932 (+11 B): the pane reader got the throw guard its sibling already
+ * had. A throwing `pricePane` escaped the capture-phase handler — measured, ESCAPED=["Object is
+ * disposed"], which is what `chart.panes()` throws once the chart is disposed. A throw REFUSES the
+ * lock rather than falling back to the container the way `null` does, because `null` is an answer
+ * and a throw is a failure to answer; the reasoning is written at `src/drawing/axisLock.ts:38-54`.
+ * Only 11 B because both foreign reads now sit behind ONE guard, which deleted a clause and an
+ * `if` from `onDown`. The provisional ceiling is untouched, 62 B above.
  * RE-PINNED 2026-08-20 to 104921 (+112 B): the axis lock asks the chart WHICH PANE the press landed
  * in before it locks. A press on a study pane below the price pane froze the axes for a gesture that
  * was never a drag, because the hit-test reads container coordinates and answers about a point the
@@ -109,7 +116,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104921,
+  '*': 104932,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

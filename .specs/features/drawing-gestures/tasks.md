@@ -1079,7 +1079,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T33: The pane reader gets the throw guard its sibling already has
+### T33: The pane reader gets the throw guard its sibling already has — DONE
 
 **What**: Wrap `host.pricePane()` the way `host.anchorAt()` is wrapped, so a reader that throws costs one missed lock rather than escaping the capture handler.
 **Where**: `src/drawing/axisLock.ts`
@@ -1093,13 +1093,13 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: a `pricePane` that throws currently escapes the capture-phase handler — measured by the Verifier as `ESCAPED = ["Object is disposed"]`. The test must fail before the fix
-- [ ] After the fix, a throwing reader behaves like a missed lock, never an exception out of the handler — `chart.panes()` throws on a disposed chart and `attachAxisLock` is a published export
-- [ ] Decide and state whether a throwing reader falls back to the whole container or refuses the lock, and say why in the docblock — do not leave it incidental
-- [ ] The byte cost is measured and named in both ledgers. **The entry is at 104921 with 73 B under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised.** If the guard does not fit, recover the bytes inside this feature's own modules the way T24 did, and report what you took
-- [ ] `test/axisLock.spec.ts` extended
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] Reproduce first: a `pricePane` that throws currently escapes the capture-phase handler — measured by the Verifier as `ESCAPED = ["Object is disposed"]`. The test must fail before the fix. **Reproduced**: `test/axisLock.spec.ts:252` failed against the shipped code with `escaped` receiving `["Object is disposed"]`, and jsdom logged `Uncaught [Error: Object is disposed]`
+- [x] After the fix, a throwing reader behaves like a missed lock, never an exception out of the handler — `test/axisLock.spec.ts:278-279` asserts `expect(escaped).toEqual([])` **and** `expect(it.calls).toEqual([])`
+- [x] Decide and state whether a throwing reader falls back to the whole container or refuses the lock, and say why in the docblock — **DECIDED: a throw REFUSES the lock**, unlike `null`, which keeps the whole container. Reasoning at `src/drawing/axisLock.ts:47-53`: `null` is an ANSWER the port documents (that pane has no widget yet), while a throw is a FAILURE to answer, and the only thing known to throw here is `chart.panes()` on a disposed chart — keeping the container would then reach `applyOptions` on that same disposed chart one line below and put the crash straight back into the page
+- [x] The byte cost is measured and named in both ledgers. **The entry is at 104921 with 73 B under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised.** — **+11 B, 104921 → 104932**, so it FITS and nothing was recovered and no ceiling was touched: `PROVISIONAL_ENTRY_LIMIT` stays 104994 with 62 B above. Only 11 B because both foreign reads moved behind ONE guard, which deleted a clause and a standalone `if` from `onDown`. Named in `size-budget.json` (`entry.note`, measured and limit both re-pinned) and `test/gates/sizeBudget.spec.ts:86-92` + `MEASURED_AT_PIN['*']`
+- [x] `test/axisLock.spec.ts` extended — `:252-283`
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs` — build ok, 103 suites / 1276 tests, size-gate exit 0 (entry `104932 / 104932`), verify-package-paths exit 0. `npm run e2e` also re-run: 48/48
+- [x] Test count: baseline + ≥1 test passes (no silent deletions) — 1275 → 1276
 
 **Tests**: unit
 **Gate**: build

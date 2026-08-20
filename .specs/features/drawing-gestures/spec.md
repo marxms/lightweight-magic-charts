@@ -135,7 +135,7 @@ recorded.
 | DRAG-03 | P1: anchor drag does not pan | T3 | Done |
 | DRAG-04 | P1: anchor drag does not pan | T3 | Done |
 | DRAG-05 | P1: anchor drag does not pan | T3, T5, T15, T28 | Done |
-| DRAG-06 | P1: anchor drag does not pan | T3, T4, T16, T29, T32 | Done |
+| DRAG-06 | P1: anchor drag does not pan | T3, T4, T16, T29, T32, T33 | Done |
 | MAGNET-01 | P2: the magnet is a mode | T1, T6, T7, T8, T9, T21, T11, T26, T22 | Done |
 | MAGNET-02 | P2: the magnet is a mode | T2, T12 | Done |
 | MAGNET-03 | P2: the magnet is a mode | T2, T10, T12, T18, T19, T30 | Done |

@@ -35,27 +35,37 @@ export function attachAxisLock(host: AxisLockHost): () => void {
   // flight, and one slot can only ever reach the newer — the older pair outlived the disposer.
   const pendingReleases = new Set<() => void>();
 
+  /**
+   * BOTH FOREIGN READS BEHIND ONE GUARD — where the press landed, then whether it grabbed. Anchors
+   * live in the price pane only, so a press outside it grabs none by definition.
+   *
+   * WHERE, asked of the chart and never deduced: a study pane sits below the price pane inside the
+   * same container, and the hit-test reads CONTAINER coordinates — pressed down there it answers
+   * about a point the pointer is not on, and the axes freeze for a gesture that was never a drag.
+   * The pane's own element is the whole guard, so the library still knows nothing about drawings.
+   *
+   * `null` KEEPS THE CONTAINER, A THROW REFUSES, and they differ because they are not the same
+   * event. `null` is an ANSWER the port documents — that pane has no widget yet — and refusing on a
+   * read the chart has not caught up with is the very defect this file exists to fix. A throw is a
+   * FAILURE to answer, and the only thing known to throw here is `chart.panes()` on a disposed
+   * chart; keeping the container would then reach `applyOptions` on that same disposed chart one
+   * line below and put the crash back in the page. So an unreadable state costs one missed lock and
+   * never a crash — the contract the hit-test already had, now covering the reader beside it.
+   */
   const grabsAnchor = (event: MouseEvent): boolean => {
-    const rect = container.getBoundingClientRect();
     try {
+      const pane = host.pricePane?.() ?? null;
+      if (pane !== null && !pane.contains(event.target as Node)) return false;
+      const rect = container.getBoundingClientRect();
       return host.anchorAt({ x: event.clientX - rect.left, y: event.clientY - rect.top });
     } catch {
-      // A hit-test against a state the engine did not expect costs one missed lock, never a crash.
       return false;
     }
   };
 
   // CAPTURE PHASE: the only place this lands before the base library reads the same press in bubble.
   const onDown = (event: MouseEvent): void => {
-    // WHERE THE PRESS LANDED, asked of the chart and never deduced. A study pane sits below the
-    // price pane inside the same container, and the hit-test reads CONTAINER coordinates — pressed
-    // down there it answers about a point the pointer is not on, and the axes freeze for a gesture
-    // that was never a drag. The pane's own element is the whole guard, so the library still knows
-    // nothing about drawings. Unanswered keeps the container: refusing the lock on a read the chart
-    // has not caught up with is the very defect this file exists to fix.
-    const pane = host.pricePane?.() ?? null;
-    if (event.button !== 0 || (pane !== null && !pane.contains(event.target as Node))) return;
-    if (!grabsAnchor(event)) return;
+    if (event.button !== 0 || !grabsAnchor(event)) return;
     host.chart.applyOptions(axes(false));
     const release = (): void => {
       listen('removeEventListener', release);

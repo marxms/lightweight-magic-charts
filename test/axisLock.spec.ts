@@ -249,6 +249,38 @@ describe('DRAG-06 — a press outside the price pane leaves the axes alone', () 
     dispose();
   });
 
+  it('a pane reader that throws costs one missed lock, not an exception out of the handler', () => {
+    // THE SIBLING'S CONTRACT, applied to the reader that did not have it. `chart.panes()` is what
+    // the in-repo caller asks (`src/react/surface/useDrawingSeam.ts:82`), and the base library
+    // throws "Object is disposed" out of it once the chart is gone — reachable without the disposer
+    // ever running, because `attachAxisLock` is published for hosts composing their own surface.
+    //
+    // REFUSED, and not the container fallback `null` gets: the reasoning is at axisLock.ts:38-54.
+    const built = harness(ON_ANCHOR);
+    const it = {
+      ...built,
+      host: {
+        ...built.host,
+        pricePane: (): HTMLElement | null => {
+          throw new Error('Object is disposed');
+        },
+      },
+    };
+    const escaped: string[] = [];
+    const onError = (event: Event): void => {
+      escaped.push((event as ErrorEvent).message);
+    };
+    window.addEventListener('error', onError);
+    const dispose = attachAxisLock(it.host);
+
+    press(it.canvas);
+
+    expect(escaped).toEqual([]);
+    expect(it.calls).toEqual([]);
+    window.removeEventListener('error', onError);
+    dispose();
+  });
+
   it('a pane the chart cannot name yet costs no lock at all', () => {
     // `getHTMLElement()` answers `null` until that pane index has a widget — the port says so at
     // docs/explanation/port.md#gethtmlelement-is-the-gui-catch-up-read. Refusing to lock on an

@@ -21,7 +21,10 @@ turn off, so freehand placement between bars could not be expressed at all.
   gesture, and so is a press outside the price pane — a study pane sits below it in the same
   container, where the hit-test reads coordinates that are not the pointer's. Proven in a real
   browser: a 200 px horizontal pull leaves the visible bar range byte-identical while the drawing's
-  anchors move.
+  anchors move. Both reads the host supplies are guarded: a hit-test or a pane reader that THROWS —
+  `chart.panes()` does once the chart is disposed — costs one missed lock rather than an error in
+  the page. A pane the chart cannot name yet answers `null`, which is an answer and not a failure,
+  and keeps the whole container.
 - **An abandoned price-alert drag gives the axes back.** The drawing lock released on `blur` from
   the day it was written and the alert layer did not, so a tab switch with a level still held wrote
   the lock and never took it back — a frozen chart with a drag in flight, reachable with no drawing
@@ -97,8 +100,9 @@ optional prop, or a new optional label with a default.
 
 ### Size
 
-The entry moves from 103,007 B to **104,921 B** (+1,914 B), re-pinned in both ledgers with a named
-reason per step — the last of them the pane guard above, at 112 B. 349 B of that came back out of this feature's own modules rather than out of
+The entry moves from 103,007 B to **104,932 B** (+1,925 B), re-pinned in both ledgers with a named
+reason per step — the last of them the pane reader's throw guard, at 11 B, and the pane guard itself
+before it, at 112 B. 349 B of that came back out of this feature's own modules rather than out of
 unrelated code, measured one candidate at a time: the snap winner held in two scalars, one factory
 for the axis pair, one call for the release listeners, and the snap input built by spread. The hard
 cap — `lightweight-charts` under the same probe — is 195,761 B.
