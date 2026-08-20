@@ -587,7 +587,7 @@ T19 → T20
 
 ---
 
-### T18: The magnet fixtures discriminate the scale and the tie rule
+### T18: The magnet fixtures discriminate the scale and the tie rule — DONE
 
 **What**: Add a non-unity price-to-pixel slope so "the threshold is pixels, not price units" can fail, and reorder the tie fixture so the tie rule cannot be deleted green.
 **Where**: `test/magnet.spec.ts`
@@ -601,11 +601,11 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] A case with slope ≠ -1 exists; verified discriminating with `priceToCoordinate: (p) => 400 - 4 * p`, pointer `107.5`, `thresholdPx: 8` — real code answers `107.5`, the price-unit mutant answers `110`
-- [ ] The tie fixture is `{open: 110, high: 110, low: 100, close: 100}` at `price: 105`, so deleting the tie rule answers `100` where the real code answers `110`
-- [ ] Prove BOTH mutants die: apply each to `magnet.ts`, watch the suite fail, restore, and verify with `git status --porcelain`
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] A case with slope ≠ -1 exists; verified discriminating with `priceToCoordinate: (p) => 400 - 4 * p`, pointer `107.5`, `thresholdPx: 8` — real code answers `107.5`, the price-unit mutant answers `110`
+- [x] The tie fixture is `{open: 110, high: 110, low: 100, close: 100}` at `price: 105`, so deleting the tie rule answers `100` where the real code answers `110`
+- [x] Prove BOTH mutants die: apply each to `magnet.ts`, watch the suite fail, restore, and verify with `git status --porcelain`
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

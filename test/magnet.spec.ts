@@ -82,6 +82,20 @@ describe('MAGNET-03 — on resolves to the nearest bar value within the threshol
     // may win, and it is a different member of the quartet than above, so "nearest" does real work.
     expect(snapAnchorPrice(input({ price: 103.7 }))).toBe(105);
   });
+
+  it('measures the threshold in PIXELS, so a steeper scale puts the same prices out of reach', () => {
+    // THE ONE CASE THAT CAN TELL THE TWO UNITS APART. Everywhere else in this file the scale is one
+    // pixel per price unit, where a pixel threshold and a price threshold give the same answer for
+    // every input — so none of those cases would notice the tolerance being applied to the price
+    // difference instead of the screen distance. At four pixels to the unit they part company: the
+    // high and the close each sit `2.5` away in price and would qualify under a threshold of eight,
+    // while on the screen they are ten pixels away and neither does.
+    const price = snapAnchorPrice(
+      input({ price: 107.5, thresholdPx: 8, priceToCoordinate: (value) => 400 - 4 * value }),
+    );
+
+    expect(price).toBe(107.5);
+  });
 });
 
 describe('MAGNET-04 — nothing within the threshold leaves the price alone', () => {
@@ -99,6 +113,17 @@ describe('the edge cases the spec decides', () => {
     // Low and open sit at 100, high and close at 110, and the pointer is exactly between them. The
     // outcome is decided rather than incidental: without the rule it is whichever the loop met last.
     const tied: Bar = { time: TIME, open: 100, high: 110, low: 100, close: 110 };
+    expect(snapAnchorPrice(input({ bars: [tied], price: 105 }))).toBe(110);
+  });
+
+  it('resolves the tie to the higher price when the higher pair is met FIRST', () => {
+    // THE MIRROR OF THE CASE ABOVE, AND BOTH ARE NEEDED. The quartet is read open, high, low,
+    // close, so one ordering only ever catches one way of losing the rule. With the higher pair
+    // last, "keep the candidate already found" answers 110 as well and survives; with the higher
+    // pair first, "take the later candidate" answers 110 as well and survives. Only the two
+    // orderings together leave the tie rule nowhere to hide, and a tie decided by arrival order is
+    // exactly the incidental outcome the spec replaced with a decided one.
+    const tied: Bar = { time: TIME, open: 110, high: 110, low: 100, close: 100 };
     expect(snapAnchorPrice(input({ bars: [tied], price: 105 }))).toBe(110);
   });
 
