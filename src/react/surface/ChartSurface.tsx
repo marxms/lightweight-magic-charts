@@ -225,10 +225,14 @@ export function ChartSurface({
     };
   }, [handles, overlays]);
 
-  useDrawingSeam(handles, hostRef, drawings, activeDrawingTool, {
-    onCountChange: onDrawingCountChange,
-    onToolFinished: onDrawingToolFinished,
-  });
+  useDrawingSeam(
+    handles,
+    hostRef,
+    drawings,
+    activeDrawingTool,
+    { onCountChange: onDrawingCountChange, onToolFinished: onDrawingToolFinished },
+    { magnet: 'off', thresholdPx: 8, bars },
+  );
 
   usePriceAlertLayer(handles, live, hostRef, bars, priceAlerts, onPriceAlertsChange, onPriceAlertCrossed);
 

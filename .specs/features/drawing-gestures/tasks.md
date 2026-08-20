@@ -209,7 +209,7 @@ T12 → T13
 
 ---
 
-### T5: Wire the lock and the closure into the seam hook
+### T5: Wire the lock and the closure into the seam hook — DONE
 
 **What**: Call `attachAxisLock` when the layer implements `anchorAt`, unlock before `detach()`, and build the stable `snapPrice` closure over live refs.
 **Where**: `src/react/surface/useDrawingSeam.ts`
@@ -223,13 +223,13 @@ T12 → T13
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] The mount effect attaches the lock only when `layer.anchorAt` is defined
-- [ ] Cleanup unlocks **before** `layer.detach()`
-- [ ] The effect's dependency list does **not** gain bars, mode or threshold — a new bar must not re-attach the layer
-- [ ] `snapPrice` reads mode, threshold and bars at call time, so a mode changed mid-gesture applies to the next anchor only
-- [ ] `test/drawingSeam.spec.tsx` extended for each bullet above
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥4 tests pass (no silent deletions)
+- [x] The mount effect attaches the lock only when `layer.anchorAt` is defined
+- [x] Cleanup unlocks **before** `layer.detach()`
+- [x] The effect's dependency list does **not** gain bars, mode or threshold — a new bar must not re-attach the layer
+- [x] `snapPrice` reads mode, threshold and bars at call time, so a mode changed mid-gesture applies to the next anchor only
+- [x] `test/drawingSeam.spec.tsx` extended for each bullet above
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥4 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
