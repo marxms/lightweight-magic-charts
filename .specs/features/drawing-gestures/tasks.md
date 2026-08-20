@@ -541,7 +541,7 @@ and the first shape measured 105005. The lean shape measures 104967.
 
 ---
 
-### T13: Close the ledgers
+### T13: Close the ledgers — DONE
 
 **What**: CHANGELOG entry, size-budget ledger update, and the spec's traceability table marked Done.
 **Where**: `CHANGELOG.md`
@@ -555,10 +555,10 @@ and the first shape measured 105005. The lean shape measures 104967.
 - Skill: NONE
 
 **Done when**:
-- [ ] The entry names the defect fixed and the mode added, and states why neither is breaking
-- [ ] The size budget moved by a named amount in both ledgers, or did not move
-- [ ] `.specs/features/drawing-gestures/spec.md` traceability shows 13/13 mapped, Status Done
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] The entry names the defect fixed and the mode added, and states why neither is breaking
+- [x] The size budget moved by a named amount in both ledgers, or did not move
+- [x] `.specs/features/drawing-gestures/spec.md` traceability shows 13/13 mapped, Status Done
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build

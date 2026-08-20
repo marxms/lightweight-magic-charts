@@ -4,6 +4,80 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0 — 2026-08-20
+
+Two gestures a chart user arrives already knowing did not work. Resizing a drawing was impossible —
+pulling an anchor panned the chart underneath it, so the shape never reached where it was being
+taken. And every anchor landed on a bar boundary whether or not that was wanted, with no magnet to
+turn off, so freehand placement between bars could not be expressed at all.
+
+### Fixed
+
+- **An anchor drag moves the anchor and nothing else.** While a press holds a drawing anchor the
+  chart's `handleScroll` and `handleScale` are held at `false`, and both are restored on release —
+  including a release outside the container, a `blur` that abandons the gesture, and a surface that
+  unmounts mid-drag, which frees the axes without touching a chart the base library has disposed.
+  A press that lands anywhere other than an anchor is left alone, so panning stays the default
+  gesture. Proven in a real browser: a 200 px horizontal pull leaves the visible bar range
+  byte-identical while the drawing's anchors move.
+
+### Added
+
+- **The magnet, as a mode the user controls.** `off` and `on`, **defaulting to `off`** — a library
+  that defaults to the behaviour being complained about has not fixed it. With the magnet on, an
+  anchor placed within reach of a bar's open, high, low or close resolves to that value; with
+  nothing in reach, and with the magnet off, it resolves to the pointer's own price. A tie between
+  two bar values goes to the higher price, so the outcome is decided rather than incidental.
+  **Price only:** an off-bar time has no coordinate and would not render, which is measured in the
+  spec rather than assumed.
+- **The reach is a SCREEN distance, eight pixels by default.** A price-unit tolerance means one
+  thing at 60 000 and another at 0.4, and something different again after a zoom. The gesture is a
+  screen gesture.
+- **The rail draws the magnet and the host names it** — the same shape as the cursor, the
+  delete-selection and the clear-all controls it already draws, each with its glyph from the package
+  and its word from `DrawingToolbarLabels`. A `DrawingToolbar` mounted with no magnet group draws no
+  toggle, so a rail that never asked for one keeps the rail it had.
+- **`attachAxisLock`** and **`AxisLockHost`** — the whole drag lock except the hit-test, for a host
+  that composes its own surface instead of re-deriving it.
+- **`snapAnchorPrice`**, **`SnapInput`** and **`MagnetMode`** — the snap rule, pure and testable,
+  with no knowledge of pointers or React.
+- **`DrawingLayer.anchorAt?`** — the one engine-specific fact the package cannot know: is there an
+  anchor at this point? Optional, so a binding written before this release compiles and runs
+  unchanged; it simply goes without the lock.
+- **`DrawingSurfaceHost.snapPrice`** — the snap rule handed to the binding already bound to the live
+  bars, mode and reach, so the binding calls it where it currently uses the raw pointer price.
+- **`WorkspaceDrawingOptions.snapThresholdPx`** — the reach, and only the reach. The mode is
+  deliberately not a prop: it would hand the host a value the package must also write, and the two
+  would disagree the moment a shortcut armed it.
+- **`DrawingToolbarLabels.magnet`** — optional, with the published default supplying the word.
+
+### Changed
+
+- **BREAKING — `DrawingToolbarProps` regroups three props into one.** `onDeleteSelection`,
+  `onClearAll` and `drawingCount` are now `edits: { onDelete?, onClear?, count? }`. This is the one
+  break in this release, and it was forced rather than chosen: `test/gates/propCount.spec.ts` caps a
+  component at twelve top-level props and `DrawingToolbarProps` sat at exactly twelve, so the magnet
+  group took a slot that had to be freed. Breaking by the rule below, which counts narrowing what an
+  exported type accepts. A host migrates by moving three arguments into one object.
+
+  ```tsx
+  // before
+  <DrawingToolbar onDeleteSelection={remove} onClearAll={clear} drawingCount={count} … />
+  // after
+  <DrawingToolbar edits={{ onDelete: remove, onClear: clear, count }} … />
+  ```
+
+Nothing else here is breaking by the rule below: every other addition is a new export, a new
+optional prop, or a new optional label with a default.
+
+### Size
+
+The entry moves from 103,007 B to **104,716 B** (+1,709 B), re-pinned in both ledgers with a named
+reason per step. 349 B of that came back out of this feature's own modules rather than out of
+unrelated code, measured one candidate at a time: the snap winner held in two scalars, one factory
+for the axis pair, one call for the release listeners, and the snap input built by spread. The hard
+cap — `lightweight-charts` under the same probe — is 195,761 B.
+
 ## 0.1.1 — 2026-08-17
 
 A chart went blank on the first socket reconnect and stayed blank until the host changed symbol or

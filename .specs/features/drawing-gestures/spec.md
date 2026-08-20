@@ -10,11 +10,11 @@ expressed at all.
 
 ## Goals
 
-- [ ] An anchor drag moves the anchor and nothing else: zero chart pan while a drag is in flight.
-- [ ] A host can offer the two placement modes a chart user expects, and the library can express both:
+- [x] An anchor drag moves the anchor and nothing else: zero chart pan while a drag is in flight.
+- [x] A host can offer the two placement modes a chart user expects, and the library can express both:
       free (the pointer's own price) and magnetic (snapped to a named price of the nearest bar).
       **Price only** — the time axis is quantised to bars by the base library and stays that way.
-- [ ] Both proven in a real browser by `npm run e2e`, not only in jsdom.
+- [x] Both proven in a real browser by `npm run e2e`, not only in jsdom.
 
 ## Out of Scope
 
@@ -136,24 +136,24 @@ recorded.
 | DRAG-04 | P1: anchor drag does not pan | T3 | Done |
 | DRAG-05 | P1: anchor drag does not pan | T3, T5, T15 | Done |
 | DRAG-06 | P1: anchor drag does not pan | T3, T4, T16 | Done |
-| MAGNET-01 | P2: the magnet is a mode | T1, T6, T7, T8, T9, T21, T11, T26, T22 | Pending |
+| MAGNET-01 | P2: the magnet is a mode | T1, T6, T7, T8, T9, T21, T11, T26, T22 | Done |
 | MAGNET-02 | P2: the magnet is a mode | T2, T12 | Done |
 | MAGNET-03 | P2: the magnet is a mode | T2, T10, T12, T18, T19 | Done |
 | MAGNET-04 | P2: the magnet is a mode | T2, T17, T25 | Done |
-| MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11 | Pending |
+| MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11, T26 | Done |
 | MAGNET-06 | P2: the magnet is a mode | T5, T8, T22 | Done |
-| MAGNET-07 | P3: the preview shows the magnet | T10, T19 | Pending |
+| MAGNET-07 | P3: the preview shows the magnet | T10, T19 | Done |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
-**Coverage:** 13 total, 13 mapped to tasks, 0 unmapped
+**Coverage:** 13 total, 13 mapped to tasks, 0 unmapped, 13 Done
 
 ---
 
 ## Success Criteria
 
-- [ ] A 200 px anchor drag leaves the visible bar range byte-identical, asserted in `npm run e2e`.
-- [ ] With the magnet off, an anchor's price differs from every bar value of the bar under it.
-- [ ] With the magnet on, an anchor placed within the threshold of a high reads exactly that high.
-- [ ] The size budget moves by a named amount in both ledgers, or does not move.
-- [ ] `npm test` and `npm run e2e` both green, with at least one new e2e check per P1 and P2 story.
+- [x] A 200 px anchor drag leaves the visible bar range byte-identical, asserted in `npm run e2e`.
+- [x] With the magnet off, an anchor's price differs from every bar value of the bar under it.
+- [x] With the magnet on, an anchor placed within the threshold of a high reads exactly that high.
+- [x] The size budget moves by a named amount in both ledgers, or does not move.
+- [x] `npm test` and `npm run e2e` both green, with at least one new e2e check per P1 and P2 story.
