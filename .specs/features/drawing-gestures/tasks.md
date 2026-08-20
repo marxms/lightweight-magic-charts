@@ -1015,7 +1015,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T31: The CHANGELOG stops claiming one break too few
+### T31: The CHANGELOG stops claiming one break too few — DONE
 
 **What**: Name the `DrawingSurfaceHost.snapPrice` obligation precisely — additive for a host that only consumes the binding, breaking for one that constructs a host double in its own tests.
 **Where**: `CHANGELOG.md`
@@ -1029,10 +1029,10 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] The sentence "This is the one break in this release" is corrected rather than deleted
-- [ ] The distinction is stated plainly: `snapPrice` is CONSTRUCTED only by the library (`src/react/surface/useDrawingSeam.ts:60`) and consumed by the host, so production code is unaffected; a host that fabricates a `DrawingSurfaceHost` in its own tests must add the member
-- [ ] `0.2.0` remains correct either way — pre-1.0, both kinds take the minor
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] The sentence "This is the one break in this release" is corrected rather than deleted
+- [x] The distinction is stated plainly: `snapPrice` is CONSTRUCTED only by the library (`src/react/surface/useDrawingSeam.ts:60`) and consumed by the host, so production code is unaffected; a host that fabricates a `DrawingSurfaceHost` in its own tests must add the member
+- [x] `0.2.0` remains correct either way — pre-1.0, both kinds take the minor
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build

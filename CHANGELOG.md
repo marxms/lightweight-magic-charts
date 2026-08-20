@@ -18,8 +18,10 @@ turn off, so freehand placement between bars could not be expressed at all.
   including a release outside the container, a `blur` that abandons the gesture, and a surface that
   unmounts mid-drag, which frees the axes without touching a chart the base library has disposed.
   A press that lands anywhere other than an anchor is left alone, so panning stays the default
-  gesture. Proven in a real browser: a 200 px horizontal pull leaves the visible bar range
-  byte-identical while the drawing's anchors move.
+  gesture, and so is a press outside the price pane — a study pane sits below it in the same
+  container, where the hit-test reads coordinates that are not the pointer's. Proven in a real
+  browser: a 200 px horizontal pull leaves the visible bar range byte-identical while the drawing's
+  anchors move.
 - **An abandoned price-alert drag gives the axes back.** The drawing lock released on `blur` from
   the day it was written and the alert layer did not, so a tab switch with a level still held wrote
   the lock and never took it back — a frozen chart with a drag in flight, reachable with no drawing
@@ -61,10 +63,11 @@ turn off, so freehand placement between bars could not be expressed at all.
 
 - **BREAKING — `DrawingToolbarProps` regroups three props into one.** `onDeleteSelection`,
   `onClearAll` and `drawingCount` are now `edits: { onDelete?, onClear?, count? }`. This is the one
-  break in this release, and it was forced rather than chosen: `test/gates/propCount.spec.ts` caps a
-  component at twelve top-level props and `DrawingToolbarProps` sat at exactly twelve, so the magnet
-  group took a slot that had to be freed. Breaking by the rule below, which counts narrowing what an
-  exported type accepts. A host migrates by moving three arguments into one object.
+  break that reaches a host's PRODUCTION code in this release, and it was forced rather than chosen:
+  `test/gates/propCount.spec.ts` caps a component at twelve top-level props and
+  `DrawingToolbarProps` sat at exactly twelve, so the magnet group took a slot that had to be freed.
+  Breaking by the rule below, which counts narrowing what an exported type accepts. A host migrates
+  by moving three arguments into one object.
 
   ```tsx
   // before
@@ -73,13 +76,29 @@ turn off, so freehand placement between bars could not be expressed at all.
   <DrawingToolbar edits={{ onDelete: remove, onClear: clear, count }} … />
   ```
 
-Nothing else here is breaking by the rule below: every other addition is a new export, a new
+One other addition narrows an exported type, and it is named here rather than folded into the
+sentence above. **`DrawingSurfaceHost.snapPrice` is a required member**, and by the rule below
+narrowing what an exported type accepts is breaking. It is breaking in one direction only: the
+package CONSTRUCTS that object — in `src/react/surface/useDrawingSeam.ts`, the only place it is
+built — and hands it to the binding, which merely receives it. A host that implements
+`DrawingBinding` is therefore untouched, the same direction `Session.reseed` was released under in
+0.1.1. A host that FABRICATES a `DrawingSurfaceHost` of its own, which a test double or a wrapping
+binding does, adds the member:
+
+```ts
+// a host double, before and after
+const host = { chart, series, container };
+const host = { chart, series, container, snapPrice: ({ price }) => price };
+```
+
+`0.2.0` is correct either way: while the version stays in `0.x` a break bumps the minor, and this
+release bumps it for the feature regardless. Everything else added here is a new export, a new
 optional prop, or a new optional label with a default.
 
 ### Size
 
-The entry moves from 103,007 B to **104,809 B** (+1,802 B), re-pinned in both ledgers with a named
-reason per step. 349 B of that came back out of this feature's own modules rather than out of
+The entry moves from 103,007 B to **104,921 B** (+1,914 B), re-pinned in both ledgers with a named
+reason per step — the last of them the pane guard above, at 112 B. 349 B of that came back out of this feature's own modules rather than out of
 unrelated code, measured one candidate at a time: the snap winner held in two scalars, one factory
 for the axis pair, one call for the release listeners, and the snap input built by spread. The hard
 cap — `lightweight-charts` under the same probe — is 195,761 B.
