@@ -1,6 +1,6 @@
 {
   "name": "lightweight-magic-charts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embeddable chart workspace: domain types, data port and the executable conformance suite every adapter must pass.",
   "license": "Apache-2.0",
   "keywords": [

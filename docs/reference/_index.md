@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **290 symbols** — 104 values and 186 types — across **49 modules**.
+The public entry exports **295 symbols** — 106 values and 189 types — across **51 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -43,8 +43,10 @@ whole and on its own, so nothing is stitched in behind it.
 
 | Module | Exports | What it holds |
 | --- | --- | --- |
+| [`drawing/axisLock`](drawing/axisLock.md) | 2 (1 value) | the axis lock, so pulling an anchor does not pan the chart |
 | [`drawing/drawingLayer`](drawing/drawingLayer.md) | 5 (0 value) | the seam a drawing library is plugged into |
 | [`drawing/drawingMemory`](drawing/drawingMemory.md) | 5 (4 value) | which markets have drawings, remembered for the session |
+| [`drawing/magnet`](drawing/magnet.md) | 3 (1 value) | where an anchor lands: the pointer, or the bar under it |
 
 ## extension
 

@@ -11,9 +11,19 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { seriesId } from '../src/domain/types';
 import type { SeriesProvider } from '../src/extension/plugins';
-import { DrawingToolbar, type DrawingTool } from '../src/react/DrawingToolbar';
+import {
+  DEFAULT_DRAWING_TOOLBAR_LABELS,
+  DrawingToolbar,
+  type DrawingTool,
+  type DrawingToolbarLabels,
+} from '../src/react/DrawingToolbar';
 import { SeriesMenu, type SeriesCatalogueEntry } from '../src/react/SeriesMenu';
 import { WorkspaceChromeProvider } from '../src/react/chrome/ChromeContext';
+import {
+  DEFAULT_MAGNET_LABEL,
+  DEFAULT_WORKSPACE_CHROME_LABELS,
+  resolveWorkspaceLabels,
+} from '../src/react/chrome/labels';
 import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from '../src/react/theme';
 
 const TOOLS: readonly DrawingTool[] = [
@@ -167,8 +177,7 @@ describe('DrawingToolbar', () => {
         tools={TOOLS}
         activeToolId={null}
         onSelect={() => undefined}
-        onClearAll={() => undefined}
-        drawingCount={3}
+        edits={{ onClear: () => undefined, count: 3 }}
       />,
     );
 
@@ -212,6 +221,55 @@ describe('DrawingToolbar', () => {
       fontFamily: DEFAULT_WORKSPACE_THEME.fontFamily,
     });
     expect(DEFAULT_WORKSPACE_THEME.surface).not.toBe(CANARY.surface);
+  });
+});
+
+describe('the labels contract names the magnet', () => {
+  /**
+   * The mode is the library's; the WORD for it is not. A rail that hard-coded "Magnet" would ship
+   * one control in English on an otherwise translated screen, which is the defect `chrome.labels`
+   * exists to make impossible.
+   */
+  it('supplies a default word, so a host that overrides nothing still has one', () => {
+    expect(DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar.magnet).toBe('Magnet');
+    // The SAME object, not a second copy: two defaults drift apart on the first edit.
+    expect(DEFAULT_DRAWING_TOOLBAR_LABELS).toBe(DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar);
+    expect(DEFAULT_DRAWING_TOOLBAR_LABELS.magnet).toBe('Magnet');
+  });
+
+  it('overrides the magnet ALONE, leaving every other word of the group at the default', () => {
+    const labels = resolveWorkspaceLabels({ drawingToolbar: { magnet: 'Snap to bar' } });
+
+    expect(labels.drawingToolbar.magnet).toBe('Snap to bar');
+    // CONTROL POSITIVE: the group is a per-group `Partial`, so naming one field replaces one field.
+    // A spread would have erased the four words below and left the rail unnamed.
+    expect(labels.drawingToolbar.cursor).toBe('Cursor');
+    expect(labels.drawingToolbar.deleteSelection).toBe('Delete selected');
+    expect(labels.drawingToolbar.clearAll).toBe('Clear all');
+    expect(labels.drawingToolbar.count(3)).toBe('3');
+    // And the default itself is untouched: the merge returns a copy.
+    expect(DEFAULT_WORKSPACE_CHROME_LABELS.drawingToolbar.magnet).toBe('Magnet');
+  });
+
+  it('takes a FULL group that omits the magnet — the word a host never had is not demanded', () => {
+    // THE BREAK THIS CLOSES. `DrawingVocabulary` picks `labels` as the WHOLE `DrawingToolbarLabels`,
+    // not a `Partial`, so every host that hand-built the group before the magnet existed stopped
+    // compiling the moment a required `magnet` was added — a break charged for a control they never
+    // asked for. The field is optional now, and this object is exactly what such a host hands over.
+    const legacy: DrawingToolbarLabels = {
+      group: 'Ferramentas',
+      cursor: 'Cursor',
+      deleteSelection: 'Apagar',
+      clearAll: 'Limpar',
+      allTools: 'Todas',
+      otherTools: 'Outras',
+      count: (drawings) => `${drawings}`,
+    };
+
+    expect(legacy.magnet).toBeUndefined();
+    // And the published default still carries the word the toolbar falls back to.
+    expect(DEFAULT_MAGNET_LABEL).toBe('Magnet');
+    expect(DEFAULT_DRAWING_TOOLBAR_LABELS.magnet).toBe(DEFAULT_MAGNET_LABEL);
   });
 });
 

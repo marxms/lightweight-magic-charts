@@ -1,0 +1,66 @@
+/**
+ * The magnet, as a RULE and not as a placement: pure, pixel-thresholded, ignorant of who places
+ * the anchor. See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement
+ */
+
+import type { Bar, UtcSeconds } from '../domain/types';
+import type { PriceConverter } from '../port/chartApi';
+
+export type MagnetMode = 'off' | 'on';
+
+export interface SnapInput {
+  readonly mode: MagnetMode;
+  readonly bars: readonly Bar[];
+  readonly time: UtcSeconds;
+  /** Where the pointer is, in price. What `off` resolves to, and what `on` measures from. */
+  readonly price: number;
+  /** A SCREEN distance, so the tolerance means the same thing at 60 000 and at 0.4. */
+  readonly thresholdPx: number;
+  readonly priceToCoordinate: PriceConverter['priceToCoordinate'];
+}
+
+/** A coordinate the scale can measure WITH. `null`, `NaN` and `Infinity` are all "cannot". */
+const measurable = (px: number | null): px is number => Number.isFinite(px);
+
+/**
+ * THE CONVERTER IS A HOST'S, because `snapAnchorPrice` is published — so it is allowed to throw, and
+ * a throw here has to cost ONE CANDIDATE, never the gesture. Same reading `attachAxisLock` takes of
+ * `host.anchorAt`: a call against a state the engine did not expect costs one missed lock, never a
+ * crash. A throw is one more way of saying "cannot measure", and `null` already means that.
+ */
+function coordinate(input: SnapInput, price: number): number | null {
+  try {
+    return input.priceToCoordinate(price);
+  } catch {
+    return null;
+  }
+}
+
+export function snapAnchorPrice(input: SnapInput): number {
+  if (input.mode === 'off') return input.price;
+  // A TOLERANCE NOBODY CAN MEASURE MEANS "DO NOT SNAP", never "snap to anything". Every comparison
+  // against NaN is false, so `distancePx > thresholdPx` stopped rejecting and the magnet took the
+  // whole quartet — the anchor landed on a bar value the user never aimed at.
+  if (!measurable(input.price) || !measurable(input.thresholdPx)) return input.price;
+  const bar = input.bars.find((candidate) => candidate.time === input.time);
+  if (bar === undefined) return input.price;
+  const pointerPx = coordinate(input, input.price);
+  if (!measurable(pointerPx)) return input.price;
+
+  // THE WINNER IN TWO SCALARS, not in an object: nearest wins, and a TIE goes to the HIGHER price,
+  // so the outcome is decided and not incidental. `Infinity` is the "nothing qualified yet" mark —
+  // unreachable as a real distance, because a finite threshold already rejected every other case.
+  let bestPrice = input.price;
+  let bestPx = Infinity;
+  for (const price of [bar.open, bar.high, bar.low, bar.close]) {
+    const px = coordinate(input, price);
+    // A candidate the scale cannot place is dropped; the snap itself survives it.
+    if (!measurable(px)) continue;
+    const distancePx = Math.abs(px - pointerPx);
+    if (distancePx > input.thresholdPx || distancePx > bestPx) continue;
+    if (distancePx === bestPx && price <= bestPrice) continue;
+    bestPrice = price;
+    bestPx = distancePx;
+  }
+  return bestPrice;
+}

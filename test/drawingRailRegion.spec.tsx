@@ -46,6 +46,8 @@ const VOCABULARY: DrawingVocabulary = {
     // non-english-fixture: a host label in another language — English here would prove nothing
     allTools: 'Todas as ferramentas',
     otherTools: 'Outras',
+    // non-english-fixture: a host label in another language — English here would prove nothing
+    magnet: 'Ímã',
     count: (drawings) => `${drawings} desenhos`,
   },
   shortcuts: { KeyT: 'trend-line' },
@@ -61,6 +63,8 @@ interface Recorded {
 
 class FakeLayer implements DrawingLayer {
   detached = false;
+  /** Where the hit-test was asked, so a wrapper that answered on its own is visible. */
+  readonly probed: Array<{ readonly x: number; readonly y: number }> = [];
   private held: string;
 
   constructor(
@@ -97,6 +101,14 @@ class FakeLayer implements DrawingLayer {
   }
 }
 
+/** A layer that CAN hit-test: the anchor at x 10 and nowhere else. */
+class HitTestingLayer extends FakeLayer {
+  anchorAt(point: { readonly x: number; readonly y: number }): boolean {
+    this.probed.push(point);
+    return point.x === 10;
+  }
+}
+
 function recorder(): Recorded {
   return { calls: [], restored: [], layers: [], report: null };
 }
@@ -112,14 +124,20 @@ function bindingOf(log: Recorded, seed = 'two-drawings'): DrawingBinding {
 
 /** Stands in for the canvas: it is what calls the binding and, on the way out, `detach`. */
 function FakeCanvas(): ReactElement {
-  const { bind, onCount } = useDrawingRail();
+  const { bind, onCount, magnet } = useDrawingRail();
   useEffect(() => {
     if (bind === undefined) return;
     const layer = bind({} as DrawingSurfaceHost, { onCountChange: onCount, onToolFinished: () => {} });
+    handed = layer;
     return () => layer.detach();
   }, [bind, onCount]);
-  return <div data-testid="canvas" />;
+  // The mode WHERE THE SURFACE READS IT: `CanvasSurface` takes `magnet` off `useDrawingRail()` and
+  // hands it to the surface, so publishing it here is the canvas doing what the real one does.
+  return <div data-testid="canvas" data-magnet={magnet} />;
 }
+
+/** The wrapper the canvas actually holds — which is not the layer the binding built. */
+let handed: DrawingLayer | null = null;
 
 /** Stands in for the root: it owns a keymap, and the keymap reaches the layer through the seam. */
 function FakeRoot({ children }: { readonly children: ReactNode }): ReactElement {
@@ -288,6 +306,35 @@ describe('the drawing rail region', () => {
     expect(log.restored).toEqual([]);
   });
 
+  /**
+   * THE WRAPPER IS A REWRITE, AND A REWRITE DROPS WHAT IT DOES NOT NAME.
+   *
+   * The provider hands the canvas an object of its own so it can file the snapshot on the way out.
+   * Everything the surface reads has to be named in it: `anchorAt` decides whether the axis lock is
+   * attached at all, so a wrapper that swallowed it would leave the anchor drag panning the chart
+   * with every other test in this file still green.
+   */
+  it('forwards the hit-test to the layer, because the lock is attached only when there is one', () => {
+    const log = recorder();
+    const layer = new HitTestingLayer(log, 'two-drawings');
+    render(<Harness binding={() => layer} />);
+
+    expect(typeof handed?.anchorAt).toBe('function');
+    expect(handed?.anchorAt?.({ x: 10, y: 4 })).toBe(true);
+    expect(handed?.anchorAt?.({ x: 11, y: 4 })).toBe(false);
+    // Asked of the LAYER, not answered by the wrapper out of its own head.
+    expect(layer.probed).toEqual([
+      { x: 10, y: 4 },
+      { x: 11, y: 4 },
+    ]);
+  });
+
+  it('leaves the hit-test undefined for a layer that has none, so panning stays the default', () => {
+    const log = recorder();
+    render(<Harness binding={bindingOf(log)} />);
+    expect(handed?.anchorAt).toBeUndefined();
+  });
+
   it('refuses to answer outside the provider instead of pretending to work', () => {
     function Orphan(): ReactElement {
       useDrawingRail();
@@ -296,5 +343,94 @@ describe('the drawing rail region', () => {
     const noise = jest.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<Orphan />)).toThrow(/DrawingRailProvider/);
     noise.mockRestore();
+  });
+});
+
+/**
+ * THE MAGNET IS A MODE, AND THE MODE HAS ONE HOME.
+ *
+ * The provider is asserted to hold it and to render nothing about it. A provider that grew its own
+ * toggle would put the library's words on a host's screen, and a second copy of the mode anywhere
+ * would disagree with this one the first time a keyboard shortcut wrote to it.
+ */
+function MagnetProbe(): ReactElement {
+  const { magnet, setMagnet } = useDrawingRail();
+  return (
+    <button type="button" data-testid="magnet-probe" onClick={() => setMagnet('on')}>
+      {magnet}
+    </button>
+  );
+}
+
+function MagnetHarness(): ReactElement {
+  return (
+    <WorkspaceChromeProvider>
+      <DrawingRailProvider vocabulary={VOCABULARY} market="BTCUSDT">
+        <MagnetProbe />
+      </DrawingRailProvider>
+    </WorkspaceChromeProvider>
+  );
+}
+
+describe('the rail provider holds the magnet mode', () => {
+  it('reads OFF on the first render, because the library never defaults to the complaint', () => {
+    render(<MagnetHarness />);
+    expect(screen.getByTestId('magnet-probe')).toHaveTextContent('off');
+  });
+
+  it('flips to ON when a consumer writes it, and the consumer sees the new value', () => {
+    render(<MagnetHarness />);
+    fireEvent.click(screen.getByTestId('magnet-probe'));
+    expect(screen.getByTestId('magnet-probe')).toHaveTextContent('on');
+  });
+
+  it('renders no control and no glyph of its own: the whole DOM belongs to the consumer', () => {
+    const view = render(<MagnetHarness />);
+    expect(view.container.innerHTML).toBe(
+      '<button type="button" data-testid="magnet-probe">off</button>',
+    );
+  });
+});
+
+describe('the magnet reaches the toolbar through the composition a host mounts', () => {
+  /**
+   * MAGNET-01 and MAGNET-06, ASSERTED THROUGH THE REAL COMPOSITION — and that is the whole point of
+   * these two cases. Every other magnet test either mounts `DrawingToolbar` in isolation with a
+   * hand-built group, or reads the context through a probe of its own; both skip `DrawingRail`,
+   * which is the one component that has to hand the mode over. It did not, the prop is optional so
+   * it typechecked, and the toggle simply never existed on a rail any host actually mounts. This is
+   * the same shape as the defect that left `anchorAt` dropped by the provider's wrapper: a seam
+   * proven everywhere except where it is joined.
+   */
+  it('draws the toggle in the rail, under the word the host brought', () => {
+    render(<Harness />);
+
+    // BY ROLE AND BY THE HOST'S WORD: a toggle the composition never mounted cannot be found at
+    // all, so this query is what fails when the rail stops forwarding the mode.
+    const toggle = screen.getByRole('button', { name: 'Ímã' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    // CONTROL POSITIVE: the two fixed controls beside it are drawn, so a failure above is the
+    // magnet missing and not the toolbar failing to render its actions at all.
+    expect(screen.getByRole('button', { name: 'Apagar seleção' })).toBeInTheDocument();
+  });
+
+  it('presses it, and the mode changes for the toggle AND for the canvas that reads it', () => {
+    render(<Harness />);
+    // The mode starts OFF everywhere: the library never defaults to the behaviour complained of.
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ímã' }));
+
+    // The toggle holds NO COPY: it reports `on` only because the provider's state came back to it.
+    expect(screen.getByRole('button', { name: 'Ímã' })).toHaveAttribute('aria-pressed', 'true');
+    // And the same press reached the canvas, which is where the surface takes the mode from. A test
+    // that only asserted the prop was passed would prove neither half of this.
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'on');
+
+    // AND BACK: a control that only ever turns the magnet on is not the two-state mode MAGNET-01
+    // asks for, and it is the one direction the reported defect never offered.
+    fireEvent.click(screen.getByRole('button', { name: 'Ímã' }));
+    expect(screen.getByRole('button', { name: 'Ímã' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('canvas')).toHaveAttribute('data-magnet', 'off');
   });
 });

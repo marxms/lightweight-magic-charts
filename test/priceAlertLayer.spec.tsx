@@ -30,6 +30,7 @@ import type {
   SeriesHandle,
   WorkspaceChartHandle,
 } from '../src/port/chartApi';
+import type { DrawingBinding } from '../src/drawing/drawingLayer';
 import { ChartSurface, type SeriesReader } from '../src/react/surface/ChartSurface';
 
 /** Price 100 lives at pixel 100: an identity projection makes the test's geometry legible. */
@@ -254,5 +255,204 @@ describe('LMC-23 — the reconciliation only happens when the set differs', () =
 
     expect(ledger.created).toBe(3);
     expect(ledger.removed).toBe(1);
+  });
+});
+
+/** A layer that claims an anchor everywhere, so a missing lock is never the hit-test's doing. */
+const alwaysAnchored: DrawingBinding = () => ({
+  setActiveTool: () => undefined,
+  deleteSelection: () => undefined,
+  clearAll: () => undefined,
+  anchorAt: () => true,
+  detach: () => undefined,
+});
+
+/** Only the writes that touch the panning pair; the surface applies plenty of other options. */
+const axisWrites = (ledger: Ledger): Array<Record<string, unknown>> =>
+  ledger.chartOptions.filter((options) => 'handleScroll' in options);
+
+const LOCKED = { handleScroll: false, handleScale: false };
+const FREE = { handleScroll: true, handleScale: true };
+
+function locksOn(
+  ledger: Ledger,
+  binding: DrawingBinding | undefined,
+  onLevelsChange?: (levels: readonly number[]) => void,
+): {
+  press: (y: number) => void;
+  release: () => void;
+  blur: () => void;
+  unmount: () => void;
+} {
+  const view = render(
+    <ChartSurface
+      engine={draggableEngine(ledger)}
+      convention={CONVENTION}
+      data={{ bars: BARS, panes: [], read, pricePane: PRICE }}
+      layout={{ heightPx: 400 }}
+      a11y={{ label: 'workspace', describedBy: 'state' }}
+      alerts={{ levels: [100], onChange: onLevelsChange }}
+      drawing={{ binding }}
+    />,
+  );
+  const host = view.container.querySelector('[role="img"]') as HTMLElement;
+  host.getBoundingClientRect = () => ({ top: 0, left: 0, width: 800, height: 400 }) as DOMRect;
+  return {
+    press: (y) => {
+      act(() => {
+        host.dispatchEvent(
+          new MouseEvent('mousedown', { clientY: y, bubbles: true, cancelable: true }),
+        );
+      });
+    },
+    release: () => {
+      act(() => {
+        window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      });
+    },
+    /** The tab switch: the window loses focus with the button still down. */
+    blur: () => {
+      act(() => {
+        window.dispatchEvent(new Event('blur'));
+      });
+    },
+    unmount: () => {
+      act(() => {
+        view.unmount();
+      });
+    },
+  };
+}
+
+/**
+ * DRAG-02 — THE TWO AXIS LOCKS, MEASURED TOGETHER RATHER THAN ASSUMED APART.
+ *
+ * THE QUESTION. `usePriceAlertLayer` and `attachAxisLock` both register `mousedown` in CAPTURE on
+ * the same element — the canvas host — and both write the same `handleScroll`/`handleScale` pair.
+ * The alert handler calls `stopPropagation`, which reads like an answer and is not one: it stops
+ * the event reaching other NODES and has no effect on a second listener of the SAME node. Only
+ * `stopImmediatePropagation` would do that, and nothing here calls it.
+ *
+ * THE MEASURED ANSWER: they DO overlap. A press that is both within grabbing distance of an alert
+ * and on a drawing anchor engages both locks, and that is reachable — nothing stops a user drawing
+ * a trendline whose anchor sits at the price they already alerted on. The control below isolates
+ * the second write: drop the binding and the same press locks once.
+ *
+ * AND THE OVERLAP IS BENIGN, which is the part worth writing down. Both handlers write the SAME
+ * two values, so locking twice is locking. Both hang their release off the same `window` mouseup,
+ * so one release event ends both — and because both write `FREE`, the terminal state does not
+ * depend on which of the two listeners runs first. There is no ordering to get wrong here.
+ *
+ * WHAT IS STILL ASYMMETRIC, named so the next reader does not have to find it again: the axis lock
+ * also releases on `blur` and the alert layer does not. A tab switch mid-gesture therefore frees
+ * the axes while an alert drag is still in flight. That is the ALERT layer missing a release, not
+ * the two locks disagreeing, and it is reachable with no drawing layer present at all — so it is
+ * its own defect and its own task, not this one.
+ */
+describe('DRAG-02 — the two axis locks, measured together', () => {
+  it('BOTH engage on one press: stopPropagation does not silence a sibling on the same element', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press } = locksOn(ledger, alwaysAnchored);
+
+    press(100);
+
+    expect(axisWrites(ledger)).toEqual([LOCKED, LOCKED]);
+  });
+
+  it('CONTROL: with no drawing binding the same press locks ONCE, so the second write is the lock', () => {
+    // Without this half the case above would pass just as well if the alert layer had written
+    // twice, and the whole question would have been answered about the wrong handler.
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press } = locksOn(ledger, undefined);
+
+    press(100);
+
+    expect(axisWrites(ledger)).toEqual([LOCKED]);
+  });
+
+  it('one mouseup frees the chart, because both releases hang off the same window event', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press, release } = locksOn(ledger, alwaysAnchored);
+
+    press(100);
+    release();
+
+    expect(axisWrites(ledger)).toEqual([LOCKED, LOCKED, FREE, FREE]);
+  });
+});
+
+/**
+ * DRAG-02 — THE ALERT DRAG SURVIVES A TAB SWITCH, and this is the defect the case above named and
+ * deliberately left standing: the drawing lock has released on `blur` since it was written and this
+ * layer had not, so a tab switch mid-gesture wrote the lock and never took it back.
+ *
+ * FILED WHERE IT BELONGS. Every case below mounts with NO drawing binding, so nothing but the alert
+ * layer is listening. A frozen axis reached with no drawing layer present is the alert layer's
+ * defect, whatever the two locks do when they overlap.
+ */
+describe('DRAG-02 — an abandoned alert drag gives the axes back', () => {
+  it('frees both axes when the window loses focus with the drag still in flight', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const reported: number[][] = [];
+    const { press, blur } = locksOn(ledger, undefined, (levels) => reported.push([...levels]));
+
+    press(100);
+    // The press engaged the lock, so what follows is about the RELEASE and not about the grab.
+    expect(axisWrites(ledger)).toEqual([LOCKED]);
+
+    blur();
+
+    // Before this fix the log ended right there, at LOCKED, with the drag still running.
+    expect(axisWrites(ledger)).toEqual([LOCKED, FREE]);
+    // And the drag ENDED: the level settled where it was left and was reported once. A release that
+    // freed the axes without settling would leave the layer dragging a level nobody is holding.
+    expect(reported).toEqual([[100]]);
+  });
+
+  it('SETTLES rather than discards, because the pointer never left the pane', () => {
+    // The distinction is not cosmetic: `endDrag(true)` REMOVES the level, and removal is the one
+    // outcome of this gesture a user cannot undo. A window losing focus is not a level being
+    // thrown off the pane.
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const reported: number[][] = [];
+    const { press, blur } = locksOn(ledger, undefined, (levels) => reported.push([...levels]));
+
+    press(100);
+    blur();
+
+    expect(reported).toEqual([[100]]);
+    expect(ledger.removed).toBe(0);
+  });
+
+  it('takes the blur listener back on unmount, so no handler outlives the mount', () => {
+    // Counted rather than inferred: after teardown `live.current` is null and every call the
+    // handler could make is already a no-op, so a leaked listener would leave no trace in the
+    // ledger at all. The registration is what has to be watched.
+    const added: unknown[] = [];
+    const removed: unknown[] = [];
+    const realAdd = window.addEventListener;
+    const realRemove = window.removeEventListener;
+    window.addEventListener = function patched(type: string, handler: never, options: never) {
+      if (type === 'blur') added.push(handler);
+      return realAdd.call(window, type, handler, options);
+    } as typeof window.addEventListener;
+    window.removeEventListener = function patched(type: string, handler: never, options: never) {
+      if (type === 'blur') removed.push(handler);
+      return realRemove.call(window, type, handler, options);
+    } as typeof window.removeEventListener;
+
+    try {
+      const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+      const { press, unmount } = locksOn(ledger, undefined);
+      press(100);
+      unmount();
+    } finally {
+      window.addEventListener = realAdd;
+      window.removeEventListener = realRemove;
+    }
+
+    // CONTROL POSITIVE: one was registered, so the equality below is not two empty lists agreeing.
+    expect(added).toHaveLength(1);
+    expect(removed).toEqual(added);
   });
 });

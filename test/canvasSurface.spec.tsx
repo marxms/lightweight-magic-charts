@@ -32,7 +32,7 @@ import type { FrameSink, HistoryRequest, HistoryResult, MarketDataPort, Unsubscr
 import { WorkspaceChromeProvider } from '../src/react/chrome/ChromeContext';
 import { CanvasSurface } from '../src/react/workspace/CanvasSurface';
 import type { CandleLaneState } from '../src/react/useCandleLane';
-import { DrawingRail, DrawingRailProvider } from '../src/react/workspace/DrawingRail';
+import { DrawingRail, DrawingRailProvider, useDrawingRail } from '../src/react/workspace/DrawingRail';
 
 const PARITY = JSON.parse(
   readFileSync(join(__dirname, 'fixtures', 'candleLaneParity.json'), 'utf8'),
@@ -97,7 +97,11 @@ function fakePane(index: number) {
   };
 }
 
-function fakeEngine(framing?: { calls: Array<{ from: number; to: number }> }) {
+/** `scale` prices the fake axis. Absent, the axis answers nothing, which is what most cases want. */
+function fakeEngine(
+  framing?: { calls: Array<{ from: number; to: number }> },
+  scale?: (price: number) => number | null,
+) {
   const series: SeriesRecord[] = [];
   const engine: ChartEngine = () => {
     let paneCount = 1;
@@ -118,7 +122,7 @@ function fakeEngine(framing?: { calls: Array<{ from: number; to: number }> }) {
           priceScale: () => ({ applyOptions: () => undefined }),
           createPriceLine: () => ({ applyOptions: () => undefined }),
           removePriceLine: () => undefined,
-          priceToCoordinate: () => null,
+          priceToCoordinate: (price: number) => scale?.(price) ?? null,
           coordinateToPrice: () => null,
           attachPrimitive: (primitive: unknown) => record.attached.push(primitive as Overlay),
           detachPrimitive: () => undefined,
@@ -150,9 +154,21 @@ class FakeLayer implements DrawingLayer {
   detach(): void {}
 }
 
+/** The host's own control, standing where the demo's toggle stands: it holds no copy of the mode. */
+function MagnetSwitch(): ReactElement {
+  const { setMagnet } = useDrawingRail();
+  return (
+    <button type="button" data-testid="magnet" onClick={() => setMagnet('on')}>
+      magnet
+    </button>
+  );
+}
+
 interface HarnessProps {
   readonly port: MarketDataPort;
   readonly binding?: DrawingBinding;
+  readonly magnetSwitch?: boolean;
+  readonly snapThresholdPx?: number;
   readonly onLayout?: (application: StackApplication) => void;
   readonly onLane?: (state: CandleLaneState) => void;
   readonly showDensity?: boolean;
@@ -164,6 +180,8 @@ interface HarnessProps {
 function Harness({
   port,
   binding,
+  magnetSwitch,
+  snapThresholdPx,
   onLayout,
   onLane,
   showDensity,
@@ -179,6 +197,7 @@ function Harness({
         market="BTC/USDT"
       >
         <DrawingRail heightPx={heightPx} />
+        {magnetSwitch === true ? <MagnetSwitch /> : null}
         <CanvasSurface
           engine={engine}
           convention={CONVENTION}
@@ -193,6 +212,7 @@ function Harness({
           a11y={{ label: 'BTC/USDT · 1h', describedBy: 'state' }}
           lane={{ scope: SCOPE, port, barCount: 800 }}
           fields={{ showDensity, showProfile }}
+          snapThresholdPx={snapThresholdPx}
           onLane={onLane}
         />
       </DrawingRailProvider>
@@ -319,5 +339,57 @@ describe('the canvas surface region', () => {
     await settle();
     fireEvent.click(screen.getByRole('radio', { name: 'Trend' }));
     expect(layer.armed).toContain('trend-line');
+  });
+
+  /**
+   * THE MODE IS ASSERTED THROUGH ITS EFFECT, not through the prop it travelled on.
+   *
+   * A region that declared the field and never passed it renders identically, which is why the
+   * question asked here is the one the binding asks: what price does the seam hand back? The axis
+   * is priced linearly by the fake so the answer is arithmetic and not a guess — the second bar's
+   * high sits one pixel from the pointer, and its close four.
+   */
+  const linear = (price: number): number => 100 - price * 10;
+
+  function snapper(captured: { at: ((price: number) => number) | null }): DrawingBinding {
+    return (host) => {
+      captured.at = (price) => host.snapPrice({ time: utcSeconds(2000), price });
+      return new FakeLayer();
+    };
+  }
+
+  it('hands the seam the rail magnet: OFF keeps the pointer price, ON reaches the bar value', async () => {
+    const order: string[] = [];
+    const { port } = recordingPort(order);
+    const { engine } = fakeEngine(undefined, linear);
+    const captured: { at: ((price: number) => number) | null } = { at: null };
+    render(<Harness port={port} engine={engine} binding={snapper(captured)} magnetSwitch />);
+    await settle();
+
+    // Default: the library never starts on the behaviour the magnet exists to escape.
+    expect(captured.at?.(2.9)).toBe(2.9);
+    fireEvent.click(screen.getByTestId('magnet'));
+    // The second bar's high, exactly — not the close four pixels further away.
+    expect(captured.at?.(2.9)).toBe(3);
+  });
+
+  it('hands the seam the threshold the host set, so a reach of zero snaps to nothing', async () => {
+    const order: string[] = [];
+    const { port } = recordingPort(order);
+    const { engine } = fakeEngine(undefined, linear);
+    const captured: { at: ((price: number) => number) | null } = { at: null };
+    render(
+      <Harness
+        port={port}
+        engine={engine}
+        binding={snapper(captured)}
+        magnetSwitch
+        snapThresholdPx={0}
+      />,
+    );
+    await settle();
+
+    fireEvent.click(screen.getByTestId('magnet'));
+    expect(captured.at?.(2.9)).toBe(2.9);
   });
 });

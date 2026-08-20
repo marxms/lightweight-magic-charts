@@ -7,6 +7,7 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react';
 
 import type { DrawingBinding, DrawingLayer } from '../../drawing/drawingLayer';
 import { drawingMemoryFor } from '../../drawing/drawingMemory';
+import type { MagnetMode } from '../../drawing/magnet';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
 import { DrawingToolbar } from '../DrawingToolbar';
 import type { DrawingToolbarProps } from '../DrawingToolbar';
@@ -21,10 +22,19 @@ export interface DrawingVocabulary
   readonly shortcuts?: Readonly<Record<string, string>>;
 }
 
-interface DrawingRailValue {
+/**
+ * What every drawing control reads, whoever draws it. The MAGNET lives here for the same reason
+ * `activeTool` does: it is a mode a keyboard shortcut may arm and a control must show, and a value
+ * with two homes disagrees with itself the first time one of them is written to.
+ * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement
+ */
+export interface DrawingRailValue {
   readonly vocabulary: DrawingVocabulary;
   readonly activeTool: string | null;
   readonly arm: (toolId: string | null) => void;
+  /** Off until a host says otherwise: the library never defaults to the behaviour complained of. */
+  readonly magnet: MagnetMode;
+  readonly setMagnet: (mode: MagnetMode) => void;
   /** The binding the canvas attaches. `undefined` = no layer, and every operation below is inert. */
   readonly bind: DrawingBinding | undefined;
   readonly count: number;
@@ -54,6 +64,7 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
   children,
 }: DrawingRailProviderProps): ReactElement {
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [magnet, setMagnet] = useState<MagnetMode>('off');
   const [count, setCount] = useState(0);
   const layer = useRef<DrawingLayer | null>(null);
   // Through refs. See docs/explanation/react-workspace.md#market-and-delete-teller-through-refs
@@ -77,6 +88,11 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
         setActiveTool: (id) => created.setActiveTool(id),
         deleteSelection: () => created.deleteSelection(),
         clearAll: () => created.clearAll(),
+        // FORWARDED, and undefined when the layer has none: the surface attaches the axis lock only
+        // for a layer that hit-tests, so a wrapper that swallowed this would leave the drag panning
+        // the chart with every unit test still green.
+        // See docs/explanation/drawing.md#the-axis-lock-is-the-librarys-half-of-the-drag
+        anchorAt: created.anchorAt === undefined ? undefined : (point) => created.anchorAt?.(point) === true,
         detach: () => {
           // The market NOW, not the one at birth: the surface outlives an instrument change, so the
           // snapshot has to land where the drawings currently belong.
@@ -118,6 +134,8 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
       vocabulary,
       activeTool,
       arm: setActiveTool,
+      magnet,
+      setMagnet,
       bind,
       count,
       onCount: setCount,
@@ -127,7 +145,7 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
       },
       clearAll: () => layer.current?.clearAll(),
     }),
-    [vocabulary, activeTool, bind, count],
+    [vocabulary, activeTool, magnet, bind, count],
   );
 
   return <DrawingRailContext.Provider value={value}>{children}</DrawingRailContext.Provider>;
@@ -154,7 +172,11 @@ export interface DrawingRailProps {
 
 export const DrawingRail = memo(function DrawingRail({ heightPx }: DrawingRailProps): ReactElement {
   const { labels, testIdPrefix } = useWorkspaceChrome();
-  const { vocabulary, activeTool, arm, count, deleteSelection, clearAll } = useDrawingRail();
+  // THE MODE IS FORWARDED, NEVER COPIED. `magnet` is an optional prop of the toolbar, so a rail
+  // that dropped it typechecked and simply drew no toggle — the control existed in every unit test
+  // and in no composition a host mounts. Same shape as the wrapper that dropped `anchorAt`.
+  const { vocabulary, activeTool, arm, count, deleteSelection, clearAll, magnet, setMagnet } =
+    useDrawingRail();
 
   return (
     <div data-testid={`${testIdPrefix}-tools`} style={COLUMN}>
@@ -164,9 +186,8 @@ export const DrawingRail = memo(function DrawingRail({ heightPx }: DrawingRailPr
         toolGroups={vocabulary.toolGroups}
         activeToolId={activeTool}
         onSelect={arm}
-        onDeleteSelection={deleteSelection}
-        onClearAll={clearAll}
-        drawingCount={count}
+        edits={{ onDelete: deleteSelection, onClear: clearAll, count }}
+        magnet={{ mode: magnet, onChange: setMagnet }}
         heightPx={heightPx}
         orientation="vertical"
         labels={vocabulary.labels ?? labels.drawingToolbar}

@@ -9,6 +9,7 @@ import type { PriceAlert, PriceAlertStyle } from '../../alerts/priceAlerts';
 import type { Bar, PaneSpec, PriceScaleConvention } from '../../domain/types';
 import { encodeDirection } from '../../domain/types';
 import type { DrawingBinding } from '../../drawing/drawingLayer';
+import type { MagnetMode } from '../../drawing/magnet';
 import type { Overlay } from '../../extension/plugins';
 import { PRICE_PANE_ID, type LayoutBudget } from '../../layout/computeLayout';
 import { paneBoxes } from '../../layout/paneBoxes';
@@ -105,6 +106,11 @@ export interface SurfaceAlerts {
 export interface SurfaceDrawing {
   readonly binding?: DrawingBinding;
   readonly activeTool?: string | null;
+  /** Absent is `off`: the library never defaults to the behaviour the magnet exists to escape.
+   * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly magnet?: MagnetMode;
+  /** A SCREEN distance. Absent is eight pixels. */
+  readonly snapThresholdPx?: number;
   readonly onCountChange?: (count: number) => void;
   readonly onToolFinished?: () => void;
 }
@@ -122,6 +128,8 @@ export interface ChartSurfaceProps {
 }
 
 const DEFAULT_BUDGET: LayoutBudget = { priceFloorPx: 180, defaultPaneHeightPx: 90 };
+/** Eight pixels: near enough to be deliberate, far enough that a steady hand is not required. */
+const DEFAULT_SNAP_THRESHOLD_PX = 8;
 export function seriesStyleKey(paneKey: string, id: string): string {
   return seriesKey(paneKey, id);
 }
@@ -154,6 +162,8 @@ export function ChartSurface({
   const {
     binding: drawings,
     activeTool: activeDrawingTool,
+    magnet = 'off',
+    snapThresholdPx = DEFAULT_SNAP_THRESHOLD_PX,
     onCountChange: onDrawingCountChange,
     onToolFinished: onDrawingToolFinished,
   } = drawing ?? {};
@@ -225,10 +235,14 @@ export function ChartSurface({
     };
   }, [handles, overlays]);
 
-  useDrawingSeam(handles, hostRef, drawings, activeDrawingTool, {
-    onCountChange: onDrawingCountChange,
-    onToolFinished: onDrawingToolFinished,
-  });
+  useDrawingSeam(
+    handles,
+    hostRef,
+    drawings,
+    activeDrawingTool,
+    { onCountChange: onDrawingCountChange, onToolFinished: onDrawingToolFinished },
+    { magnet, thresholdPx: snapThresholdPx, bars },
+  );
 
   usePriceAlertLayer(handles, live, hostRef, bars, priceAlerts, onPriceAlertsChange, onPriceAlertCrossed);
 

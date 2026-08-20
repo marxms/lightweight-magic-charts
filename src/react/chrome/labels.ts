@@ -156,6 +156,14 @@ const decimal = (locale: string | undefined, value: number, digits: number): str
   }).format(value);
 
 /** The whole default, built for one locale. Absent means the runtime's own. */
+/**
+ * The magnet's word, held apart because `DrawingToolbarLabels.magnet` is OPTIONAL: a rail written
+ * before the magnet existed hands over a FULL `DrawingToolbarLabels` and must still compile, so the
+ * toolbar falls back to this rather than drawing a control with no name.
+ * See docs/explanation/react.md#the-optional-close-label
+ */
+export const DEFAULT_MAGNET_LABEL = 'Magnet';
+
 export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
   return {
     dismiss: 'Dismiss',
@@ -243,6 +251,7 @@ export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
       cursor: 'Cursor',
       deleteSelection: 'Delete selected',
       clearAll: 'Clear all',
+      magnet: DEFAULT_MAGNET_LABEL,
       allTools: 'All tools',
       otherTools: 'Other tools',
       count: (drawings) => `${drawings}`,

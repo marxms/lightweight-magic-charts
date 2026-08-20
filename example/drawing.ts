@@ -16,10 +16,11 @@ import type {
   DrawingToolGroup,
   DrawingToolOption,
   DrawingVocabulary,
+  UtcSeconds,
 } from 'lightweight-magic-charts';
 import { DrawingManager, getToolRegistry } from 'lightweight-charts-drawing';
 
-import { DrawingPreviewPrimitive, type PreviewAnchor } from './drawingPreview';
+import { DrawingPreviewPrimitive, type PreviewAnchor, type PreviewState } from './drawingPreview';
 import { realChartOf } from './engine';
 
 /**
@@ -157,6 +158,30 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
   const manager = new DrawingManager();
   manager.attach(chart, host.series as never, host.container);
 
+  /**
+   * THE BROWSER SUITE'S ONE READ-ONLY WINDOW, and it exists because the two gestures this demo
+   * proves have no other observable. An anchor's PRICE lives inside the drawing engine and the
+   * visible bar range lives inside the time scale; every DOM surface above shows bars, counts and
+   * labels, never either of those. `scripts/e2e-demo.mjs` reads both through here, so the magnet
+   * check asserts a price the anchor actually landed on rather than a class or an attribute.
+   *
+   * Both members only READ, and the whole thing is taken back in `detach()`.
+   */
+  const probe = {
+    anchors: (): readonly { readonly time: unknown; readonly price: number }[] =>
+      manager.exportDrawings().flatMap((drawing) => drawing.anchors),
+    /** Bar times at a fifth, half and four fifths of the width: a pan moves all three. */
+    barTimes: (): readonly unknown[] => {
+      const scale = host.chart.timeScale();
+      const width = host.container.clientWidth;
+      return [0.2, 0.5, 0.8].map((at) => scale.coordinateToTime?.(Math.round(width * at)) ?? null);
+    },
+    /** Where the dashed trace is drawn RIGHT NOW. The preview paints on a canvas, so a colour count
+     * can say something blue appeared and never say at which price — this reads the price. */
+    previewCursor: (): PreviewAnchor | null => traced,
+  };
+  (globalThis as Record<string, unknown>).__lmcDrawingProbe = probe;
+
   const report = (): void => events.onCountChange(manager.getAllDrawings().length);
   const off = [
     manager.on('drawing:added', report),
@@ -188,6 +213,18 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     preview = null;
   }
 
+  /**
+   * ONE DOOR TO THE PREVIEW, so what the probe reports is what the preview was handed — the same
+   * object, not a second computation of it. A trace that went back to the raw pointer price would
+   * report the raw pointer price, which is the only reason the browser check can tell the two apart.
+   */
+  let traced: PreviewAnchor | null = null;
+  const trace = (state: PreviewState | null): void => {
+    if (preview === null) return;
+    preview.setState(state);
+    traced = state?.cursor ?? null;
+  };
+
   const onClick = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
     if (activeTool === null || param.point === undefined) return;
     // `point` is LOCAL TO THE PANE clicked, so y only prices on pane 0. Any other pane would read
@@ -197,7 +234,9 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     const price = host.series.coordinateToPrice(param.point.y);
     if (time === null || time === undefined || price === null) return;
 
-    pending.push({ time: time as PreviewAnchor['time'], price });
+    // THROUGH THE SEAM, never the raw pointer price. The rule — mode, reach and bars — is the
+    // library's; where the anchor lands is this file's, and this is the one line where the two meet.
+    pending.push({ time: time as PreviewAnchor['time'], price: host.snapPrice({ time: time as UtcSeconds, price }) });
     if (pending.length < (registry.get(activeTool)?.requiredAnchors ?? 2)) return;
 
     created += 1;
@@ -208,7 +247,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // A tool the package cannot build in this window is one drawing fewer, never a crash.
     }
     pending = [];
-    preview?.setState(null);
+    trace(null);
     events.onToolFinished(); // back to the cursor, as every chart app does
   };
   host.chart.subscribeClick?.(onClick as never);
@@ -220,18 +259,51 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
    */
   const onCrosshair = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
     if (activeTool === null || param.point === undefined || (param.paneIndex ?? 0) !== 0) {
-      preview?.setState(null);
+      trace(null);
       return;
     }
     const time = param.time ?? host.chart.timeScale().coordinateToTime?.(param.point.x);
     const price = host.series.coordinateToPrice(param.point.y);
     if (time === null || time === undefined || price === null) {
-      preview?.setState(null);
+      trace(null);
       return;
     }
-    preview?.setState({ tool: activeTool, anchors: pending, cursor: { time: time as PreviewAnchor['time'], price } });
+    // The SAME call the click makes, so the dashed trace already sits where the anchor will land.
+    trace({
+      tool: activeTool,
+      anchors: pending,
+      cursor: {
+        time: time as PreviewAnchor['time'],
+        price: host.snapPrice({ time: time as UtcSeconds, price }),
+      },
+    });
   };
   host.chart.subscribeCrosshairMove(onCrosshair as never);
+
+  /**
+   * SELECTION ON THE PRESS, IN CAPTURE — the half of the anchor drag the library cannot own.
+   *
+   * `hitTestAnchor` only answers for a drawing that is ALREADY selected, and nothing selects one
+   * before the press that starts the drag. Without this the hit-test below is null on every press,
+   * the surface never locks the axes, and pulling an anchor pans the chart underneath it. It is in
+   * capture and registered before the lock's own listener, so the drawing is selected by the time
+   * the library asks whether an anchor is under the pointer.
+   */
+  const pointIn = (event: MouseEvent): { x: number; y: number } => {
+    const rect = host.container.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+  const onDown = (event: MouseEvent): void => {
+    if (event.button !== 0 || activeTool !== null) return;
+    try {
+      const hit = manager.hitTest(pointIn(event));
+      if (hit !== null && manager.getSelectedDrawing() === null) manager.selectDrawing(hit.id);
+    } catch {
+      // A hit-test against a state the package did not expect costs one missed selection, not a
+      // mount. The same rule the preview follows.
+    }
+  };
+  host.container.addEventListener('mousedown', onDown, true);
 
   return {
     setActiveTool: (toolId) => {
@@ -239,7 +311,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // drawing with a point the visitor placed for a different one.
       activeTool = toolId;
       pending = [];
-      preview?.setState(null);
+      trace(null);
       manager.setActiveTool(toolId);
     },
     deleteSelection: () => {
@@ -248,7 +320,21 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     },
     clearAll: () => manager.clearAll(),
     serialize: () => manager.exportDrawings(),
+    /**
+     * THE ONE FACT ONLY THIS FILE KNOWS. `attachAxisLock` owns the whole gesture except this
+     * question, and a throw here would take the mount down for a hit-test the package fumbled —
+     * so an unexpected state is one missed lock, never an exception out of the handler.
+     */
+    anchorAt: (point) => {
+      try {
+        return manager.hitTestAnchor(point) !== null;
+      } catch {
+        return false;
+      }
+    },
     detach: () => {
+      delete (globalThis as Record<string, unknown>).__lmcDrawingProbe;
+      host.container.removeEventListener('mousedown', onDown, true);
       host.chart.unsubscribeClick?.(onClick as never);
       host.chart.unsubscribeCrosshairMove(onCrosshair as never);
       if (preview !== null) host.series.detachPrimitive(preview);

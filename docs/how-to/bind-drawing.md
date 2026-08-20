@@ -12,7 +12,7 @@ You supply two halves, and they are independent:
 | Half | Prop | What it is |
 | --- | --- | --- |
 | the words | `drawing.vocabulary` | which tools exist, what they are called, which key arms each |
-| the behaviour | `drawing.binding` | a function handed the chart and the container; it returns a live layer |
+| the behaviour | `drawing.binding` | a function handed the chart, the price series, the container and the snap rule; it returns a live layer |
 
 ## Step 1 — name the tools
 
@@ -95,8 +95,10 @@ export const binding: DrawingBinding = (
 };
 ```
 
-`host` carries three things: `chart` (the workspace's handle on the chart), `series` (the price
-series, for coordinate conversion) and `container` (the element to draw into).
+`host` carries four things: `chart` (the workspace's handle on the chart), `series` (the price
+series, for coordinate conversion), `container` (the element to draw into) and `snapPrice` (the
+library's magnet rule, already bound to the live bars, mode and threshold — call it where you
+commit an anchor and again where you trace the preview).
 
 ## Step 3 — keep the drawings across a redraw
 

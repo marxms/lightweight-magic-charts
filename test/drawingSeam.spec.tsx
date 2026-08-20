@@ -16,10 +16,11 @@
  * discard shows up.
  */
 import { render } from '@testing-library/react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 
 import { directionConvention, paneId, seriesId, utcSeconds } from '../src/domain/types';
 import type { Bar, PaneSpec } from '../src/domain/types';
-import type { DrawingBinding } from '../src/drawing/drawingLayer';
+import type { DrawingBinding, DrawingSurfaceHost } from '../src/drawing/drawingLayer';
 import type {
   ChartEngine,
   PaneHandle,
@@ -27,6 +28,8 @@ import type {
   WorkspaceChartHandle,
 } from '../src/port/chartApi';
 import { ChartSurface, type PaneView, type SeriesReader } from '../src/react/surface/ChartSurface';
+import type { ChartHandles } from '../src/react/surface/chartHandles';
+import { useDrawingSeam, type DrawingSnapInput } from '../src/react/surface/useDrawingSeam';
 
 function fakeEngine(): ChartEngine {
   return () => {
@@ -102,6 +105,9 @@ const RATE: PaneSpec = {
 const BARS: readonly Bar[] = [
   { time: utcSeconds(1_700_000_000), open: 100, high: 110, low: 95, close: 105 },
 ];
+/** The same bar with its high moved, and one that arrives later — the two live-data stimuli. */
+const MOVED_BAR: Bar = { time: utcSeconds(1_700_000_000), open: 100, high: 112, low: 95, close: 105 };
+const LATER_BAR: Bar = { time: utcSeconds(1_700_003_600), open: 105, high: 115, low: 104, close: 114 };
 const read: SeriesReader = () => [1];
 const view = (spec: PaneSpec): PaneView => ({ spec, visible: true, heightPx: 90, lastUsedAt: 1 });
 
@@ -192,5 +198,304 @@ describe('LMC-23 — the layer hears each armed tool ONCE', () => {
 
     expect(log.attaches).toBe(2);
     expect(log.armed).toEqual(['trend-line', 'ruler']);
+  });
+});
+
+/**
+ * THE LOCK AND THE SNAP CLOSURE, driven through the hook itself rather than through the surface.
+ *
+ * The mode is not yet a surface prop, and the criteria here are about what the HOOK does with the
+ * mode it is handed: attach the lock only for a layer that can hit-test, stop listening before the
+ * layer detaches, and read the magnet at call time rather than at attach time. A harness that owns
+ * those three inputs is the only place all of them can be varied.
+ */
+
+interface SeamLog {
+  readonly attaches: { count: number };
+  readonly hosts: DrawingSurfaceHost[];
+  readonly applied: Array<Record<string, unknown>>;
+  readonly duringDetach: string[];
+  /** The two cleanup acts IN THE ORDER THEY HAPPENED. A total cannot say which came first. */
+  readonly order: string[];
+}
+
+const emptyLog = (): SeamLog => ({
+  attaches: { count: 0 },
+  hosts: [],
+  applied: [],
+  duringDetach: [],
+  order: [],
+});
+
+/** One pixel per price unit, so a threshold in pixels reads as a price difference. */
+const lockSeries = (): SeriesHandle => ({
+  setData: () => undefined,
+  applyOptions: () => undefined,
+  priceScale: () => ({ applyOptions: () => undefined }),
+  createPriceLine: () => ({ applyOptions: () => undefined }),
+  removePriceLine: () => undefined,
+  priceToCoordinate: (price) => 200 - price,
+  coordinateToPrice: () => null,
+  attachPrimitive: () => undefined,
+  detachPrimitive: () => undefined,
+});
+
+/**
+ * THE TWO PANES THE HOST DRAWS, and the id the fake chart answers WITH.
+ *
+ * Every chart fake in this repo answers `getHTMLElement: () => null` and this one answered
+ * `panes: () => []`. Both make the axis lock's pane guard inert, because an unanswered pane falls
+ * back to the whole container BY DESIGN (`src/drawing/axisLock.ts:54-56`) — so here the guard
+ * refuses nothing, and the line that feeds it can be deleted with everything still green.
+ *
+ * MEASURED, not suspected: deleting `pricePane` from the `attachAxisLock` call in
+ * `src/react/surface/useDrawingSeam.ts` left `npm test` at 1274/1274, `tsc --noEmit` silent and
+ * `npm run e2e` at 48/48, while the spec's third edge case went back to broken through the whole
+ * composition.
+ *
+ * THAT IS THE FIFTH TIME ON THIS FEATURE an optional member vanished with no type error and nothing
+ * noticed — after `anchorAt` dropped by the rail's provider wrapper, the `magnet` group never
+ * forwarded by `DrawingRail`, the one-pixel-per-price fixtures that could not tell a pixel
+ * threshold from a price one, and the preview clause that had no sensor at all. `pricePane?` is
+ * optional for the same good reason each of those was, and optional is exactly what lets a missing
+ * wire typecheck. So THIS fake answers an ELEMENT: a guard can only discriminate against a pane it
+ * can actually name.
+ */
+const PRICE_PANE = 'seam-price-pane';
+const STUDY_PANE = 'seam-study-pane';
+
+/** Read at press time, never captured: the panes do not exist until the harness has rendered. */
+const paneElement = (testId: string): HTMLElement | null =>
+  document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+
+function seamHandles(log: SeamLog): ChartHandles {
+  const series = lockSeries();
+  const chart = {
+    panes: () => [{ getHTMLElement: () => paneElement(PRICE_PANE) }],
+    addPane: () => undefined,
+    addSeries: () => series,
+    applyOptions: (options: Record<string, unknown>) => {
+      log.applied.push(options);
+      log.order.push(options.handleScroll === false ? 'lock' : 'release');
+    },
+    subscribeCrosshairMove: () => undefined,
+    unsubscribeCrosshairMove: () => undefined,
+    remove: () => undefined,
+    timeScale: () => ({ fitContent: () => undefined }),
+  };
+  return { chart, candle: series, anchor: series } as unknown as ChartHandles;
+}
+
+/** `anchorAt` absent means the layer cannot hit-test, which is the no-lock case. */
+function seamBinding(log: SeamLog, anchorAt: (() => boolean) | null): DrawingBinding {
+  return (host) => {
+    log.attaches.count += 1;
+    log.hosts.push(host);
+    return {
+      setActiveTool: () => undefined,
+      deleteSelection: () => undefined,
+      clearAll: () => undefined,
+      ...(anchorAt === null ? {} : { anchorAt }),
+      detach: () => {
+        // THE ORDERING PROBE, and it records the ORDER rather than deducing it from a total. A total
+        // cannot tell the two orderings apart: with the lock released first the count is already 2,
+        // and with the lock still listening the `mouseup` below takes it to 2 before it is read.
+        //
+        // So two things are written here. The marker fixes the sequence, and the pair around the
+        // dispatch says whether the lock was still ANSWERING at this moment — it must not be, or a
+        // release would reach a chart the base library is about to dispose.
+        log.order.push('detach');
+        const before = log.applied.length;
+        window.dispatchEvent(new MouseEvent('mouseup'));
+        log.duringDetach.push(`applied ${before} -> ${log.applied.length}`);
+      },
+    };
+  };
+}
+
+function SeamHarness({
+  binding,
+  snap,
+  handles,
+}: {
+  binding: DrawingBinding;
+  snap: DrawingSnapInput;
+  handles: ChartHandles;
+}): ReactElement {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [live, setLive] = useState<ChartHandles | null>(null);
+  useEffect(() => {
+    setLive(handles);
+  }, [handles]);
+  useDrawingSeam(live, hostRef, binding, null, {}, snap);
+  // The chart draws its panes INSIDE the host, one under the other. A press never lands on the host
+  // element itself, which is why every press below targets a pane.
+  return (
+    <div ref={hostRef} data-testid="seam-host">
+      <div data-testid={PRICE_PANE} />
+      <div data-testid={STUDY_PANE} />
+    </div>
+  );
+}
+
+const OFF: DrawingSnapInput = { magnet: 'off', thresholdPx: 8, bars: BARS };
+const ON: DrawingSnapInput = { magnet: 'on', thresholdPx: 8, bars: BARS };
+
+type View = { getByTestId: (id: string) => HTMLElement };
+
+const pressIn = (view: View, testId: string): void => {
+  view.getByTestId(testId).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+};
+
+/** Where a drag actually begins: on what the chart drew in the PRICE pane. */
+const pressPricePane = (view: View): void => pressIn(view, PRICE_PANE);
+
+describe('DRAG-05 — the surface attaches the lock and releases it before the layer goes', () => {
+  it('a layer that can hit-test its anchors gets the lock', () => {
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+
+    pressPricePane(view);
+
+    expect(log.applied).toEqual([{ handleScroll: false, handleScale: false }]);
+  });
+
+  it('a layer with no hit-test is left alone, so panning stays the default gesture', () => {
+    // CONTROL. `anchorAt` is optional precisely so an older binding keeps working unchanged.
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, null)} snap={OFF} handles={seamHandles(log)} />,
+    );
+
+    pressPricePane(view);
+
+    expect(log.applied).toEqual([]);
+  });
+
+  it('the cleanup stops the lock listening BEFORE the layer detaches', () => {
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+    pressPricePane(view);
+    expect(log.applied).toHaveLength(1);
+
+    view.unmount();
+
+    // THE ORDER, read directly. Detaching first and unlocking after leaves `['lock','detach',
+    // 'release']` — a release aimed at a chart the layer has already let go of.
+    expect(log.order).toEqual(['lock', 'release', 'detach']);
+    expect(log.applied).toEqual([
+      { handleScroll: false, handleScale: false },
+      { handleScroll: true, handleScale: true },
+    ]);
+  });
+
+  it('the lock has already stopped listening by the time the layer detaches', () => {
+    // THE OTHER HALF OF DRAG-05 — "SHALL leave no listener attached". The layer dispatches a
+    // `mouseup` from inside its own `detach()`, which is the last moment a stranded listener could
+    // still answer, and the count either side of that dispatch says whether one did.
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+    pressPricePane(view);
+
+    view.unmount();
+
+    // Unlocking AFTER the detach instead reads `applied 1 -> 2`: the release the layer's own event
+    // provoked, aimed at a chart the base library is about to dispose.
+    expect(log.duringDetach).toEqual(['applied 2 -> 2']);
+  });
+});
+
+describe('DRAG-06 — the seam is what tells the lock WHICH pane is the price pane', () => {
+  it('a press on a study pane makes no call, though the hit-test says yes', () => {
+    // THE WIRE, sensed. The module's own guard is already proven against a pane handed to it by
+    // hand (`test/axisLock.spec.ts:237`), and that proves the guard — never that anybody supplies
+    // it. This one presses through the real composition, so it goes red the moment the seam stops
+    // passing `pricePane`: the deletion that was silent across the ENTIRE suite until this case.
+    //
+    // The hit-test answers TRUE here on purpose. A study pane sits below the price pane inside the
+    // same container and `anchorAt` reads CONTAINER coordinates, so pressed down there it answers
+    // about a point the pointer is not on. Only the pane can tell the two apart.
+    const log = emptyLog();
+    const view = render(
+      <SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />,
+    );
+
+    pressIn(view, STUDY_PANE);
+
+    expect(log.applied).toEqual([]);
+  });
+});
+
+describe('MAGNET-06 — the mode is read when the anchor is placed, not when the layer attached', () => {
+  it('a new bar, a new mode and a new threshold do not re-attach the layer', () => {
+    // THE WHOLE REASON THE HOST CARRIES A CLOSURE AND NOT THE DATA. Re-attaching is losing every
+    // drawing the user has made, and bars arrive on every tick.
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={OFF} handles={handles} />);
+    expect(log.attaches.count).toBe(1);
+
+    view.rerender(
+      <SeamHarness
+        binding={binding}
+        snap={{ magnet: 'on', thresholdPx: 20, bars: [...BARS, LATER_BAR] }}
+        handles={handles}
+      />,
+    );
+
+    expect(log.attaches.count).toBe(1);
+  });
+
+  it('the same host snaps by the mode in force at the call, and moves nothing already placed', () => {
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={OFF} handles={handles} />);
+    const host = log.hosts[0];
+    const placed = host.snapPrice({ time: BARS[0].time, price: 109 });
+
+    view.rerender(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+
+    // Off gave the pointer its own price; on gives the high. The anchor already resolved keeps the
+    // value it was given, because the rule returns a number and never reaches back for one.
+    expect(placed).toBe(109);
+    expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(110);
+  });
+
+  it('the bars the snap measures against are the live ones, not the ones present at attach', () => {
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+    const host = log.hosts[0];
+
+    view.rerender(
+      <SeamHarness binding={binding} snap={{ ...ON, bars: [MOVED_BAR] }} handles={handles} />,
+    );
+
+    // The high moved, and the same closure answers with the moved one.
+    expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(112);
+  });
+
+  it('the threshold is read at the call too, so a narrower one stops snapping', () => {
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+    const host = log.hosts[0];
+    expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(110);
+
+    view.rerender(
+      <SeamHarness binding={binding} snap={{ ...ON, thresholdPx: 0 }} handles={handles} />,
+    );
+
+    expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(109);
   });
 });

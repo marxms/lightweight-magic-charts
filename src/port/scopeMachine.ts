@@ -255,6 +255,24 @@ export function restartScope(state: ScopeState): ScopeState {
   return { ...createScopeState(state.scope, state.shape), discarded: state.discarded };
 }
 
+/**
+ * The repair valve — a stranded scope goes back to seeding WITHOUT losing the cursor.
+ * `restartScope` starts over; this resumes.
+ * See docs/explanation/port.md#a-stranded-scope-asks-again
+ */
+export function resumeScope(state: ScopeState): ScopeState {
+  return { ...state, phase: 'seeding', resetCause: null, buffered: [] };
+}
+
+/**
+ * The window never reached the live edge and the attempts are spent, so the scope says it is
+ * stranded rather than going quiet in `seeding`.
+ * See docs/explanation/port.md#a-stale-window-strands-the-scope-out-loud
+ */
+export function strandScope(state: ScopeState): ScopeState {
+  return toReset(state, 'stale-history');
+}
+
 /** I7 — after this, no frame and no in-flight fetch may reach the consumer. */
 export function discardScope(state: ScopeState): ScopeState {
   return { ...state, phase: 'discarded', buffered: [] };

@@ -241,6 +241,37 @@ async function colourPixelCount(page, hostSelector, rgb, tolerance = 15) {
   );
 }
 
+/**
+ * The host's read-only probe, and the two gestures below have no other observable: an anchor's
+ * PRICE lives inside the drawing engine and the visible bar range lives inside the time scale.
+ * Declared in `example/drawing.ts`, where the reason is written next to it.
+ */
+const drawingProbe = (page, member) =>
+  page.evaluate((name) => window.__lmcDrawingProbe[name](), member);
+
+/** Arms the one-anchor tool, clicks once, and answers the PRICE the anchor landed on. */
+async function placeHorizontalLine(page, x, y) {
+  await page.locator('[data-testid="workspace-drawing-tool-horizontal-line"]').click();
+  await page.waitForTimeout(120);
+  await page.mouse.move(x, y, { steps: 6 });
+  await page.waitForTimeout(120);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(220);
+  const anchors = await drawingProbe(page, 'anchors');
+  return anchors.length === 0 ? null : anchors[anchors.length - 1].price;
+}
+
+/** The four REAL values of the bar under `x`, read off the legend the chart prints for it. */
+async function hoveredBar(page, x, y) {
+  await page.mouse.move(x, y, { steps: 4 });
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const text = (await page.locator('[data-testid="workspace-legend-price"]').textContent()) ?? '';
+  const read = text.match(/O\s*([\d.]+)\s*H\s*([\d.]+)\s*L\s*([\d.]+)\s*C\s*([\d.]+)/);
+  if (read === null) return null;
+  return { open: +read[1], high: +read[2], low: +read[3], close: +read[4] };
+}
+
 const SURFACE_HOST = '[data-testid="workspace-surface"] [role="img"]';
 /** `DEFAULT_PRICE_ALERT_STYLE.idleColor` and the drawing preview's stroke — both `#2962FF` in the
  * demo. See `src/alerts/priceAlerts.ts` and `example/drawingPreview.ts`. */
@@ -676,6 +707,143 @@ async function sceneFullJourneyStaysClean(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Scene 10 — DRAG-01: pulling an anchor moves the anchor and nothing else.
+//
+// THE DEFECT THIS EXISTS FOR passed 1234 green unit tests and every gate: the provider's wrapper
+// dropped `anchorAt`, the lock never attached, and the chart panned under the pointer while the
+// shape stayed where it was. It is a browser gesture, so only a browser can see it.
+//
+// THE TWO CHECKS ARE A PAIR, deliberately. A gesture that never grabbed the anchor pans the chart
+// and fails the first; a gesture that grabbed it and then did nothing fails the second. Neither
+// passes by accident, and no single check could say that on its own.
+// ---------------------------------------------------------------------------------------------
+async function sceneAnchorDragHoldsTheRange(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const box = await page.locator(SURFACE_HOST).boundingBox();
+
+  // Two spaced anchors, per the double-click pitfall the drawing scene above documents.
+  await page.locator('[data-testid="workspace-drawing-tool-trend-line"]').click();
+  await page.waitForTimeout(150);
+  const first = { x: box.x + box.width * 0.35, y: box.y + box.height * 0.3 };
+  const grabbed = { x: box.x + box.width * 0.55, y: box.y + box.height * 0.45 };
+  for (const at of [first, grabbed]) {
+    await page.mouse.move(at.x, at.y, { steps: 8 });
+    await page.waitForTimeout(180);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(280);
+  }
+
+  const rangeBefore = await drawingProbe(page, 'barTimes');
+  const anchorsBefore = await drawingProbe(page, 'anchors');
+
+  // 200 px HORIZONTALLY — the pan direction on purpose, so a lock that never engaged shows up as
+  // the whole chart sliding out from under the shape being resized.
+  await page.mouse.move(grabbed.x, grabbed.y, { steps: 6 });
+  await page.waitForTimeout(180);
+  await page.mouse.down();
+  await page.mouse.move(grabbed.x - 200, grabbed.y, { steps: 24 });
+  await page.waitForTimeout(180);
+  await page.mouse.up();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+
+  const rangeAfter = await drawingProbe(page, 'barTimes');
+  const anchorsAfter = await drawingProbe(page, 'anchors');
+
+  check(
+    'drag.range-unchanged',
+    JSON.stringify(rangeBefore) === JSON.stringify(rangeAfter),
+    `bar times at a fifth, half and four fifths of the width: before=${JSON.stringify(rangeBefore)} after=${JSON.stringify(rangeAfter)}`,
+  );
+  check(
+    'drag.anchor-moved',
+    anchorsBefore.length === 2 && JSON.stringify(anchorsBefore) !== JSON.stringify(anchorsAfter),
+    `anchors before=${JSON.stringify(anchorsBefore)} after=${JSON.stringify(anchorsAfter)}`,
+  );
+
+  reportConsole('drag.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 11 — MAGNET-02, MAGNET-03 and MAGNET-07, read as PRICES and not as a pressed attribute.
+//
+// The price scale is calibrated from two anchors placed with the magnet off, so every y below is
+// derived from prices the drawing itself reported; the bar's four values come from the legend the
+// chart prints. Both aiming points sit ABOVE the high, where no other value of the bar can be
+// nearer, so "snaps to the high" is the only outcome the rule allows.
+// ---------------------------------------------------------------------------------------------
+async function sceneMagnetPlacesTheAnchor(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const box = await page.locator(SURFACE_HOST).boundingBox();
+  const x = box.x + box.width * 0.6;
+
+  const calibrateA = box.y + box.height * 0.15;
+  const calibrateB = box.y + box.height * 0.55;
+  const priceA = await placeHorizontalLine(page, x, calibrateA);
+  const priceB = await placeHorizontalLine(page, x, calibrateB);
+  const perPx = (priceB - priceA) / (calibrateB - calibrateA);
+  const yOf = (price) => calibrateA + (price - priceA) / perPx;
+
+  const bar = await hoveredBar(page, x, calibrateB);
+  const nearHigh = yOf(bar.high) - 3;
+  const alsoNearHigh = yOf(bar.high) - 7;
+  const betweenCloseAndHigh = (yOf(bar.high) + yOf(bar.close)) / 2;
+
+  const freeNear = await placeHorizontalLine(page, x, nearHigh);
+  const freeAlsoNear = await placeHorizontalLine(page, x, alsoNearHigh);
+  const freeBetween = await placeHorizontalLine(page, x, betweenCloseAndHigh);
+  const values = [bar.open, bar.high, bar.low, bar.close];
+  const isBarValue = (price) => values.some((value) => value.toFixed(2) === price.toFixed(2));
+
+  check(
+    'magnet.off-is-free',
+    freeBetween !== null &&
+      freeBetween > bar.close &&
+      freeBetween < bar.high &&
+      !isBarValue(freeBetween) &&
+      !isBarValue(freeNear) &&
+      !isBarValue(freeAlsoNear) &&
+      freeNear !== freeAlsoNear,
+    `bar=${JSON.stringify(bar)} between close and high=${freeBetween} (equal to no bar value); two points 4 px apart read ${freeNear} and ${freeAlsoNear}`,
+  );
+
+  await page.getByRole('button', { name: 'Magnet', exact: true }).click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+
+  const snapped = await placeHorizontalLine(page, x, nearHigh);
+  const snappedAgain = await placeHorizontalLine(page, x, alsoNearHigh);
+
+  check(
+    'magnet.on-snaps',
+    snapped !== null &&
+      snapped === snappedAgain &&
+      snapped.toFixed(2) === bar.high.toFixed(2) &&
+      freeNear !== freeAlsoNear,
+    `the same two points that read ${freeNear} and ${freeAlsoNear} free now both read ${snapped} — the bar's high is ${bar.high}`,
+  );
+
+  // MAGNET-07 — WHERE the dashed trace sits, which no colour count can answer. The check at
+  // `drawing.preview-visible-between-clicks` is a presence sensor by its own comment above, and it
+  // runs with the magnet off; a preview drawn at the raw pointer price would keep it green. So the
+  // tool is armed and the pointer HOVERS without clicking: the only thing that moves is the trace.
+  await page.locator('[data-testid="workspace-drawing-tool-horizontal-line"]').click();
+  await page.waitForTimeout(120);
+  await page.mouse.move(x, nearHigh, { steps: 6 });
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const traced = await drawingProbe(page, 'previewCursor');
+
+  check(
+    'magnet.preview-traces-the-snap',
+    traced !== null && traced.price.toFixed(2) === bar.high.toFixed(2) && traced.price !== freeNear,
+    `hovering the point that placed ${freeNear} with the magnet off, the trace now sits at ${traced === null ? 'nothing' : traced.price} — the bar's high is ${bar.high}`,
+  );
+
+  reportConsole('magnet.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
 
 const context = await esbuild.context({
   entryPoints: [join(EXAMPLE, 'main.tsx')],
@@ -703,6 +871,8 @@ try {
   await sceneGlyphsAreNotPlaceholders(browser, base);
   await sceneRailContainsItsControls(browser, base);
   await sceneAlertAddAndDragRemove(browser, base);
+  await sceneAnchorDragHoldsTheRange(browser, base);
+  await sceneMagnetPlacesTheAnchor(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

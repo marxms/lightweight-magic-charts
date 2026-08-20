@@ -19,7 +19,9 @@ import { formatterFor, minMoveOf } from '../domain/format';
 import { encodeDirection, scopeKey } from '../domain/types';
 import type { Bar, PriceScaleConvention, Scope, ValueFormat } from '../domain/types';
 import type { HistoryPort, LivePort } from '../port/ports';
+import { needsRefetch } from '../port/scopeMachine';
 import { openScope } from '../port/seedTransaction';
+import type { Session } from '../port/seedTransaction';
 import type { ChartEngine, SeriesHandle, WorkspaceChartHandle } from '../port/chartApi';
 import { useChromeTheme } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
@@ -196,15 +198,23 @@ export function CompactCell({
       });
     };
 
+    let live = true;
+    // Assigned right below, same as the candle lane.
+    let current: Session | null = null;
+
     const opened = openScope({
       scope: session,
       shape: 'delta',
       port,
       history: { from: 0, to: Number.MAX_SAFE_INTEGER, barCount },
-      onState: (state) => paint(state.bars),
+      onState: (state) => {
+        paint(state.bars);
+        // A cell strands on a reconnect exactly like the main lane, and a grid strands at once.
+        // See docs/explanation/port.md#a-stranded-scope-asks-again
+        if (live && needsRefetch(state)) void current?.reseed();
+      },
     });
-
-    let live = true;
+    current = opened;
     opened.outcome.then(
       (outcome) => {
         if (!live) return;

@@ -43,7 +43,7 @@ changes in the code changes here.
 - **`SurfaceAlerts`** · type · `interface SurfaceAlerts { levels?: readonly number[] | undefined; onChange?: ((levels: readonly number[]) => void) | undefined; onCrossed?: ((crossed: readonly PriceAlert[]) => void) | undefined; style?: PriceAlertStyle | undefined }`
 - **`SurfaceAppearance`** · type · `interface SurfaceAppearance { theme?: WorkspaceTheme | undefined; gridLinesVisible?: boolean | undefined; testIdPrefix?: string | undefined }`
 - **`SurfaceData`** · type · `interface SurfaceData { bars: readonly Bar[]; panes: readonly PaneView[]; read: SeriesReader; pricePane?: PaneSpec | undefined; priceCaption?: string | undefined; seriesStyles?: Readonly<Record<string, SeriesShape>> | undefined; priceMarkers?: readonly SeriesMarkerPoint[] | undefined; datasetId?: string | undefined; autoFit?: boolean | undefined; futureBars?: number | undefined }`
-- **`SurfaceDrawing`** · type · `interface SurfaceDrawing { binding?: DrawingBinding | undefined; activeTool?: string | null | undefined; onCountChange?: ((count: number) => void) | undefined; onToolFinished?: (() => void) | undefined }`
+- **`SurfaceDrawing`** · type · `interface SurfaceDrawing { binding?: DrawingBinding | undefined; activeTool?: string | null | undefined; magnet?: MagnetMode | undefined; snapThresholdPx?: number | undefined; onCountChange?: ((count: number) => void) | undefined; onToolFinished?: (() => void) | undefined }`
 - **`SurfaceLabels`** · type · `interface SurfaceLabels { label: string; describedBy: string }`
 - **`SurfaceLayout`** · type · `interface SurfaceLayout { heightPx: number; budget?: LayoutBudget | undefined; onLayout?: ((application: StackApplication) => void) | undefined }`
 
