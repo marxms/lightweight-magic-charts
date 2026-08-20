@@ -766,7 +766,8 @@ async function sceneAnchorDragHoldsTheRange(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Scene 11 — MAGNET-02, MAGNET-03 and MAGNET-07, read as PRICES and not as a pressed attribute.
+// Scene 11 — MAGNET-02, MAGNET-03, MAGNET-07 and MAGNET-08, read as PRICES and as the chart's own
+// RESOLVED crosshair mode, never as a pressed attribute.
 //
 // The price scale is calibrated from two anchors placed with the magnet off, so every y below is
 // derived from prices the drawing itself reported; the bar's four values come from the legend the
@@ -808,8 +809,15 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
     `bar=${JSON.stringify(bar)} between close and high=${freeBetween} (equal to no bar value); two points 4 px apart read ${freeNear} and ${freeAlsoNear}`,
   );
 
+  // MAGNET-08 — WHAT THE POINTER DOES, which every check above is blind to. `chart.options()` is the
+  // RESOLVED option and not what the host passed in, because the defect was the base library's own
+  // default (`CrosshairMode.Magnet`, 1) that nothing had ever overridden: at the released 0.2.0 this
+  // read 1 with the toggle off, 1 with it on, and 1 with it off again.
+  const cursorFree = await drawingProbe(page, 'crosshairMode');
+
   await page.getByRole('button', { name: 'Magnet', exact: true }).click();
   await page.waitForTimeout(ACTION_SETTLE_MS);
+  const cursorStuck = await drawingProbe(page, 'crosshairMode');
 
   const snapped = await placeHorizontalLine(page, x, nearHigh);
   const snappedAgain = await placeHorizontalLine(page, x, alsoNearHigh);
@@ -837,6 +845,18 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
     'magnet.preview-traces-the-snap',
     traced !== null && traced.price.toFixed(2) === bar.high.toFixed(2) && traced.price !== freeNear,
     `hovering the point that placed ${freeNear} with the magnet off, the trace now sits at ${traced === null ? 'nothing' : traced.price} — the bar's high is ${bar.high}`,
+  );
+
+  await page.getByRole('button', { name: 'Magnet', exact: true }).click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const cursorFreeAgain = await drawingProbe(page, 'crosshairMode');
+
+  check(
+    'magnet.cursor-follows-the-mode',
+    cursorFree === 0 && cursorStuck === 3 && cursorFreeAgain === 0,
+    `chart.options().crosshair.mode read ${cursorFree} off, ${cursorStuck} on and ${cursorFreeAgain} ` +
+      'off again — 0 Normal and 3 MagnetOHLC, the four values the anchor snaps to, never 1 Magnet, ' +
+      'which is the close alone',
   );
 
   reportConsole('magnet.console-clean', console_);

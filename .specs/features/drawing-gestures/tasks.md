@@ -1150,7 +1150,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T35: The browser proves the cursor and the anchor agree
+### T35: The browser proves the cursor and the anchor agree — DONE
 
 **What**: A browser check that reads the resolved crosshair mode with the toggle off and on, and closes the release.
 **Where**: `scripts/e2e-demo.mjs`
@@ -1164,12 +1164,12 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] The probe reads `chart.options().crosshair.mode` — the RESOLVED option, not what was passed in, so a default that was never overridden is visible
-- [ ] With the toggle off the check reads `0`; pressing it reads `3`; pressing again returns to `0`
-- [ ] The check FAILS against the pre-T34 code — prove it by reverting T34 in a scratch, watching it fail, restoring, and confirming `git status --porcelain`
-- [ ] `package.json` goes to `0.2.1` and the CHANGELOG names the defect plainly: what a user saw, why it was the base library's default rather than a regression, and that the feature which added the mode left the cursor out of it
-- [ ] Gate check passes: `npm test && npm run e2e`
-- [ ] e2e count: 48 baseline + the new check(s)
+- [x] The probe reads `chart.options().crosshair.mode` — the RESOLVED option, not what was passed in, so a default that was never overridden is visible
+- [x] With the toggle off the check reads `0`; pressing it reads `3`; pressing again returns to `0`
+- [x] The check FAILS against the pre-T34 code — prove it by reverting T34 in a scratch, watching it fail, restoring, and confirming `git status --porcelain`. MEASURED: with `src/react/surface/useDrawingSeam.ts` at `HEAD~1` the suite read 48/49 and `magnet.cursor-follows-the-mode` reported `1` off, `1` on and `1` off again; restored, the file shows no diff and the suite reads 49/49
+- [x] `package.json` goes to `0.2.1` and the CHANGELOG names the defect plainly: what a user saw, why it was the base library's default rather than a regression, and that the feature which added the mode left the cursor out of it
+- [x] Gate check passes: `npm test && npm run e2e`
+- [x] e2e count: 48 baseline + 1 = 49
 
 **Tests**: e2e
 **Gate**: full

@@ -155,11 +155,11 @@ recorded.
 | MAGNET-05 | P2: the magnet is a mode | T4, T6, T9, T11, T26 | Done |
 | MAGNET-06 | P2: the magnet is a mode | T5, T8, T22 | Done |
 | MAGNET-07 | P3: the preview shows the magnet | T10, T19, T27 | Done |
-| MAGNET-08 | P2: the magnet is a mode | T34, T35 | Pending |
+| MAGNET-08 | P2: the magnet is a mode | T34, T35 | Done |
 
 **ID format:** `[CATEGORY]-[NUMBER]`
 
-**Coverage:** 14 total, 14 mapped to tasks, 0 unmapped, 13 Done
+**Coverage:** 14 total, 14 mapped to tasks, 0 unmapped, 14 Done
 
 ---
 
