@@ -45,9 +45,9 @@ function definitionOf(shape: SeriesShape): unknown {
 /**
  * THE REAL CHART, KEPT REACHABLE — and the reason is a gap in the drawing seam worth naming.
  *
- * `DrawingSurfaceHost` hands a binding `{ chart, series, container }`, where `series` is the real
- * `ISeriesApi` (a real series satisfies `SeriesHandle` structurally, as below) but `chart` is the
- * STRUCTURAL handle this file builds. A drawing library that wants `IChartApi` — and
+ * `DrawingSurfaceHost` hands a binding `{ chart, series, container, snapPrice }`, where `series` is
+ * the real `ISeriesApi` (a real series satisfies `SeriesHandle` structurally, as below) but `chart`
+ * is the STRUCTURAL handle this file builds. A drawing library that wants `IChartApi` — and
  * `lightweight-charts-drawing` does — cannot get it from the seam alone.
  *
  * So the host keeps the pairing. A WeakMap rather than a field on the handle: nothing should be able

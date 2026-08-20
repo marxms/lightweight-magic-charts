@@ -614,7 +614,7 @@ T19 → T20
 
 ---
 
-### T19: The three places that still teach a three-member host
+### T19: The three places that still teach a three-member host — DONE
 
 **What**: Name all four members of `DrawingSurfaceHost` in the how-to, the example's engine comment and the reference generator's prose, then regenerate the reference page.
 **Where**: `docs/how-to/bind-drawing.md`
@@ -628,9 +628,9 @@ T19 → T20
 - Skill: NONE
 
 **Done when**:
-- [ ] `docs/how-to/bind-drawing.md`, `example/engine.ts` and `scripts/reference-prose.mjs` all name `chart`, `series`, `container` and `snapPrice`
-- [ ] `node scripts/gen-reference.mjs` run, and `docs/reference/drawing/drawingLayer.md` no longer contradicts its own Exports table
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] `docs/how-to/bind-drawing.md`, `example/engine.ts` and `scripts/reference-prose.mjs` all name `chart`, `series`, `container` and `snapPrice`
+- [x] `node scripts/gen-reference.mjs` run, and `docs/reference/drawing/drawingLayer.md` no longer contradicts its own Exports table
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build

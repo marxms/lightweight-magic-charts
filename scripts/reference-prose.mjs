@@ -140,8 +140,9 @@ export const price: number = snapAnchorPrice({ ...pointer, mode });`,
   'drawing/drawingLayer': {
     title: 'the seam a drawing library is plugged into',
     summary: `Five types and no implementation: the library owns the rail and the tool buttons, and the
-thing that draws is the host's. A \`DrawingBinding\` is handed the chart, the price series and the
-container, and returns a live layer the workspace drives.`,
+thing that draws is the host's. A \`DrawingBinding\` is handed the chart, the price series, the
+container and \`snapPrice\` — the library's magnet rule, already bound — and returns a live layer the
+workspace drives.`,
     example: `import type { DrawingBinding, DrawingLayer } from 'lightweight-magic-charts';
 
 declare const layerOver: (container: HTMLElement) => DrawingLayer;
