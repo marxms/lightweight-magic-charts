@@ -110,13 +110,17 @@ const SYMBOLS_AT_CUTOVER = 13;
  * paid; the per-candidate deltas are written in `size-budget.json`'s entry note. On a ZERO-SLACK row
  * the limit descends with the measurement, which is the ratchet closing behind the shrinkage rather
  * than banking it as slack.
+ * RE-PINNED 2026-08-20, entry 104932 -> 104973 (+41 B) and ChartWorkspace 95696 -> 95702 (+6 B):
+ * the crosshair follows the magnet, so the pointer and the anchor stop disagreeing. Net of 90 B
+ * this feature's own modules gave back, measured one candidate at a time — the deltas are in the
+ * budget's entry note. `PROVISIONAL_ENTRY_LIMIT` is untouched and the entry sits 21 B under it.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104932,
+  '*': 104973,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -129,7 +133,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95696,
+  ChartWorkspace: 95702,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

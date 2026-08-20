@@ -217,6 +217,9 @@ interface SeamLog {
   readonly duringDetach: string[];
   /** The two cleanup acts IN THE ORDER THEY HAPPENED. A total cannot say which came first. */
   readonly order: string[];
+  /** Every `crosshair.mode` the chart was told, in order. A LEDGER OF ITS OWN, because the lock's
+   * assertions below are about the `{handleScroll, handleScale}` pair and about nothing else. */
+  readonly crosshair: number[];
 }
 
 const emptyLog = (): SeamLog => ({
@@ -225,6 +228,7 @@ const emptyLog = (): SeamLog => ({
   applied: [],
   duringDetach: [],
   order: [],
+  crosshair: [],
 });
 
 /** One pixel per price unit, so a threshold in pixels reads as a price difference. */
@@ -275,6 +279,13 @@ function seamHandles(log: SeamLog): ChartHandles {
     addPane: () => undefined,
     addSeries: () => series,
     applyOptions: (options: Record<string, unknown>) => {
+      // The axis lock and the crosshair mode both reach the chart through this one door; they are
+      // filed apart so neither ledger has to be read through the other's noise.
+      const crosshair = options.crosshair as { mode: number } | undefined;
+      if (crosshair !== undefined) {
+        log.crosshair.push(crosshair.mode);
+        return;
+      }
       log.applied.push(options);
       log.order.push(options.handleScroll === false ? 'lock' : 'release');
     },
@@ -318,7 +329,7 @@ function SeamHarness({
   snap,
   handles,
 }: {
-  binding: DrawingBinding;
+  binding: DrawingBinding | undefined;
   snap: DrawingSnapInput;
   handles: ChartHandles;
 }): ReactElement {
@@ -497,5 +508,83 @@ describe('MAGNET-06 — the mode is read when the anchor is placed, not when the
     );
 
     expect(host.snapPrice({ time: BARS[0].time, price: 109 })).toBe(109);
+  });
+});
+
+/**
+ * MAGNET-08 — WHAT THE USER SEES, which every requirement before this one was silent about.
+ *
+ * `0.2.0` shipped with the magnet off and the crosshair still stuck to the candle's close, because
+ * `CrosshairMode.Magnet` is the base library's DEFAULT (`node_modules/lightweight-charts/dist/
+ * typings.d.ts:1084`) and nothing in `src/` or `example/` ever set `crosshair`. Reproduced in a real
+ * browser before the fix: with the toggle off, `chart.options().crosshair.mode` read `1`, and it
+ * still read `1` after pressing the toggle twice. The anchor landed free while the pointer said
+ * otherwise, so free placement read as broken.
+ *
+ * The ordinals: `0` Normal, `1` Magnet (the close alone), `2` Hidden, `3` MagnetOHLC.
+ */
+const NORMAL = 0;
+const MAGNET_OHLC = 3;
+
+describe('MAGNET-08 — the crosshair follows the magnet, so aim matches outcome', () => {
+  it('a mounted layer overrides the base library default: the cursor starts at Normal', () => {
+    const log = emptyLog();
+    render(<SeamHarness binding={seamBinding(log, () => true)} snap={OFF} handles={seamHandles(log)} />);
+
+    expect(log.crosshair).toEqual([NORMAL]);
+  });
+
+  it('turning the magnet on applies MagnetOHLC — 3, the four values the snap chooses among', () => {
+    // NOT `1`. `Magnet` sticks the crosshair to the CLOSE alone, while `snapAnchorPrice` chooses
+    // among open, high, low and close — a cursor magnetised to a smaller set is the same
+    // disagreement wearing the other mask.
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={OFF} handles={handles} />);
+
+    view.rerender(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+
+    expect(log.crosshair).toEqual([NORMAL, MAGNET_OHLC]);
+  });
+
+  it('turning it off again gives the cursor back its freedom', () => {
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+    expect(log.crosshair).toEqual([MAGNET_OHLC]);
+
+    view.rerender(<SeamHarness binding={binding} snap={OFF} handles={handles} />);
+
+    expect(log.crosshair).toEqual([MAGNET_OHLC, NORMAL]);
+  });
+
+  it('a bar arriving neither re-attaches the layer nor speaks to the crosshair again', () => {
+    // THE LIVE-REF PATH, sensed. A dependency on the mode is a dependency on the snap group, which
+    // carries `bars` and is new on every tick: the layer would re-attach and every drawing would go.
+    const log = emptyLog();
+    const handles = seamHandles(log);
+    const binding = seamBinding(log, () => true);
+    const view = render(<SeamHarness binding={binding} snap={ON} handles={handles} />);
+
+    view.rerender(
+      <SeamHarness binding={binding} snap={{ ...ON, bars: [...BARS, LATER_BAR] }} handles={handles} />,
+    );
+
+    expect(log.attaches.count).toBe(1);
+    expect(log.crosshair).toEqual([MAGNET_OHLC]);
+  });
+
+  it('with NO drawing binding the library never touches the crosshair, so a host keeps its own', () => {
+    // THE DECISION, pinned. Where a layer IS attached the library's mode wins over anything the host
+    // passed through `ChartEngine` — the port publishes no reader, so a host's value cannot be read,
+    // remembered or given back. Where no layer is attached there is no anchor to place and nothing
+    // to disagree about, so the surface leaves the option exactly as the host left it.
+    const log = emptyLog();
+
+    render(<SeamHarness binding={undefined} snap={ON} handles={seamHandles(log)} />);
+
+    expect(log.crosshair).toEqual([]);
   });
 });

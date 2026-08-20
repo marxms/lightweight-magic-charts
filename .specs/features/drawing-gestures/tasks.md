@@ -1120,7 +1120,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T34: The crosshair follows the magnet
+### T34: The crosshair follows the magnet — DONE
 
 **What**: The library applies the chart's crosshair mode from the magnet mode — free when `off`, stuck to a bar value when `on` — so the pointer and the anchor never disagree.
 **Where**: `src/react/surface/useDrawingSeam.ts`
@@ -1134,14 +1134,14 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] **Reproduce first, in the browser.** At HEAD, with the magnet OFF, `chart.options().crosshair.mode` reads `1` (`CrosshairMode.Magnet`, the base library default, which sticks the horizontal line to the CLOSE). The check must fail before the fix
-- [ ] With the magnet `off` the library applies mode `0` (`Normal`); with it `on`, mode `3` (`MagnetOHLC`) — **3, not 1**, because this feature's snap targets open, high, low OR close, and `1` sticks to the close alone. A crosshair that magnetises to a different set than the anchor is the same defect wearing the other mask
-- [ ] The mode is applied on mount AND on every change, through the same live-ref path the snap closure uses — no new effect dependency on the mode, or a bar arriving re-attaches the drawing layer
-- [ ] The numeric values are named in a comment with their enum names, because the library cannot import the enum and a bare `3` is unreadable
-- [ ] A host that supplies its own `crosshair` option keeps it while the magnet is `off`? **Decide and state which wins, and why** — do not leave it incidental
-- [ ] The byte cost is measured and named in both ledgers. The entry is at 104932 with **62 B** under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised. If it does not fit, recover from this feature's own modules as T24 did
-- [ ] `test/drawingSeam.spec.tsx` extended
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] **Reproduce first, in the browser.** At HEAD, with the magnet OFF, `chart.options().crosshair.mode` reads `1` (`CrosshairMode.Magnet`, the base library default, which sticks the horizontal line to the CLOSE). The check must fail before the fix — MEASURED: `1` off, `1` on, `1` off again; after the fix `0`, `3`, `0`
+- [x] With the magnet `off` the library applies mode `0` (`Normal`); with it `on`, mode `3` (`MagnetOHLC`) — **3, not 1**, because this feature's snap targets open, high, low OR close, and `1` sticks to the close alone. A crosshair that magnetises to a different set than the anchor is the same defect wearing the other mask
+- [x] The mode is applied on mount AND on every change, through the same live-ref path the snap closure uses — no new effect dependency on the mode, or a bar arriving re-attaches the drawing layer. The push effect carries NO dependency array and reads `snapRef.current`
+- [x] The numeric values are named in a comment with their enum names, because the library cannot import the enum and a bare `3` is unreadable
+- [x] A host that supplies its own `crosshair` option keeps it while the magnet is `off`? **Decided: the LIBRARY wins wherever a drawing layer is attached, and the host keeps its own wherever none is.** The port publishes `applyOptions` and no reader, so a host's value cannot be read, remembered or given back — honouring one would rest MAGNET-08's promise on a value the library cannot see, and an unoverridden default is exactly what shipped the defect. With no layer there is no anchor to place and nothing to disagree about
+- [x] The byte cost is measured and named in both ledgers. The entry is at 104932 with **62 B** under `PROVISIONAL_ENTRY_LIMIT`; that ceiling is not to be raised. If it does not fit, recover from this feature's own modules as T24 did — TAKEN: 90 B back from this feature's own modules, so the entry moved 104932 -> 104973 (+41 B) and sits 21 B under the untouched ceiling
+- [x] `test/drawingSeam.spec.tsx` extended
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: unit
 **Gate**: build

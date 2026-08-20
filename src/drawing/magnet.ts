@@ -37,29 +37,30 @@ function coordinate(input: SnapInput, price: number): number | null {
 }
 
 export function snapAnchorPrice(input: SnapInput): number {
-  if (input.mode === 'off') return input.price;
+  const { price, thresholdPx } = input;
+  if (input.mode === 'off') return price;
   // A TOLERANCE NOBODY CAN MEASURE MEANS "DO NOT SNAP", never "snap to anything". Every comparison
   // against NaN is false, so `distancePx > thresholdPx` stopped rejecting and the magnet took the
   // whole quartet — the anchor landed on a bar value the user never aimed at.
-  if (!measurable(input.price) || !measurable(input.thresholdPx)) return input.price;
+  if (!measurable(price) || !measurable(thresholdPx)) return price;
   const bar = input.bars.find((candidate) => candidate.time === input.time);
-  if (bar === undefined) return input.price;
-  const pointerPx = coordinate(input, input.price);
-  if (!measurable(pointerPx)) return input.price;
+  if (bar === undefined) return price;
+  const pointerPx = coordinate(input, price);
+  if (!measurable(pointerPx)) return price;
 
   // THE WINNER IN TWO SCALARS, not in an object: nearest wins, and a TIE goes to the HIGHER price,
   // so the outcome is decided and not incidental. `Infinity` is the "nothing qualified yet" mark —
   // unreachable as a real distance, because a finite threshold already rejected every other case.
-  let bestPrice = input.price;
+  let bestPrice = price;
   let bestPx = Infinity;
-  for (const price of [bar.open, bar.high, bar.low, bar.close]) {
-    const px = coordinate(input, price);
+  for (const candidate of [bar.open, bar.high, bar.low, bar.close]) {
+    const px = coordinate(input, candidate);
     // A candidate the scale cannot place is dropped; the snap itself survives it.
     if (!measurable(px)) continue;
     const distancePx = Math.abs(px - pointerPx);
-    if (distancePx > input.thresholdPx || distancePx > bestPx) continue;
-    if (distancePx === bestPx && price <= bestPrice) continue;
-    bestPrice = price;
+    if (distancePx > thresholdPx || distancePx > bestPx) continue;
+    if (distancePx === bestPx && candidate <= bestPrice) continue;
+    bestPrice = candidate;
     bestPx = distancePx;
   }
   return bestPrice;

@@ -34,16 +34,17 @@ export function useDrawingSeam(
   events: DrawingSeamEvents,
   snap: DrawingSnapInput,
 ): void {
-  const layerRef = useRef<DrawingLayer | null>(null);
-  const activeToolRef = useRef<string | null>(activeTool ?? null);
-  activeToolRef.current = activeTool ?? null;
-  /** What the layer last heard. `undefined` = no layer to hear anything — never a valid tool value.
-   * See docs/explanation/react-surface.md#the-push-is-deduplicated */
+  /** WHAT THE SEAM IS ATTACHED TO, as ONE value: two refs cleared together are one chance to miss. */
+  const attachedRef = useRef<{ layer: DrawingLayer; chart: ChartHandles['chart'] } | null>(null);
+  /** What the layer last heard. `undefined` = no layer to hear anything, so the push below is what
+   * ARMS a fresh layer, the mount included. See docs/explanation/react-surface.md#the-push-is-deduplicated */
   const sentToolRef = useRef<string | null | undefined>(undefined);
   const eventsRef = useRef(events);
   eventsRef.current = events;
   const snapRef = useRef(snap);
   snapRef.current = snap;
+  /** What the crosshair was last told. `-1` is no `CrosshairMode`, so a NEW chart is always owed one. */
+  const sentModeRef = useRef(-1);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -82,23 +83,44 @@ export function useDrawingSeam(
             pricePane: () => chart.panes()[0]?.getHTMLElement() ?? null,
             anchorAt: (point) => layer.anchorAt?.(point) === true,
           });
-    layerRef.current = layer;
-    // The tool armed BEFORE the layer attached still arrives — state pushed, not assumed lost.
-    sentToolRef.current = activeToolRef.current;
-    layer.setActiveTool(activeToolRef.current);
+    attachedRef.current = { layer, chart };
     return () => {
-      layerRef.current = null;
+      attachedRef.current = null;
       sentToolRef.current = undefined;
+      sentModeRef.current = -1;
       // BEFORE `detach()`: the lock has to stop listening while the chart is still alive.
       unlock?.();
       layer.detach();
     };
   }, [binding, handles, hostRef]);
 
+  /**
+   * ONE PUSH FOR BOTH: the layer hears each armed tool once, the chart each magnet mode once. No
+   * dependency list — both are read off live refs, and a dependency on the snap group is one on
+   * `bars`, new every tick, which re-attaches the layer and throws away every drawing.
+   * THE CURSOR FOLLOWS THE MODE, so what the user aims at is what the anchor takes. `CrosshairMode`
+   * cannot be imported by a package with no runtime dependency, so the ordinals carry their names:
+   * `0` Normal moves freely, `3` MagnetOHLC sticks to open/high/low/close — the four values
+   * `snapAnchorPrice` chooses among. NOT `1` Magnet, the base library's DEFAULT, which takes the
+   * close alone: a cursor magnetised to a smaller set is the same disagreement in a better disguise.
+   *
+   * THE LIBRARY'S MODE WINS over a host-supplied `crosshair`: the port publishes no reader, so that
+   * value cannot be read, remembered or given back, and an unoverridden default is what shipped the
+   * defect. Scoped to an ATTACHED LAYER — with no anchor to place, nothing can disagree.
+   * See docs/explanation/react-surface.md#the-push-is-deduplicated
+   */
   useEffect(() => {
+    const attached = attachedRef.current;
+    if (attached === null) return;
     const next = activeTool ?? null;
-    if (layerRef.current === null || sentToolRef.current === next) return;
-    sentToolRef.current = next;
-    layerRef.current.setActiveTool(next);
-  }, [activeTool]);
+    if (sentToolRef.current !== next) {
+      sentToolRef.current = next;
+      attached.layer.setActiveTool(next);
+    }
+    const mode = snapRef.current.magnet === 'on' ? 3 : 0;
+    if (sentModeRef.current !== mode) {
+      sentModeRef.current = mode;
+      attached.chart.applyOptions({ crosshair: { mode } });
+    }
+  });
 }
