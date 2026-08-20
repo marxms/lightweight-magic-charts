@@ -324,7 +324,7 @@ T12 → T13
 
 ---
 
-### T9: Forward the mode from the workspace to the surface
+### T9: Forward the mode from the workspace to the surface — DONE
 
 **What**: `CanvasSurface` passes `magnet` into `SurfaceDrawing`; `WorkspaceDrawingOptions` gains `snapThresholdPx`.
 **Where**: `src/react/workspace/CanvasSurface.tsx`
@@ -338,12 +338,13 @@ T12 → T13
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] The mode reaches `ChartSurface` from `useDrawingRail()`
-- [ ] `test/gates/socketParity.spec.ts` passes — no field declared and never passed
-- [ ] `test/gates/setupFanOut.spec.ts` passes
-- [ ] `test/canvasSurface.spec.tsx` extended for the forwarding
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] The mode reaches `ChartSurface` from `useDrawingRail()`
+- [x] `test/gates/socketParity.spec.ts` passes — no field declared and never passed
+- [x] `test/gates/setupFanOut.spec.ts` passes — it counts `useWorkspaceSetup` selectors, and the
+      fifth read here is off `useDrawingRail()`, which that gate does not measure
+- [x] `test/canvasSurface.spec.tsx` extended for the forwarding
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + 2 tests pass (1237 -> 1239, no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

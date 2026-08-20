@@ -39,6 +39,10 @@ export interface CanvasSurfaceProps {
   readonly lane: CandleLane;
   /** The fields drawn behind the price action. Their data is adapted by the host. */
   readonly fields?: Omit<OverlayFields, 'bars'>;
+  /** How close a pointer has to come, in SCREEN pixels, before the magnet takes it. Absent is 8.
+   * The MODE is not here: it is session state the library also writes, so it travels by context.
+   * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly snapThresholdPx?: number;
   /** What the seed decided, so the host can say it out loud instead of showing a short chart. */
   readonly onLane?: (state: CandleLaneState) => void;
 }
@@ -55,6 +59,7 @@ export const CanvasSurface = memo(function CanvasSurface({
   alerts,
   lane,
   fields = NO_FIELDS,
+  snapThresholdPx,
   onLane,
 }: CanvasSurfaceProps): ReactElement {
   const drawing = useDrawingRail();
@@ -82,6 +87,8 @@ export const CanvasSurface = memo(function CanvasSurface({
       drawing={{
         binding: drawing.bind,
         activeTool: drawing.activeTool,
+        magnet: drawing.magnet,
+        snapThresholdPx,
         onCountChange: drawing.onCount,
         onToolFinished: () => drawing.arm(null),
       }}

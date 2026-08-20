@@ -103,6 +103,10 @@ export type WorkspaceChromeOptions = Omit<WorkspaceChromeProviderProps, 'childre
 export interface WorkspaceDrawingOptions {
   readonly vocabulary?: DrawingVocabulary;
   readonly binding?: DrawingBinding;
+  /** How close the magnet reaches, in SCREEN pixels. Absent is 8. The MODE is deliberately not a
+   * prop: the library writes it too, and two owners of one value disagree the moment a shortcut
+   * arms it. See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
+  readonly snapThresholdPx?: number;
   readonly onDeleteSelection?: () => void;
 }
 
@@ -339,6 +343,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                 }}
                 fields={{ tuning: setup.density, density: data.density,
                   showDensity: setup.showDensity, showProfile: setup.showProfile }}
+                snapThresholdPx={of.drawing?.snapThresholdPx}
                 onLane={(state) => {
                   setLane(state);
                   notice.report(laneNotice(labels.notices, state.bars.length, state.outcome, data.symbol));
