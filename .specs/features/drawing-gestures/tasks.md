@@ -639,7 +639,7 @@ T19 → T20
 
 ---
 
-### T20: The two axis locks, measured together
+### T20: The two axis locks, measured together — DONE
 
 **What**: Determine whether a price-alert drag and an anchor drag can hold the same `handleScroll`/`handleScale` pair at once, and pin the answer with a test.
 **Where**: `test/priceAlertLayer.spec.tsx`
@@ -653,17 +653,32 @@ T19 → T20
 - Skill: `ecc:react-patterns`
 
 **Done when**:
-- [ ] Establish reachability FIRST: both handlers register `mousedown` in capture on the same element, and the alert layer calls `stopPropagation` — not `stopImmediatePropagation` — which does not stop a second listener on that same element. Prove by test whether both locks can engage on one press
-- [ ] If they can: the alert's `mouseup` must not free the axes while an anchor drag is still held. Fix it and assert the sequence
-- [ ] If they cannot: write the test that proves they cannot, and record why in the docblock, so the next reader does not re-derive it
-- [ ] Either way the outcome is a named, tested answer — not an assumption
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+- [x] Establish reachability FIRST: both handlers register `mousedown` in capture on the same element, and the alert layer calls `stopPropagation` — not `stopImmediatePropagation` — which does not stop a second listener on that same element. Prove by test whether both locks can engage on one press
+- [x] If they can: the alert's `mouseup` must not free the axes while an anchor drag is still held. Fix it and assert the sequence
+- [x] If they cannot: write the test that proves they cannot, and record why in the docblock, so the next reader does not re-derive it
+- [x] Either way the outcome is a named, tested answer — not an assumption
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥1 test passes (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick
 
-**Commit**: `fix(surface): the two axis locks agree on who frees the chart`
+**Commit**: `test(surface): the two axis locks are measured to overlap benignly`
+
+**SPEC_DEVIATION — commit type only.** The planned message was
+`fix(surface): the two axis locks agree on who frees the chart`. The measurement came back
+"they overlap, and the overlap is harmless", so no source changed and there is nothing to
+label `fix`. The task's own third bullet anticipates this branch — a tested answer with the
+reasoning in the docblock — and that outcome is a `test` commit.
+
+**Measured answer:** both locks DO engage on one press (`stopPropagation` does not silence a
+sibling listener on the same element). Both write the same pair and both releases hang off the
+same `window` mouseup, so the terminal state is FREE whichever runs first. The hazard the task
+named — the alert freeing the axes while an anchor drag is still held — does not occur.
+
+**Surfaced, NOT fixed (own defect, own task):** the axis lock releases on `blur` and the alert
+layer does not, so a tab switch mid-gesture frees the axes while an alert drag is in flight.
+Reachable with no drawing layer present, so it belongs to the alert layer, not to this task.
 
 ---
 

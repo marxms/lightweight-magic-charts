@@ -30,6 +30,7 @@ import type {
   SeriesHandle,
   WorkspaceChartHandle,
 } from '../src/port/chartApi';
+import type { DrawingBinding } from '../src/drawing/drawingLayer';
 import { ChartSurface, type SeriesReader } from '../src/react/surface/ChartSurface';
 
 /** Price 100 lives at pixel 100: an identity projection makes the test's geometry legible. */
@@ -254,5 +255,111 @@ describe('LMC-23 — the reconciliation only happens when the set differs', () =
 
     expect(ledger.created).toBe(3);
     expect(ledger.removed).toBe(1);
+  });
+});
+
+/** A layer that claims an anchor everywhere, so a missing lock is never the hit-test's doing. */
+const alwaysAnchored: DrawingBinding = () => ({
+  setActiveTool: () => undefined,
+  deleteSelection: () => undefined,
+  clearAll: () => undefined,
+  anchorAt: () => true,
+  detach: () => undefined,
+});
+
+/** Only the writes that touch the panning pair; the surface applies plenty of other options. */
+const axisWrites = (ledger: Ledger): Array<Record<string, unknown>> =>
+  ledger.chartOptions.filter((options) => 'handleScroll' in options);
+
+const LOCKED = { handleScroll: false, handleScale: false };
+const FREE = { handleScroll: true, handleScale: true };
+
+function locksOn(
+  ledger: Ledger,
+  binding: DrawingBinding | undefined,
+): { press: (y: number) => void; release: () => void } {
+  const view = render(
+    <ChartSurface
+      engine={draggableEngine(ledger)}
+      convention={CONVENTION}
+      data={{ bars: BARS, panes: [], read, pricePane: PRICE }}
+      layout={{ heightPx: 400 }}
+      a11y={{ label: 'workspace', describedBy: 'state' }}
+      alerts={{ levels: [100] }}
+      drawing={{ binding }}
+    />,
+  );
+  const host = view.container.querySelector('[role="img"]') as HTMLElement;
+  host.getBoundingClientRect = () => ({ top: 0, left: 0, width: 800, height: 400 }) as DOMRect;
+  return {
+    press: (y) => {
+      act(() => {
+        host.dispatchEvent(
+          new MouseEvent('mousedown', { clientY: y, bubbles: true, cancelable: true }),
+        );
+      });
+    },
+    release: () => {
+      act(() => {
+        window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      });
+    },
+  };
+}
+
+/**
+ * DRAG-02 — THE TWO AXIS LOCKS, MEASURED TOGETHER RATHER THAN ASSUMED APART.
+ *
+ * THE QUESTION. `usePriceAlertLayer` and `attachAxisLock` both register `mousedown` in CAPTURE on
+ * the same element — the canvas host — and both write the same `handleScroll`/`handleScale` pair.
+ * The alert handler calls `stopPropagation`, which reads like an answer and is not one: it stops
+ * the event reaching other NODES and has no effect on a second listener of the SAME node. Only
+ * `stopImmediatePropagation` would do that, and nothing here calls it.
+ *
+ * THE MEASURED ANSWER: they DO overlap. A press that is both within grabbing distance of an alert
+ * and on a drawing anchor engages both locks, and that is reachable — nothing stops a user drawing
+ * a trendline whose anchor sits at the price they already alerted on. The control below isolates
+ * the second write: drop the binding and the same press locks once.
+ *
+ * AND THE OVERLAP IS BENIGN, which is the part worth writing down. Both handlers write the SAME
+ * two values, so locking twice is locking. Both hang their release off the same `window` mouseup,
+ * so one release event ends both — and because both write `FREE`, the terminal state does not
+ * depend on which of the two listeners runs first. There is no ordering to get wrong here.
+ *
+ * WHAT IS STILL ASYMMETRIC, named so the next reader does not have to find it again: the axis lock
+ * also releases on `blur` and the alert layer does not. A tab switch mid-gesture therefore frees
+ * the axes while an alert drag is still in flight. That is the ALERT layer missing a release, not
+ * the two locks disagreeing, and it is reachable with no drawing layer present at all — so it is
+ * its own defect and its own task, not this one.
+ */
+describe('DRAG-02 — the two axis locks, measured together', () => {
+  it('BOTH engage on one press: stopPropagation does not silence a sibling on the same element', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press } = locksOn(ledger, alwaysAnchored);
+
+    press(100);
+
+    expect(axisWrites(ledger)).toEqual([LOCKED, LOCKED]);
+  });
+
+  it('CONTROL: with no drawing binding the same press locks ONCE, so the second write is the lock', () => {
+    // Without this half the case above would pass just as well if the alert layer had written
+    // twice, and the whole question would have been answered about the wrong handler.
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press } = locksOn(ledger, undefined);
+
+    press(100);
+
+    expect(axisWrites(ledger)).toEqual([LOCKED]);
+  });
+
+  it('one mouseup frees the chart, because both releases hang off the same window event', () => {
+    const ledger: Ledger = { chartOptions: [], bubbled: 0, created: 0, removed: 0 };
+    const { press, release } = locksOn(ledger, alwaysAnchored);
+
+    press(100);
+    release();
+
+    expect(axisWrites(ledger)).toEqual([LOCKED, LOCKED, FREE, FREE]);
   });
 });
