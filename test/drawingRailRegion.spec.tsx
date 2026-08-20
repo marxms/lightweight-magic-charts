@@ -61,6 +61,8 @@ interface Recorded {
 
 class FakeLayer implements DrawingLayer {
   detached = false;
+  /** Where the hit-test was asked, so a wrapper that answered on its own is visible. */
+  readonly probed: Array<{ readonly x: number; readonly y: number }> = [];
   private held: string;
 
   constructor(
@@ -97,6 +99,14 @@ class FakeLayer implements DrawingLayer {
   }
 }
 
+/** A layer that CAN hit-test: the anchor at x 10 and nowhere else. */
+class HitTestingLayer extends FakeLayer {
+  anchorAt(point: { readonly x: number; readonly y: number }): boolean {
+    this.probed.push(point);
+    return point.x === 10;
+  }
+}
+
 function recorder(): Recorded {
   return { calls: [], restored: [], layers: [], report: null };
 }
@@ -116,10 +126,14 @@ function FakeCanvas(): ReactElement {
   useEffect(() => {
     if (bind === undefined) return;
     const layer = bind({} as DrawingSurfaceHost, { onCountChange: onCount, onToolFinished: () => {} });
+    handed = layer;
     return () => layer.detach();
   }, [bind, onCount]);
   return <div data-testid="canvas" />;
 }
+
+/** The wrapper the canvas actually holds — which is not the layer the binding built. */
+let handed: DrawingLayer | null = null;
 
 /** Stands in for the root: it owns a keymap, and the keymap reaches the layer through the seam. */
 function FakeRoot({ children }: { readonly children: ReactNode }): ReactElement {
@@ -286,6 +300,35 @@ describe('the drawing rail region', () => {
     btc.unmount();
     render(<Harness binding={bindingOf(log, 'eth-drawings')} market="ETHUSDT" />);
     expect(log.restored).toEqual([]);
+  });
+
+  /**
+   * THE WRAPPER IS A REWRITE, AND A REWRITE DROPS WHAT IT DOES NOT NAME.
+   *
+   * The provider hands the canvas an object of its own so it can file the snapshot on the way out.
+   * Everything the surface reads has to be named in it: `anchorAt` decides whether the axis lock is
+   * attached at all, so a wrapper that swallowed it would leave the anchor drag panning the chart
+   * with every other test in this file still green.
+   */
+  it('forwards the hit-test to the layer, because the lock is attached only when there is one', () => {
+    const log = recorder();
+    const layer = new HitTestingLayer(log, 'two-drawings');
+    render(<Harness binding={() => layer} />);
+
+    expect(typeof handed?.anchorAt).toBe('function');
+    expect(handed?.anchorAt?.({ x: 10, y: 4 })).toBe(true);
+    expect(handed?.anchorAt?.({ x: 11, y: 4 })).toBe(false);
+    // Asked of the LAYER, not answered by the wrapper out of its own head.
+    expect(layer.probed).toEqual([
+      { x: 10, y: 4 },
+      { x: 11, y: 4 },
+    ]);
+  });
+
+  it('leaves the hit-test undefined for a layer that has none, so panning stays the default', () => {
+    const log = recorder();
+    render(<Harness binding={bindingOf(log)} />);
+    expect(handed?.anchorAt).toBeUndefined();
   });
 
   it('refuses to answer outside the provider instead of pretending to work', () => {

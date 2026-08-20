@@ -88,6 +88,11 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
         setActiveTool: (id) => created.setActiveTool(id),
         deleteSelection: () => created.deleteSelection(),
         clearAll: () => created.clearAll(),
+        // FORWARDED, and undefined when the layer has none: the surface attaches the axis lock only
+        // for a layer that hit-tests, so a wrapper that swallowed this would leave the drag panning
+        // the chart with every unit test still green.
+        // See docs/explanation/drawing.md#the-axis-lock-is-the-librarys-half-of-the-drag
+        anchorAt: created.anchorAt === undefined ? undefined : (point) => created.anchorAt?.(point) === true,
         detach: () => {
           // The market NOW, not the one at birth: the surface outlives an instrument change, so the
           // snapshot has to land where the drawings currently belong.
