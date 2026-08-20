@@ -126,6 +126,19 @@ T12 → T13
 T12 → T23
 ```
 
+### Phase 9: What the independent Verifier found
+
+FAIL, 3 surviving mutants across 28, plus two gaps with no evidence at all. Iteration 1 of a loop
+bounded at 3. One of these is not a test gap — the pane edge case at `spec.md:124-125` has no
+implementation, only a requirement.
+
+```
+T27 → T28
+T28 → T29
+T29 → T30
+T30 → T31
+```
+
 ---
 
 ## Task Breakdown
@@ -889,6 +902,145 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
+### T27: The preview's snap becomes provable
+
+**What**: A browser check that fails when the crosshair preview traces to the raw pointer price instead of the snapped one.
+**Where**: `scripts/e2e-demo.mjs`
+**Depends on**: None
+**Reuses**: the read-only probe T12 added to `example/drawing.ts` (`anchors()`, `barTimes()`), extended with the preview's own cursor price
+**Requirement**: MAGNET-07
+**Skills**: `ecc:e2e-testing`
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:e2e-testing`
+
+**Done when**:
+- [ ] Reproduce first: mutant **M22** — revert `example/drawing.ts:266` so the crosshair preview uses the raw pointer price — currently leaves `npm test` green AND `npm run e2e` at 47/47. Confirm that, then make it fail
+- [ ] The existing check at `scripts/e2e-demo.mjs:502` is a colour-PRESENCE sensor by its own comment at `:210-211`, and it runs with the magnet OFF. It does not become the proof; a new check does
+- [ ] With the magnet ON, the preview's traced price equals the snapped bar value, read as a number — not a colour, not a class
+- [ ] M22 dies against the new check; restore the source and verify `git status --porcelain`
+- [ ] Gate check passes: `npm test && npm run e2e`
+- [ ] e2e count: 47 baseline + the new check(s), all passing
+
+**Tests**: e2e
+**Gate**: full
+
+**Commit**: `test(e2e): the preview traces where the anchor will land`
+
+---
+
+### T28: The seam's ordering probe discriminates the ordering
+
+**What**: Make `test/drawingSeam.spec.tsx` observe unlock-before-detach directly, instead of inferring it from a count the probe's own `detach()` corrupts.
+**Where**: `test/drawingSeam.spec.tsx`
+**Depends on**: T27
+**Reuses**: the existing harness in the same file
+**Requirement**: DRAG-05
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: mutant **M20** — call `layer.detach()` before `unlock?.()` in `src/react/surface/useDrawingSeam.ts` — currently PASSES. The probe's `detach()` fires the very `mouseup` it measures (`test/drawingSeam.spec.tsx:268`), and the still-live listener answers it before `log.applied.length` is read
+- [ ] The comment at `:334-336` claims `applied=1` would expose a mute disposer; `applied=1` is unreachable in BOTH orders. Fix the claim or the probe — do not leave a comment asserting something false
+- [ ] The new assertion records the ORDER of the two calls, not a count
+- [ ] M20 dies; restore and verify `git status --porcelain`
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(drawing): the seam proves unlock runs before detach`
+
+---
+
+### T29: The axis lock leaves the other panes alone
+
+**What**: Implement the pane guard the spec's third edge case requires, and prove it. This is an UNIMPLEMENTED requirement, not a missing test — `src/drawing/axisLock.ts` has no pane guard and listens to the whole host container.
+**Where**: `src/drawing/axisLock.ts`
+**Depends on**: T28
+**Reuses**: the pane-index guard the example already applies on placement (`example/drawing.ts:217`, `:246`); `PaneHandle.getHTMLElement()` on the port
+**Requirement**: DRAG-06
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: a qualifying press whose target lies outside the price pane currently locks the axes — the test must fail before the guard exists
+- [ ] After the guard, such a press makes NO `applyOptions` call at all, matching DRAG-06's wording
+- [ ] DRAG-01 and DRAG-06 still hold: a press on an anchor INSIDE the price pane still locks, and a press on nothing still leaves the axes untouched
+- [ ] The mechanism stays engine-agnostic — the library must not learn what a drawing is to answer which pane a press landed in
+- [ ] The byte cost is measured and named in both ledgers; the entry has 185 B of room below 104994 and `PROVISIONAL_ENTRY_LIMIT` is not to be raised
+- [ ] `test/axisLock.spec.ts` extended
+- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+
+**Tests**: unit
+**Gate**: build
+
+**Commit**: `fix(drawing): a press outside the price pane leaves the axes alone`
+
+---
+
+### T30: A bar time that matches nothing places at the pointer
+
+**What**: Cover the lookup miss in `snapAnchorPrice`, which every existing call site avoids by passing `BARS[0].time`.
+**Where**: `test/magnet.spec.ts`
+**Depends on**: T29
+**Reuses**: the table already in the file
+**Requirement**: MAGNET-03
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Reproduce first: mutant **M21** — make `src/drawing/magnet.ts:45` fall back to `bars[0]` when the time matches nothing — currently PASSES
+- [ ] A time matching no bar returns the pointer's own price
+- [ ] M21 dies; restore and verify `git status --porcelain`
+- [ ] Gate check passes: `npm test`
+- [ ] Test count: baseline + ≥1 test passes (no silent deletions)
+
+**Tests**: unit
+**Gate**: quick
+
+**Commit**: `test(drawing): a time that matches no bar places at the pointer`
+
+---
+
+### T31: The CHANGELOG stops claiming one break too few
+
+**What**: Name the `DrawingSurfaceHost.snapPrice` obligation precisely — additive for a host that only consumes the binding, breaking for one that constructs a host double in its own tests.
+**Where**: `CHANGELOG.md`
+**Depends on**: T30
+**Reuses**: the release's existing 0.2.0 entry and the project's own rule about what counts as breaking
+**Requirement**: none
+**Skills**: none
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] The sentence "This is the one break in this release" is corrected rather than deleted
+- [ ] The distinction is stated plainly: `snapPrice` is CONSTRUCTED only by the library (`src/react/surface/useDrawingSeam.ts:60`) and consumed by the host, so production code is unaffected; a host that fabricates a `DrawingSurfaceHost` in its own tests must add the member
+- [ ] `0.2.0` remains correct either way — pre-1.0, both kinds take the minor
+- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: none
+**Gate**: build
+
+**Commit**: `docs: name the snapPrice obligation for a host that tests its binding`
+
+---
+
 ## Phase Execution Map
 
 Phases run in sequence. Within a phase, tasks run in order; the arrows are the dependency graph.
@@ -919,6 +1071,10 @@ Phase 8:  T26 → T22
           T22 → T12
           T12 → T13
           T12 → T23
+Phase 9:  T27 → T28
+          T28 → T29
+          T29 → T30
+          T30 → T31
 ```
 
 Execution is strictly sequential — there is no intra-phase parallelism.
@@ -946,6 +1102,11 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T24: byte recovery | 3 cohesive modules | ⚠️ OK — one concern, measured |
 | T25: converter guard | 1 module | ✅ Granular |
 | T26: optional label | 1 component | ✅ Granular |
+| T27: preview e2e check | 1 file | ✅ Granular |
+| T28: ordering probe | 1 test file | ✅ Granular |
+| T29: pane guard | 1 module | ✅ Granular |
+| T30: lookup miss case | 1 test file | ✅ Granular |
+| T31: changelog precision | 1 file | ✅ Granular |
 | T12: e2e scenes | 1 file | ✅ Granular |
 | T13: ledgers | 1 file | ✅ Granular |
 | T14: disposer release order | 1 module | ✅ Granular |
@@ -978,6 +1139,11 @@ Execution is strictly sequential — there is no intra-phase parallelism.
 | T24 | None | (phase head) | ✅ Match |
 | T25 | T24 | T24 → T25 | ✅ Match |
 | T26 | T24 | T24 → T26 | ✅ Match |
+| T27 | None | (phase head) | ✅ Match |
+| T28 | T27 | T27 → T28 | ✅ Match |
+| T29 | T28 | T28 → T29 | ✅ Match |
+| T30 | T29 | T29 → T30 | ✅ Match |
+| T31 | T30 | T30 → T31 | ✅ Match |
 | T23 | T12 | T12 → T23 | ✅ Match |
 | T12 | T22 | T22 → T12 | ✅ Match |
 | T13 | T12 | T12 → T13 | ✅ Match |
@@ -1014,6 +1180,11 @@ No dependency points at a later phase.
 | T24 | Pure library module | unit | unit | ✅ OK |
 | T25 | Pure library module | unit | unit | ✅ OK |
 | T26 | Surface component | unit | unit | ✅ OK |
+| T27 | Real-browser behaviour | e2e | e2e | ✅ OK |
+| T28 | Surface hook | unit | unit | ✅ OK |
+| T29 | Pure library module | unit | unit | ✅ OK |
+| T30 | Pure library module | unit | unit | ✅ OK |
+| T31 | Docs and ledgers | none | none | ✅ OK |
 | T12 | Real-browser behaviour | e2e | e2e | ✅ OK |
 | T13 | Docs and ledgers | none | none | ✅ OK |
 | T14 | Pure library module | unit | unit | ✅ OK |
