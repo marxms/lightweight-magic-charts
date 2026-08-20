@@ -902,7 +902,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T27: The preview's snap becomes provable
+### T27: The preview's snap becomes provable — DONE
 
 **What**: A browser check that fails when the crosshair preview traces to the raw pointer price instead of the snapped one.
 **Where**: `scripts/e2e-demo.mjs`
@@ -916,12 +916,12 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] Reproduce first: mutant **M22** — revert `example/drawing.ts:266` so the crosshair preview uses the raw pointer price — currently leaves `npm test` green AND `npm run e2e` at 47/47. Confirm that, then make it fail
-- [ ] The existing check at `scripts/e2e-demo.mjs:502` is a colour-PRESENCE sensor by its own comment at `:210-211`, and it runs with the magnet OFF. It does not become the proof; a new check does
-- [ ] With the magnet ON, the preview's traced price equals the snapped bar value, read as a number — not a colour, not a class
-- [ ] M22 dies against the new check; restore the source and verify `git status --porcelain`
-- [ ] Gate check passes: `npm test && npm run e2e`
-- [ ] e2e count: 47 baseline + the new check(s), all passing
+- [x] Reproduce first: mutant **M22** — revert `example/drawing.ts:266` so the crosshair preview uses the raw pointer price — currently leaves `npm test` green AND `npm run e2e` at 47/47. Confirm that, then make it fail
+- [x] The existing check at `scripts/e2e-demo.mjs:502` is a colour-PRESENCE sensor by its own comment at `:210-211`, and it runs with the magnet OFF. It does not become the proof; a new check does
+- [x] With the magnet ON, the preview's traced price equals the snapped bar value, read as a number — not a colour, not a class
+- [x] M22 dies against the new check; restore the source and verify `git status --porcelain`
+- [x] Gate check passes: `npm test && npm run e2e`
+- [x] e2e count: 47 baseline + the new check(s), all passing
 
 **Tests**: e2e
 **Gate**: full

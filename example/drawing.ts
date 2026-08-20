@@ -20,7 +20,7 @@ import type {
 } from 'lightweight-magic-charts';
 import { DrawingManager, getToolRegistry } from 'lightweight-charts-drawing';
 
-import { DrawingPreviewPrimitive, type PreviewAnchor } from './drawingPreview';
+import { DrawingPreviewPrimitive, type PreviewAnchor, type PreviewState } from './drawingPreview';
 import { realChartOf } from './engine';
 
 /**
@@ -176,6 +176,9 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       const width = host.container.clientWidth;
       return [0.2, 0.5, 0.8].map((at) => scale.coordinateToTime?.(Math.round(width * at)) ?? null);
     },
+    /** Where the dashed trace is drawn RIGHT NOW. The preview paints on a canvas, so a colour count
+     * can say something blue appeared and never say at which price — this reads the price. */
+    previewCursor: (): PreviewAnchor | null => traced,
   };
   (globalThis as Record<string, unknown>).__lmcDrawingProbe = probe;
 
@@ -210,6 +213,18 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     preview = null;
   }
 
+  /**
+   * ONE DOOR TO THE PREVIEW, so what the probe reports is what the preview was handed — the same
+   * object, not a second computation of it. A trace that went back to the raw pointer price would
+   * report the raw pointer price, which is the only reason the browser check can tell the two apart.
+   */
+  let traced: PreviewAnchor | null = null;
+  const trace = (state: PreviewState | null): void => {
+    if (preview === null) return;
+    preview.setState(state);
+    traced = state?.cursor ?? null;
+  };
+
   const onClick = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
     if (activeTool === null || param.point === undefined) return;
     // `point` is LOCAL TO THE PANE clicked, so y only prices on pane 0. Any other pane would read
@@ -232,7 +247,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // A tool the package cannot build in this window is one drawing fewer, never a crash.
     }
     pending = [];
-    preview?.setState(null);
+    trace(null);
     events.onToolFinished(); // back to the cursor, as every chart app does
   };
   host.chart.subscribeClick?.(onClick as never);
@@ -244,17 +259,17 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
    */
   const onCrosshair = (param: { point?: { x: number; y: number }; time?: unknown; paneIndex?: number }): void => {
     if (activeTool === null || param.point === undefined || (param.paneIndex ?? 0) !== 0) {
-      preview?.setState(null);
+      trace(null);
       return;
     }
     const time = param.time ?? host.chart.timeScale().coordinateToTime?.(param.point.x);
     const price = host.series.coordinateToPrice(param.point.y);
     if (time === null || time === undefined || price === null) {
-      preview?.setState(null);
+      trace(null);
       return;
     }
     // The SAME call the click makes, so the dashed trace already sits where the anchor will land.
-    preview?.setState({
+    trace({
       tool: activeTool,
       anchors: pending,
       cursor: {
@@ -296,7 +311,7 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       // drawing with a point the visitor placed for a different one.
       activeTool = toolId;
       pending = [];
-      preview?.setState(null);
+      trace(null);
       manager.setActiveTool(toolId);
     },
     deleteSelection: () => {

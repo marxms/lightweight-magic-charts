@@ -766,7 +766,7 @@ async function sceneAnchorDragHoldsTheRange(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Scene 11 — MAGNET-02 and MAGNET-03, read as PRICES and not as a pressed attribute.
+// Scene 11 — MAGNET-02, MAGNET-03 and MAGNET-07, read as PRICES and not as a pressed attribute.
 //
 // The price scale is calibrated from two anchors placed with the magnet off, so every y below is
 // derived from prices the drawing itself reported; the bar's four values come from the legend the
@@ -821,6 +821,22 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
       snapped.toFixed(2) === bar.high.toFixed(2) &&
       freeNear !== freeAlsoNear,
     `the same two points that read ${freeNear} and ${freeAlsoNear} free now both read ${snapped} — the bar's high is ${bar.high}`,
+  );
+
+  // MAGNET-07 — WHERE the dashed trace sits, which no colour count can answer. The check at
+  // `drawing.preview-visible-between-clicks` is a presence sensor by its own comment above, and it
+  // runs with the magnet off; a preview drawn at the raw pointer price would keep it green. So the
+  // tool is armed and the pointer HOVERS without clicking: the only thing that moves is the trace.
+  await page.locator('[data-testid="workspace-drawing-tool-horizontal-line"]').click();
+  await page.waitForTimeout(120);
+  await page.mouse.move(x, nearHigh, { steps: 6 });
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const traced = await drawingProbe(page, 'previewCursor');
+
+  check(
+    'magnet.preview-traces-the-snap',
+    traced !== null && traced.price.toFixed(2) === bar.high.toFixed(2) && traced.price !== freeNear,
+    `hovering the point that placed ${freeNear} with the magnet off, the trace now sits at ${traced === null ? 'nothing' : traced.price} — the bar's high is ${bar.high}`,
   );
 
   reportConsole('magnet.console-clean', console_);
