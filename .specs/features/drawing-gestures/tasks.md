@@ -353,7 +353,7 @@ T12 → T13
 
 ---
 
-### T10: Fill the host's half of both gestures
+### T10: Fill the host's half of both gestures — DONE
 
 **What**: The demo binding implements `anchorAt` via the package's `hitTestAnchor`, and routes the click anchor and the crosshair preview through `host.snapPrice`.
 **Where**: `example/drawing.ts`
@@ -367,10 +367,12 @@ T12 → T13
 - Skill: NONE
 
 **Done when**:
-- [ ] `anchorAt` returns true only when the package reports an anchor under the point, and never throws out
-- [ ] The click anchor's price is `host.snapPrice(...)`, not the raw pointer price
-- [ ] The crosshair preview uses the same call, so the dashed trace sits where the anchor will land
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] `anchorAt` returns true only when the package reports an anchor under the point, and never throws out
+- [x] The binding SELECTS on the press, in capture: `hitTestAnchor` answers only for an already
+      selected drawing, so without it the hit-test is null on every press and the lock never fires
+- [x] The click anchor's price is `host.snapPrice(...)`, not the raw pointer price
+- [x] The crosshair preview uses the same call, so the dashed trace sits where the anchor will land
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build

@@ -16,6 +16,7 @@ import type {
   DrawingToolGroup,
   DrawingToolOption,
   DrawingVocabulary,
+  UtcSeconds,
 } from 'lightweight-magic-charts';
 import { DrawingManager, getToolRegistry } from 'lightweight-charts-drawing';
 
@@ -197,7 +198,9 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     const price = host.series.coordinateToPrice(param.point.y);
     if (time === null || time === undefined || price === null) return;
 
-    pending.push({ time: time as PreviewAnchor['time'], price });
+    // THROUGH THE SEAM, never the raw pointer price. The rule — mode, reach and bars — is the
+    // library's; where the anchor lands is this file's, and this is the one line where the two meet.
+    pending.push({ time: time as PreviewAnchor['time'], price: host.snapPrice({ time: time as UtcSeconds, price }) });
     if (pending.length < (registry.get(activeTool)?.requiredAnchors ?? 2)) return;
 
     created += 1;
@@ -229,9 +232,42 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
       preview?.setState(null);
       return;
     }
-    preview?.setState({ tool: activeTool, anchors: pending, cursor: { time: time as PreviewAnchor['time'], price } });
+    // The SAME call the click makes, so the dashed trace already sits where the anchor will land.
+    preview?.setState({
+      tool: activeTool,
+      anchors: pending,
+      cursor: {
+        time: time as PreviewAnchor['time'],
+        price: host.snapPrice({ time: time as UtcSeconds, price }),
+      },
+    });
   };
   host.chart.subscribeCrosshairMove(onCrosshair as never);
+
+  /**
+   * SELECTION ON THE PRESS, IN CAPTURE — the half of the anchor drag the library cannot own.
+   *
+   * `hitTestAnchor` only answers for a drawing that is ALREADY selected, and nothing selects one
+   * before the press that starts the drag. Without this the hit-test below is null on every press,
+   * the surface never locks the axes, and pulling an anchor pans the chart underneath it. It is in
+   * capture and registered before the lock's own listener, so the drawing is selected by the time
+   * the library asks whether an anchor is under the pointer.
+   */
+  const pointIn = (event: MouseEvent): { x: number; y: number } => {
+    const rect = host.container.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+  const onDown = (event: MouseEvent): void => {
+    if (event.button !== 0 || activeTool !== null) return;
+    try {
+      const hit = manager.hitTest(pointIn(event));
+      if (hit !== null && manager.getSelectedDrawing() === null) manager.selectDrawing(hit.id);
+    } catch {
+      // A hit-test against a state the package did not expect costs one missed selection, not a
+      // mount. The same rule the preview follows.
+    }
+  };
+  host.container.addEventListener('mousedown', onDown, true);
 
   return {
     setActiveTool: (toolId) => {
@@ -248,7 +284,20 @@ export const demoDrawingBinding: DrawingBinding = (host, events) => {
     },
     clearAll: () => manager.clearAll(),
     serialize: () => manager.exportDrawings(),
+    /**
+     * THE ONE FACT ONLY THIS FILE KNOWS. `attachAxisLock` owns the whole gesture except this
+     * question, and a throw here would take the mount down for a hit-test the package fumbled —
+     * so an unexpected state is one missed lock, never an exception out of the handler.
+     */
+    anchorAt: (point) => {
+      try {
+        return manager.hitTestAnchor(point) !== null;
+      } catch {
+        return false;
+      }
+    },
     detach: () => {
+      host.container.removeEventListener('mousedown', onDown, true);
       host.chart.unsubscribeClick?.(onClick as never);
       host.chart.unsubscribeCrosshairMove(onCrosshair as never);
       if (preview !== null) host.series.detachPrimitive(preview);
