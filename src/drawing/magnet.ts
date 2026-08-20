@@ -22,6 +22,20 @@ export interface SnapInput {
 /** A coordinate the scale can measure WITH. `null`, `NaN` and `Infinity` are all "cannot". */
 const measurable = (px: number | null): px is number => Number.isFinite(px);
 
+/**
+ * THE CONVERTER IS A HOST'S, because `snapAnchorPrice` is published — so it is allowed to throw, and
+ * a throw here has to cost ONE CANDIDATE, never the gesture. Same reading `attachAxisLock` takes of
+ * `host.anchorAt`: a call against a state the engine did not expect costs one missed lock, never a
+ * crash. A throw is one more way of saying "cannot measure", and `null` already means that.
+ */
+function coordinate(input: SnapInput, price: number): number | null {
+  try {
+    return input.priceToCoordinate(price);
+  } catch {
+    return null;
+  }
+}
+
 export function snapAnchorPrice(input: SnapInput): number {
   if (input.mode === 'off') return input.price;
   // A TOLERANCE NOBODY CAN MEASURE MEANS "DO NOT SNAP", never "snap to anything". Every comparison
@@ -30,7 +44,7 @@ export function snapAnchorPrice(input: SnapInput): number {
   if (!measurable(input.price) || !measurable(input.thresholdPx)) return input.price;
   const bar = input.bars.find((candidate) => candidate.time === input.time);
   if (bar === undefined) return input.price;
-  const pointerPx = input.priceToCoordinate(input.price);
+  const pointerPx = coordinate(input, input.price);
   if (!measurable(pointerPx)) return input.price;
 
   // THE WINNER IN TWO SCALARS, not in an object: nearest wins, and a TIE goes to the HIGHER price,
@@ -39,7 +53,7 @@ export function snapAnchorPrice(input: SnapInput): number {
   let bestPrice = input.price;
   let bestPx = Infinity;
   for (const price of [bar.open, bar.high, bar.low, bar.close]) {
-    const px = input.priceToCoordinate(price);
+    const px = coordinate(input, price);
     // A candidate the scale cannot place is dropped; the snap itself survives it.
     if (!measurable(px)) continue;
     const distancePx = Math.abs(px - pointerPx);

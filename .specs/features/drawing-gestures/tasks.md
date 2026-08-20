@@ -831,7 +831,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T25: The snap rule survives a converter that throws
+### T25: The snap rule survives a converter that throws — DONE
 
 **What**: Guard `input.priceToCoordinate` the way `attachAxisLock` already guards `host.anchorAt`, so a host converter that throws degrades to the pointer's own price instead of escaping the gesture.
 **Where**: `src/drawing/magnet.ts`
@@ -845,13 +845,13 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: a `priceToCoordinate` that throws currently propagates out of `snapAnchorPrice` — the test must fail before the fix
-- [ ] After the fix, a throwing converter returns `input.price`, matching every other unmeasurable-input path in the module
-- [ ] A converter that throws on ONE candidate only drops that candidate, and the snap survives
-- [ ] `snapAnchorPrice` is a published export, so this is a public-API robustness fix and the docblock says so
-- [ ] `test/magnet.spec.ts` extended
-- [ ] Gate check passes: `npm test`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] Reproduce first: a `priceToCoordinate` that throws currently propagates out of `snapAnchorPrice` — the test must fail before the fix
+- [x] After the fix, a throwing converter returns `input.price`, matching every other unmeasurable-input path in the module
+- [x] A converter that throws on ONE candidate only drops that candidate, and the snap survives
+- [x] `snapAnchorPrice` is a published export, so this is a public-API robustness fix and the docblock says so
+- [x] `test/magnet.spec.ts` extended
+- [x] Gate check passes: `npm test`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: quick

@@ -179,3 +179,40 @@ describe('MAGNET-04 — an unmeasurable gesture places at the pointer, never at 
     expect(price).toBe(100);
   });
 });
+
+describe('MAGNET-04 — a converter that throws costs one candidate, never the gesture', () => {
+  // `snapAnchorPrice` is a PUBLISHED export, so `priceToCoordinate` arrives from a host and the
+  // module cannot assume it answers. A host converter called against a scale the chart has not
+  // finished building throws, and the throw used to escape `snapAnchorPrice` and abort the gesture
+  // that was reading it — the anchor never landed at all. A throw is one more way of saying "cannot
+  // measure", and the module already decides what that means: the pointer's own price.
+  it('a converter that throws on every call resolves to the pointer price', () => {
+    const price = snapAnchorPrice(
+      input({
+        price: 103.7,
+        priceToCoordinate: () => {
+          throw new Error('the price scale is not ready');
+        },
+      }),
+    );
+
+    expect(price).toBe(103.7);
+  });
+
+  it('a converter that throws on ONE candidate drops that candidate and still snaps', () => {
+    // The same shape as the `null`, `NaN` and `Infinity` cases above, so the four unmeasurable
+    // readings answer alike. The close is nearest at `1.3` px and throws; the open, at `3.7` px, is
+    // still inside the threshold — so the answer is the open, never the raw pointer price.
+    const price = snapAnchorPrice(
+      input({
+        price: 103.7,
+        priceToCoordinate: (value) => {
+          if (value === 105) throw new Error('this one candidate cannot be placed');
+          return scale(value);
+        },
+      }),
+    );
+
+    expect(price).toBe(100);
+  });
+});
