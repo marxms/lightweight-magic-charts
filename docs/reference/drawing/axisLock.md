@@ -22,7 +22,7 @@ export const unlock: () => void = attachAxisLock(host);
 ## Exports
 
 - **`attachAxisLock`** · value · `(host: AxisLockHost) => () => void`
-- **`AxisLockHost`** · type · `interface AxisLockHost { chart: Pick<ChartLifecycle, 'applyOptions'>; container: HTMLElement; anchorAt: (point: { readonly x: number; readonly y: number; }) => boolean }`
+- **`AxisLockHost`** · type · `interface AxisLockHost { chart: Pick<ChartLifecycle, 'applyOptions'>; container: HTMLElement; anchorAt: (point: { readonly x: number; readonly y: number; }) => boolean; pricePane?: (() => HTMLElement | null) | undefined }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).

@@ -56,6 +56,30 @@ const press = (target: Element, button = 0): void => {
 const ON_ANCHOR = (): boolean => true;
 const NO_ANCHOR = (): boolean => false;
 
+interface PanedHarness extends Harness {
+  readonly pricePane: HTMLDivElement;
+  readonly otherPane: HTMLDivElement;
+}
+
+/**
+ * The same harness with the panes drawn in: a container holding the price pane and a study below it,
+ * which is what a chart with an indicator looks like. `unnamed` is the pane the chart cannot answer
+ * for yet.
+ */
+function panedHarness(unnamed = false): PanedHarness {
+  const built = harness(ON_ANCHOR);
+  const pricePane = document.createElement('div');
+  const otherPane = document.createElement('div');
+  pricePane.appendChild(built.canvas);
+  built.container.append(pricePane, otherPane);
+  return {
+    ...built,
+    pricePane,
+    otherPane,
+    host: { ...built.host, pricePane: () => (unnamed ? null : pricePane) },
+  };
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -196,6 +220,45 @@ describe('DRAG-06 — a press that is not on an anchor leaves panning alone', ()
     expect(it.calls).toEqual([]);
     expect(escaped).toEqual([]);
     window.removeEventListener('error', onError);
+    dispose();
+  });
+});
+
+describe('DRAG-06 — a press outside the price pane leaves the axes alone', () => {
+  it('a press on another pane makes no call at all, even where the hit-test says yes', () => {
+    // A STUDY PANE IS NOT THE PRICE PANE, and the anchors of a drawing live in the price pane only.
+    // The hit-test answers on container coordinates, so below the price pane it answers about a
+    // point that is not where the pointer is — which is why the pane, not the hit-test, is the guard.
+    const it = panedHarness();
+    const dispose = attachAxisLock(it.host);
+
+    press(it.otherPane);
+
+    expect(it.calls).toEqual([]);
+    dispose();
+  });
+
+  it('a press inside the price pane still holds both axes', () => {
+    // DRAG-01, unregressed. The guard narrows where the lock applies and never what it does there.
+    const it = panedHarness();
+    const dispose = attachAxisLock(it.host);
+
+    press(it.canvas);
+
+    expect(it.calls).toEqual([{ handleScroll: false, handleScale: false }]);
+    dispose();
+  });
+
+  it('a pane the chart cannot name yet costs no lock at all', () => {
+    // `getHTMLElement()` answers `null` until that pane index has a widget — the port says so at
+    // docs/explanation/port.md#gethtmlelement-is-the-gui-catch-up-read. Refusing to lock on an
+    // unanswered read would put the chart back to panning under the anchor, which is the defect.
+    const it = panedHarness(true);
+    const dispose = attachAxisLock(it.host);
+
+    press(it.canvas);
+
+    expect(it.calls).toEqual([{ handleScroll: false, handleScale: false }]);
     dispose();
   });
 });

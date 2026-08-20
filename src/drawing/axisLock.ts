@@ -10,6 +10,8 @@ export interface AxisLockHost {
   readonly container: HTMLElement;
   /** The ONE fact only the binding knows. The point is relative to the container. */
   readonly anchorAt: (point: { readonly x: number; readonly y: number }) => boolean;
+  /** The price pane's element, read at press time. Absent or `null` means the whole container. */
+  readonly pricePane?: () => HTMLElement | null;
 }
 
 /** The pair, written once. Both axes always move together, so one flag decides both. */
@@ -45,7 +47,15 @@ export function attachAxisLock(host: AxisLockHost): () => void {
 
   // CAPTURE PHASE: the only place this lands before the base library reads the same press in bubble.
   const onDown = (event: MouseEvent): void => {
-    if (event.button !== 0 || !grabsAnchor(event)) return;
+    // WHERE THE PRESS LANDED, asked of the chart and never deduced. A study pane sits below the
+    // price pane inside the same container, and the hit-test reads CONTAINER coordinates — pressed
+    // down there it answers about a point the pointer is not on, and the axes freeze for a gesture
+    // that was never a drag. The pane's own element is the whole guard, so the library still knows
+    // nothing about drawings. Unanswered keeps the container: refusing the lock on a read the chart
+    // has not caught up with is the very defect this file exists to fix.
+    const pane = host.pricePane?.() ?? null;
+    if (event.button !== 0 || (pane !== null && !pane.contains(event.target as Node))) return;
+    if (!grabsAnchor(event)) return;
     host.chart.applyOptions(axes(false));
     const release = (): void => {
       listen('removeEventListener', release);

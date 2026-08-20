@@ -958,7 +958,7 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 
 ---
 
-### T29: The axis lock leaves the other panes alone
+### T29: The axis lock leaves the other panes alone — DONE
 
 **What**: Implement the pane guard the spec's third edge case requires, and prove it. This is an UNIMPLEMENTED requirement, not a missing test — `src/drawing/axisLock.ts` has no pane guard and listens to the whole host container.
 **Where**: `src/drawing/axisLock.ts`
@@ -972,14 +972,14 @@ Reachable with no drawing layer present, so it belongs to the alert layer, not t
 - Skill: NONE
 
 **Done when**:
-- [ ] Reproduce first: a qualifying press whose target lies outside the price pane currently locks the axes — the test must fail before the guard exists
-- [ ] After the guard, such a press makes NO `applyOptions` call at all, matching DRAG-06's wording
-- [ ] DRAG-01 and DRAG-06 still hold: a press on an anchor INSIDE the price pane still locks, and a press on nothing still leaves the axes untouched
-- [ ] The mechanism stays engine-agnostic — the library must not learn what a drawing is to answer which pane a press landed in
-- [ ] The byte cost is measured and named in both ledgers; the entry has 185 B of room below 104994 and `PROVISIONAL_ENTRY_LIMIT` is not to be raised
-- [ ] `test/axisLock.spec.ts` extended
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
-- [ ] Test count: baseline + ≥2 tests pass (no silent deletions)
+- [x] Reproduce first: a qualifying press whose target lies outside the price pane currently locks the axes — the test must fail before the guard exists
+- [x] After the guard, such a press makes NO `applyOptions` call at all, matching DRAG-06's wording
+- [x] DRAG-01 and DRAG-06 still hold: a press on an anchor INSIDE the price pane still locks, and a press on nothing still leaves the axes untouched
+- [x] The mechanism stays engine-agnostic — the library must not learn what a drawing is to answer which pane a press landed in
+- [x] The byte cost is measured and named in both ledgers; the entry has 185 B of room below 104994 and `PROVISIONAL_ENTRY_LIMIT` is not to be raised
+- [x] `test/axisLock.spec.ts` extended
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] Test count: baseline + ≥2 tests pass (no silent deletions)
 
 **Tests**: unit
 **Gate**: build

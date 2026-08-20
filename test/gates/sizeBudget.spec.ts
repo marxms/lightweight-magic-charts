@@ -83,6 +83,11 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `measured` lowers `limit` with it, by the equality asserted just below, and the probe fails on the
  * spot if the bundle does not fit. Down is the safe direction, and it is the direction a legitimate
  * shrinkage writes.
+ * RE-PINNED 2026-08-20 to 104921 (+112 B): the axis lock asks the chart WHICH PANE the press landed
+ * in before it locks. A press on a study pane below the price pane froze the axes for a gesture that
+ * was never a drag, because the hit-test reads container coordinates and answers about a point the
+ * pointer is not on. Two shapes were measured one after the other — a named helper at 131 B and the
+ * inlined pair of clauses that shipped at 112 B. The provisional ceiling is untouched, 73 B above.
  * RE-PINNED 2026-08-20 to 104809 (+93 B): the price-alert layer releases its lock on `blur` too,
  * so a tab switch no longer leaves the axes frozen with an alert drag still in flight.
  * RE-PINNED 2026-08-20 to 104716 (+48 B): the rail region hands the mode to the toggle, which it
@@ -104,7 +109,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104809,
+  '*': 104921,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

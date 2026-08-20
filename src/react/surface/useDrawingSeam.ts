@@ -77,6 +77,9 @@ export function useDrawingSeam(
         : attachAxisLock({
             chart,
             container: host,
+            // PANE 0 IS THE PRICE PANE — the same index a binding's own placement guard reads, asked
+            // of the chart at press time because a pane added later has no element until it renders.
+            pricePane: () => chart.panes()[0]?.getHTMLElement() ?? null,
             anchorAt: (point) => layer.anchorAt?.(point) === true,
           });
     layerRef.current = layer;
