@@ -407,6 +407,45 @@ said true. Data written under a label that denies it is worse than data refused:
 anyway and cannot tell which bars were already there. Refuse, and count it, so the refusal is
 visible. `applyOpen` refuses for the same reason: a scope awaiting a refetch draws nothing.
 
+### A stranded scope asks again
+
+`reset` announced a refetch that nobody performed. `needsRefetch` was exported, documented and
+asserted by the conformance suite, and it had **zero callers** in `src/` — so the state that means
+"your data is invalid, refetch" was a message with no reader. Because the adapter mints a fresh
+generation on every socket reconnect, a chart went blank on the first reconnect and stayed blank
+until the host changed symbol or timeframe, which is the only other thing that opens a new session.
+
+`resumeScope` is the way back, and it is deliberately not `restartScope`. `restartScope` returns
+`createScopeState`, which zeroes `baseline`, `baselineTime`, `seam` and `gen`. Reseeding from there
+would throw away the cursor the reconnect snapshot has just established — the I14 defect this port
+exists to close — and, with `seam` back to `none`, `seedHistory` would skip the anchor proof
+entirely and report a `verified` seam it never checked. It lands in `seeding` rather than fetching
+out of `reset`, because frames that arrive while the repair is in flight must be held in arrival
+order (I12), and `reset` refuses them.
+
+The repair is asked for, never taken. `reseed` lives on the session and the package's own bindings
+call it; the machine does not fetch on its own. Three alternatives were knocked down:
+
+- **The machine repairs itself when it enters `reset`.** Rejected on ownership: `fetchBars` is the
+  host's backend, which the README assigns to the host and puts under *what the library will never
+  do*. Spending a request is not "the same answer for every adapter" — rate limits, cost, auth and
+  paging are all the host's. It also breaks third-party harnesses without a diff to point at: the
+  conformance harness stages `setHistory` as *what the NEXT `fetchBars` resolves with*, and an
+  unrequested fetch consumes the slot the adapter author staged for the next assertion.
+- **The binding reopens the session.** Rejected because it drops a socket that has just come back,
+  loses the bars closing during the teardown (I12 exists to capture exactly those), and resets
+  `discarded`, which `rebase` and `restartScope` preserve on purpose as the wrong-feed sensor.
+- **Expose the phase and let the host decide.** Rejected because the host already receives the whole
+  `ScopeState` through `onState` and this package's two first-party consumers both dropped it. A
+  signal with no reader is what produced this defect; a second one would not fix it.
+
+Two bounds keep the repair from becoming the worse failure. Only one repair runs at a time, because
+two windows in flight can land out of order and walk the bars backwards — corruption the blank chart
+never had. And repairs stop after `MAX_CONSECUTIVE_REPAIRS`, which is 6: a history endpoint sitting
+permanently behind the live edge would otherwise turn the repair into one fetch per frame. The bound
+is a COUNT and not a delay because nothing in this layer may name a timer, so backoff is not
+available here; a host that wants to pace retries owns the port and can.
+
 ### I4 an amend resets
 
 A correction to an already-closed bucket is not applicable in place. The bucket may be anywhere in
@@ -511,4 +550,16 @@ just because its sequence number happens to line up.
 The stale verdict is NOT published: `seedHistory` returns the state untouched on a stale window, so
 the machine stays in `seeding` with its buffer intact and keeps collecting whatever closes while we
 go back for a better window. Publishing a reset here is what threw those frames away. Only when the
-last attempt is spent does the session publish `restartScope` and report `stale-history`.
+last attempt is spent does the session strand the scope and report `stale-history`.
+
+### A stale window strands the scope out loud
+
+The spent loop used to publish `restartScope`, which lands in `seeding` — and `needsRefetch` reports
+only `reset`. So a scope that ran out of attempts went quiet in a phase that claims nothing is
+wrong, kept a live subscription, and piled frames into the buffer until `MAX_BUFFERED_FRAMES` fired
+a `gap` that never happened. That is the same stranding I10 documents, reached by a second road, and
+it was invisible for the same reason: the phase did not match the situation.
+
+`strandScope` lands it in `reset` naming `stale-history`, which gives that `ResetCause` member its
+first producer — it had been declared and never emitted — and makes both roads to a stranded scope
+report identically. One announcement, one repair path, one thing to remember.

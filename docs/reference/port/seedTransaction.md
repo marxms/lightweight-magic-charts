@@ -22,7 +22,7 @@ export const session: Session = openScope(options);
 
 - **`openScope`** · value · `(options: SessionOptions) => Session`
 - **`SeedOutcome`** · type · `type SeedOutcome = | { readonly kind: 'seeded'; readonly bars: readonly Bar[]; readonly baseline: number } | { readonly kind: 'seeded-unverified'; readonly bars: readonly Bar[]; readonly baseline: number; readonly reason: 'no-anchor'; } | { readonly kind: 'stale-history'; readonly baselineTime: number; readonly newestBarTime?: number; } | { readonly kind: 'aborted' }`
-- **`Session`** · type · `interface Session { state: () => ScopeState; outcome: Promise<SeedOutcome>; unsubscribe: Unsubscribe }`
+- **`Session`** · type · `interface Session { state: () => ScopeState; outcome: Promise<SeedOutcome>; reseed: () => Promise<SeedOutcome>; unsubscribe: Unsubscribe }`
 - **`SessionOptions`** · type · `interface SessionOptions { scope: Scope; shape: ChannelShape; port: HistoryPort & LivePort; history: { readonly from: number; readonly to: number; readonly barCount?: number; }; onState?: ((state: ScopeState) => void) | undefined; onStatus?: ((status: LinkStatus) => void) | undefined; maxRefetch?: number | undefined }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under

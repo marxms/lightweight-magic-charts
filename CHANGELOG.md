@@ -4,6 +4,32 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.1 — 2026-08-17
+
+A chart went blank on the first socket reconnect and stayed blank until the host changed symbol or
+timeframe. The state that means "refetch me" was announced and never answered.
+
+### Fixed
+
+- **A stranded scope asks again.** Every reconnect mints a generation, the machine rebases into
+  `reset`, and `reset` refuses every later frame. `needsRefetch` reported exactly that and had no
+  caller anywhere in the package, so the refusal was permanent. `Session` now carries **`reseed`**,
+  and the workspace's own lane and compact cells call it. The repair reuses the live subscription —
+  no socket is dropped — and refuses without touching the network when the cursor is not back yet,
+  when there is nothing to repair, or when its ceiling of six consecutive failures is spent.
+- **A spent stale window says so.** The exhausted refetch loop published `restartScope`, which lands
+  in `seeding` — a phase `needsRefetch` does not report. A scope that ran out of attempts went quiet
+  and piled frames until the buffer cap fired a gap that never happened. It now lands in `reset`
+  naming `stale-history`, which gives that `ResetCause` member its first producer.
+
+### Added
+
+- **`Session.reseed`** — one verdict per repair, because `outcome` describes the first seed and a
+  settled promise cannot carry what happens after it.
+
+Neither is breaking by the rule below: a member added to a type the package RETURNS, and which no
+host implements, is a new export rather than a new obligation.
+
 ## 0.1.0 — 2026-08-14
 
 First release. The chart workspace that lived inside one dashboard became a package that any React

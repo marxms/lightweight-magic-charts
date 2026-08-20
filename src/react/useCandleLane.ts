@@ -8,8 +8,9 @@ import { scopeKey } from '../domain/types';
 import type { Bar, Scope } from '../domain/types';
 import type { LinkStatus } from '../port/frames';
 import type { MarketDataPort } from '../port/ports';
+import { needsRefetch } from '../port/scopeMachine';
 import { openScope } from '../port/seedTransaction';
-import type { SeedOutcome } from '../port/seedTransaction';
+import type { SeedOutcome, Session } from '../port/seedTransaction';
 
 export interface CandleLane {
   /** `null` parks the lane: no market chosen yet, so no session and no socket. */
@@ -45,6 +46,10 @@ export function useCandleLane({ scope, port, barCount }: CandleLane): CandleLane
     setOutcome(null);
     setSeam('none');
 
+    let live = true;
+    // Assigned right below: the ask reaches the session that is still being built.
+    let current: Session | null = null;
+
     const opened = openScope({
       scope: session,
       // `delta` polices contiguity; `barCount` outranks the window, which is the advisory full range.
@@ -54,11 +59,13 @@ export function useCandleLane({ scope, port, barCount }: CandleLane): CandleLane
       onState: (state) => {
         setBars(state.bars);
         setSeam(state.seam);
+        // A stranded scope draws nothing and refuses every later frame, so the lane asks again.
+        // See docs/explanation/port.md#a-stranded-scope-asks-again
+        if (live && needsRefetch(state)) void current?.reseed();
       },
       onStatus: setStatus,
     });
-
-    let live = true;
+    current = opened;
     opened.outcome.then(
       (result) => {
         if (live) setOutcome(result.kind);

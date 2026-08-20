@@ -12,10 +12,22 @@ import {
   applyFrame,
   createScopeState,
   discardScope,
-  restartScope,
+  needsRefetch,
+  resumeScope,
   seedHistory,
+  strandScope,
   type ScopeState,
 } from './scopeMachine';
+
+/**
+ * How many consecutive failed repairs a session spends before it stops asking.
+ *
+ * A COUNT and not a delay, because nothing in this layer may name a timer. A history endpoint that
+ * sits permanently behind the live edge would otherwise turn the repair into one fetch per frame,
+ * which is a worse failure than the blank chart it replaces — and a louder one to pay for.
+ * See docs/explanation/port.md#a-stranded-scope-asks-again
+ */
+const MAX_CONSECUTIVE_REPAIRS = 6;
 
 export type SeedOutcome =
   | { readonly kind: 'seeded'; readonly bars: readonly Bar[]; readonly baseline: number }
@@ -47,7 +59,17 @@ export interface SessionOptions {
 
 export interface Session {
   readonly state: () => ScopeState;
+  /** The FIRST seed. Every repair after it reports through `reseed`. */
   readonly outcome: Promise<SeedOutcome>;
+  /**
+   * Fetch the window again for a scope that `needsRefetch` reports, and release the buffer onto it.
+   *
+   * One verdict per repair, because `outcome` already settled and a settled promise cannot carry
+   * the result of anything that happens later. Refuses without touching the network when there is
+   * nothing to repair, when the cursor is not back yet, or when the repair ceiling is spent.
+   * See docs/explanation/port.md#a-stranded-scope-asks-again
+   */
+  readonly reseed: () => Promise<SeedOutcome>;
   /** M5 — the closure IS the token. Idempotent: calling it twice is not an error. */
   readonly unsubscribe: Unsubscribe;
 }
@@ -60,6 +82,10 @@ export function openScope(options: SessionOptions): Session {
   let state = createScopeState(scope, shape);
   let released = false;
   let detach: Unsubscribe | null = null;
+  /** The repair in flight, so a second caller joins it instead of starting a rival one. */
+  let repair: Promise<SeedOutcome> | null = null;
+  /** Consecutive failed repairs. A seed that lands clears it; the ceiling stops the asking. */
+  let spent = 0;
   const controller = new AbortController();
 
   const publish = (next: ScopeState): void => {
@@ -88,7 +114,7 @@ export function openScope(options: SessionOptions): Session {
     detach = null;
   };
 
-  const outcome = (async (): Promise<SeedOutcome> => {
+  const runSeed = async (): Promise<SeedOutcome> => {
     for (let attempt = 0; attempt <= maxRefetch; attempt += 1) {
       let bars: readonly Bar[];
       try {
@@ -126,16 +152,44 @@ export function openScope(options: SessionOptions): Session {
       // I13 — the window does not reach the live edge. Refetch, and do NOT publish: the machine
       // stays in `seeding` with its buffer intact. See docs/explanation/port.md#a-stale-window-is-refetched-without-publishing
       if (attempt === maxRefetch) {
-        publish(restartScope(state));
-        return {
-          kind: 'stale-history',
-          baselineTime: state.baselineTime ?? 0,
-          newestBarTime: bars.length > 0 ? bars[bars.length - 1].time : undefined,
-        };
+        const baselineTime = state.baselineTime ?? 0;
+        const newestBarTime = bars.length > 0 ? bars[bars.length - 1].time : undefined;
+        // Spent, so the scope is STRANDED and says so. `restartScope` stood here and left it in
+        // `seeding`, which `needsRefetch` does not report — the second way a scope went quiet.
+        publish(strandScope(state));
+        return { kind: 'stale-history', baselineTime, newestBarTime };
       }
     }
     return { kind: 'aborted' };
-  })();
+  };
 
-  return { state: () => state, outcome, unsubscribe };
+  const outcome = runSeed();
+
+  const reseed = (): Promise<SeedOutcome> => {
+    // One repair at a time. Two in flight would publish two windows, and the older one landing
+    // last would walk the bars backwards — a corruption the blank chart never had.
+    if (repair !== null) return repair;
+    if (
+      released ||
+      !needsRefetch(state) ||
+      // The cursor is not back yet, and `seedHistory` only proves the seam under `anchored`. Seeding
+      // here would pass the proof vacuously and report `verified`, which is the outcome this port
+      // exists to make impossible — so the repair waits instead of guessing.
+      state.seam === 'none' ||
+      spent >= MAX_CONSECUTIVE_REPAIRS
+    ) {
+      return Promise.resolve({ kind: 'aborted' });
+    }
+
+    publish(resumeScope(state));
+    const running = runSeed().then((result) => {
+      spent = result.kind === 'seeded' || result.kind === 'seeded-unverified' ? 0 : spent + 1;
+      repair = null;
+      return result;
+    });
+    repair = running;
+    return running;
+  };
+
+  return { state: () => state, outcome, reseed, unsubscribe };
 }
