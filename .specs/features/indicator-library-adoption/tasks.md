@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T16 done
+**Status**: Implementation complete — T1..T17 done. Awaiting the independent Verifier
 
 ---
 
@@ -479,7 +479,7 @@ T15 → T16 → T17
 
 ---
 
-### T17: The reversal is written down
+### T17: The reversal is written down ✅
 
 **What**: Record AD-019, mark AD-006 superseded on its example clause only, and document the seam where a host will look for it.
 **Where**: `.specs/STATE.md`
@@ -492,11 +492,11 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] AD-019 names what changed and by what evidence; AD-006's `src/` clause is stated as standing
-- [ ] `docs/how-to/inject-catalogue.md` gains the third-party wiring, including that values are stored and never read
-- [ ] The documentation states that `views.length` is the resolved count and the cut is the difference
-- [ ] Every doc pointer written in a comment resolves to a document and a heading
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] AD-019 names what changed and by what evidence; AD-006's `src/` clause is stated as standing
+- [x] `docs/how-to/inject-catalogue.md` gains the third-party wiring, including that values are stored and never read
+- [x] The documentation states that `views.length` is the resolved count and the cut is the difference
+- [x] Every doc pointer written in a comment resolves to a document and a heading
+- [x] Gate check passes: `npm run build && npm test && npm run e2e && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: none
 **Gate**: build
