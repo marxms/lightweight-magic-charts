@@ -145,9 +145,18 @@ and neither `example/indicators/renames.json` nor the defect ledger says why. It
 is gone; it cannot tell a rename from a removal, and a host's saved workspace can — so silent loss
 only gets through a red build.
 
+**It refuses on the same terms when a NUMBER moved.** Regenerating the fingerprints is the ordinary
+way to take a vendor release, and that is exactly what turns the fingerprint check into a check of
+itself: the digest moves, the file moves with it, and the gate is green over a value nobody read.
+Measured with an inverted-weight `wma`, 2.1% wrong, shipped the way a release arrives — every check
+passed. So a moved digest has to be declared in `example/indicators/value-changes.json`, which is
+append-only, with the id, the digest it moved from, the digest it moved to and the reason. Taking a
+release therefore reads: run `--check`, read the refusal it prints, satisfy yourself about each
+indicator it names, write the declaration, then regenerate.
+
 Its own command and its own CI job, for the same reason `npm run e2e` has one: it loads a 1.05 MB
 third-party library and computes three hundred indicators over 1664 bars. Measured 2026-08-21:
-`indicator-proof: 21/21 passed in 11.2 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
+`indicator-proof: 29/29 passed in 11.3 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
 are devDependencies pinned EXACTLY — a range would let every digest move while the check stayed
 green — and `test/boundary.spec.ts` is what keeps either of them out of `src/`, statically and
 through `import()` alike.

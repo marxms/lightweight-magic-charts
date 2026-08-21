@@ -9,7 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: Implementation complete — T1..T17 done. Awaiting the independent Verifier
+**Status**: T1..T17 done. The independent Verifier returned FAIL on coverage
+(`validation.md`); T18..T23 are its ranked gaps, routed back as fix tasks
 
 ---
 
@@ -93,6 +94,16 @@ T12 → T13 → T14 → T15
 
 ```
 T15 → T16 → T17
+```
+
+### Phase 9: The Verifier's gaps, closed
+
+Routed back from `validation.md` — the report is the input to this phase, not a summary of it. Ordered
+so the mechanism lands before the claim about it, and the spec is honest before its arithmetic is
+recounted.
+
+```
+T17 → T18 → T19 → T20 → T21 → T22 → T23
 ```
 
 ---
@@ -500,3 +511,139 @@ T15 → T16 → T17
 
 **Tests**: none
 **Gate**: build
+
+---
+
+### T18: A number may not move without a declaration ✅
+
+**What**: Give the digest the rule an id already has — an append-only ledger a human writes, and a generator that refuses to overwrite a digest nobody declared.
+**Where**: `example/indicators/value-changes.json`, `scripts/indicator-proof/value-ledger.mjs`, `scripts/build-indicator-manifest.mjs`, `scripts/indicator-proof.mjs`
+**Depends on**: T17
+**Reuses**: the refusal `renames.json` already carries for an id that vanished
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A ledger carries id, old digest, new digest and reason, and nothing is ever deleted from it
+- [x] The generator REFUSES to write while a derived digest differs from the committed one and nothing declares the move
+- [x] `--check` refuses on the same terms instead of reporting the move as merely stale
+- [x] The rule discriminates: undeclared → red, correctly declared → green, wrong old digest → red
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T19: The CI comment claims what the proof proves ✅
+
+**What**: Rewrite the owner-facing text around the proof job so no sentence implies 320 indicators were checked numerically.
+**Where**: `.github/workflows/ci.yml`
+**Depends on**: T18
+**Reuses**: the seal's own three tiers, which are already honest
+**Requirement**: ADAPT-07, ADAPT-09
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The text states exhaustive parameterisation, drift-pinning and tiered numeric verification, with the counts
+- [x] No sentence presents the job as answering "correctly calculated" for every indicator
+- [x] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+
+---
+
+### T20: LANE-02 says what a host can actually do ⬜
+
+**What**: Rewrite LANE-02 to the invariant the host enforces, and record the missing notice door as a gap rather than building it.
+**Where**: `.specs/features/indicator-library-adoption/spec.md`, `.specs/STATE.md`
+**Depends on**: T19
+**Reuses**: the e2e assertion already written at T16
+**Requirement**: LANE-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] LANE-02 states the derivable cut and the one-symbol invariant, not a channel no host can reach
+- [ ] The absent host-facing notice channel is named in the Handoff as a candidate feature of its own
+- [ ] No `onNotice` is added to `ChartWorkspaceProps`
+- [ ] Gate check passes: `npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T21: IDENT-02's second conjunct is asserted ⬜
+
+**What**: Assert that a study keeps its parameter values across a label change, in the same mounted composition that asserts it stays selected.
+**Where**: `test/chartWorkspace.spec.tsx`
+**Depends on**: T20
+**Reuses**: `recordingStudies`, `HostStudyForm` and the real `WorkspaceStore` already in the file
+**Requirement**: IDENT-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] A value is written before the label changes and read back after it
+- [ ] The assertion dies when identity goes back to being the label
+- [ ] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T22: The traceability arithmetic agrees with its own table ⬜
+
+**What**: Recount the coverage line, resolve ADAPT-04 to one status, and scope APP-02 to what is provable here.
+**Where**: `.specs/features/indicator-library-adoption/spec.md`
+**Depends on**: T21
+**Reuses**: the table itself, which is the source of truth
+**Requirement**: bookkeeping — no requirement of its own
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] The counts match the rows
+- [ ] ADAPT-04 reads one status in the table and in the prose
+- [ ] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+
+---
+
+### T23: The value edited while history is loading ⬜
+
+**What**: Add the direct test for the listed edge case: a value edited before the window arrives recomputes against the bars present and draws gaps.
+**Where**: `test/chartWorkspace.spec.tsx`
+**Depends on**: T22
+**Reuses**: the deferred-port shape and `recordingStudies`
+**Requirement**: edge case — "a parameter value is edited while history is still loading"
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] The write happens while the port's history has not resolved
+- [ ] `resolve` is reached with the value and the bars present, and nothing throws
+- [ ] What is drawn for the warm-up is a declared gap, never a zero
+- [ ] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick

@@ -12,6 +12,7 @@ export const MANIFEST_PATHS = {
   manifest: 'example/indicators/manifest.json',
   fingerprints: 'example/indicators/fingerprints.json',
   renames: 'example/indicators/renames.json',
+  valueChanges: 'example/indicators/value-changes.json',
 };
 
 /** `onPriceScale`, `src/indicator/availability.ts:57-68`, with `CALIBRATED_PRICE_NEIGHBOURHOOD`. */

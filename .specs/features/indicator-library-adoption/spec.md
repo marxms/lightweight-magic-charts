@@ -293,7 +293,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Done |
 | ADAPT-08 | P1: Host draws the form, library draws the study | T11 | Done |
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12 | Done |
-| ADAPT-10 | P1: Host draws the form, library draws the study | T12 | Done |
+| ADAPT-10 | P1: Host draws the form, library draws the study | T12, T18 | Done |
 | LANE-01 | P2: A study that did not fit says so | T17 | Done |
 | LANE-02 | P2: A study that did not fit says so | T16 | Done |
 | LANE-03 | P2: A study that did not fit says so | T17 | Done |

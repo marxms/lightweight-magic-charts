@@ -53,6 +53,7 @@ import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
 import { EXCLUSION_MEASUREMENTS, digestOf, settleWithinBars, vendorPin } from './indicator-proof/manifest-shape.mjs';
+import { valueLedgerFaults } from './indicator-proof/value-ledger.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const read = (path) => JSON.parse(readFileSync(join(HERE, path), 'utf8'));
@@ -61,6 +62,7 @@ const CATALOGUE = read('../example/indicators/manifest.json');
 const MANIFEST = CATALOGUE.indicators;
 const FINGERPRINTS = read('../example/indicators/fingerprints.json');
 const RENAMES = read('../example/indicators/renames.json');
+const VALUE_CHANGES = read('../example/indicators/value-changes.json');
 const PACKAGE = read('../package.json');
 const INERT = read('./indicator-proof/INERT_INPUTS.json');
 const DEFECTS = read('./indicator-proof/DEFECT_LEDGER.json');
@@ -605,13 +607,16 @@ check(
 
   const drifted = [];
   const uncovered = [];
+  /** What this run computes, in the shape the fingerprint file holds — the ledger judges the pair. */
+  const derived = {};
   for (const row of MANIFEST) {
     const entry = byId.get(row.id);
+    const values = digestOf(entry, row.plotIds, BARS_A);
+    const settle = settleWithinBars(entry, row.plotIds, BARS_A);
+    derived[row.id] = { values, confirmsWithinBars: settle };
     const committed = FINGERPRINTS.entries?.[row.id];
     if (committed === undefined) { uncovered.push(row.id); continue; }
-    const values = digestOf(entry, row.plotIds, BARS_A);
     if (values !== committed.values) drifted.push(`${row.id}: committed ${committed.values.slice(0, 12)}… re-derived ${values.slice(0, 12)}…`);
-    const settle = settleWithinBars(entry, row.plotIds, BARS_A);
     if (settle !== committed.confirmsWithinBars || settle !== row.confirmsWithinBars) {
       drifted.push(`${row.id}: settles within ${settle} bars, manifest says ${row.confirmsWithinBars}, fingerprints say ${committed.confirmsWithinBars}`);
     }
@@ -647,6 +652,45 @@ check(
       ? `${renames.length} recorded rename(s); the generator REFUSES to write while an id has vanished from the library and neither this file nor the defect ledger says why, because it cannot tell a rename from a removal and a host's saved workspace can`
       : `renamed to an id nothing offers: ${dangling.join(', ')}`,
   );
+
+  // THE SAME RULE, ONE LEVEL DOWN — and the hole it closes was measured, not imagined. An
+  // inverted-weight `wma` (2.1% wrong on this very fixture) was planted in the vendor and the
+  // artefacts regenerated the way a release arrives: every check above passed, because regenerating
+  // the fingerprints is PART of taking the release. A digest may now only move when a human says
+  // what moved it.
+  const onFile = VALUE_CHANGES.changes ?? [];
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES });
+  check(
+    'catalogue.every-value-that-moved-carries-a-DECLARATION',
+    faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
+    faults.length === 0
+      ? `${onFile.length} declared value change(s) on file; every committed digest is the one this run derives, and the generator REFUSES both to write and to pass --check while a digest has moved and nothing says whether the vendor fixed a defect or shipped one`
+      : faults.map((fault) => `${fault.id} ${fault.fault}: ${fault.detail}`).join('; '),
+  );
+
+  // AND IT DISCRIMINATES. A rule whose only evidence is a file it has never rejected is a rule that
+  // passes over an empty set — the same objection GATE-03 raises against the boundary guard.
+  {
+    const [A, B, C] = ['a', 'b', 'c'].map((ch) => ch.repeat(64));
+    const was = { wma: { values: A, confirmsWithinBars: 0 } };
+    const now = { wma: { values: B, confirmsWithinBars: 0 } };
+    const reason = 'the vendor corrected the weighting so the newest bar carries the heaviest one';
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes } });
+    const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why });
+    const silent = judge();
+    const correct = judge(entry(A, B));
+    const wrongFrom = judge(entry(C, B));
+    const thin = judge(entry(A, B, 'vendor update'));
+    const named = (list, fault) => list.some((f) => f.id === 'wma' && f.fault === fault);
+    const verdicts = [named(silent, 'undeclared'), correct.length === 0, named(wrongFrom, 'wrong-from'), named(thin, 'no-reason')];
+    check(
+      'catalogue.the-declaration-rule-discriminates-in-four-directions',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; and a declaration whose reason says only what the git log already says is refused for having no reason'
+        : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------------------------

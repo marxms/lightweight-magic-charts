@@ -15,6 +15,13 @@
  * `npm run proof` re-derives those digests and compares. A release that moves a value by one part
  * in a billion turns it red and names the indicator.
  *
+ * AND A DIGEST THAT MOVED IS DECLARED, NOT REGENERATED. The line above had one hole and it was the
+ * ordinary workflow: regenerating the fingerprints is part of taking the release, so the number
+ * moves, the file moves with it, and the gate is green over a value nobody read. Measured with an
+ * inverted-weight `wma`, 2.1% wrong, shipped the way a release arrives — every check passed. So the
+ * generator refuses to write, and `--check` refuses to pass, while a digest has moved and
+ * `value-changes.json` does not say why. See `indicator-proof/value-ledger.mjs`.
+ *
  * THE VENDOR VERSION IS PINNED EXACTLY, NOT BY RANGE. This is the doctrine `size-budget.json`
  * already applies to esbuild, for the same reason: a reference number that moves on its own turns
  * a gate into noise, because a failure stops meaning "regression" and starts meaning "dependency
@@ -55,6 +62,7 @@ import { candidatesFor } from './indicator-proof/sensor.mjs';
 import { drawablePlotIds, movesTheDrawing } from './indicator-proof/drawing.mjs';
 import { declaredLevels, guideOf } from './indicator-proof/guide.mjs';
 import { sealOf, tallyOf } from './indicator-proof/seal.mjs';
+import { valueLedgerFaults, valueLedgerRefusal } from './indicator-proof/value-ledger.mjs';
 import {
   EXCLUSION_MEASUREMENTS,
   HOST_BOUNDS,
@@ -73,6 +81,7 @@ const CHECK_ONLY = process.argv.includes('--check');
 
 const DEFECTS = JSON.parse(readFileSync(join(HERE, 'indicator-proof', 'DEFECT_LEDGER.json'), 'utf8'));
 const RENAMES = readJson('renames');
+const VALUE_CHANGES = readJson('valueChanges');
 const PIN = vendorPin(JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8')));
 
 /** THE VENDOR NAMES ITS OWN SOURCES. Never typed out here. */
@@ -324,6 +333,21 @@ for (const row of indicators) {
   }
 }
 
+/* ---- A NUMBER THAT MOVED WITHOUT A DECLARATION STOPS THE BUILD ----------- *
+ * Same doctrine as the block above, one level down: that one refuses while an ID has vanished and
+ * nothing says whether it was renamed or removed; this one refuses while a VALUE has moved and
+ * nothing says whether the vendor fixed a defect or shipped one. Regenerating the digests as part
+ * of taking a release is what turned the fingerprint check into a check of itself.
+ * See scripts/indicator-proof/value-ledger.mjs for what it closes and what it does not.       */
+{
+  const committed = readJson('fingerprints').entries ?? {};
+  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES });
+  if (faults.length > 0) {
+    console.error(valueLedgerRefusal(faults, MANIFEST_PATHS.valueChanges));
+    process.exit(1);
+  }
+}
+
 const tally = tallyOf(seal);
 const manifest = {
   generatedBy: 'scripts/build-indicator-manifest.mjs',
@@ -359,7 +383,7 @@ if (CHECK_ONLY) {
     && readFileSync(path('fingerprints'), 'utf8') === fingerprintText;
   console.log(same
     ? `build-indicator-manifest: OK — the committed artefacts are what this generator produces (${indicators.length} offered)`
-    : 'build-indicator-manifest: STALE — re-run without --check and commit the result');
+    : 'build-indicator-manifest: STALE — names, shapes or a DECLARED value moved; re-run without --check and commit the result. An undeclared value never reaches this line: it is refused above.');
   process.exit(same ? 0 : 1);
 }
 
