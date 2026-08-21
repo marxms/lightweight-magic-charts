@@ -138,11 +138,11 @@ anything it does not know, and `useWorkspaceSetup`/`useWorkspaceSetupWriter` are
 1. WHEN a tab carrying per-study parameter values is serialised and parsed back THEN the workspace SHALL restore each study with the same values it was saved with, keyed by the identity IDENT-01 establishes  <!-- event-driven -->
 2. WHEN a study's parameter value changes THEN the workspace SHALL keep that study's identity, its lane and its position in the list unchanged  <!-- event-driven -->
 3. The package SHALL NOT read, interpret, validate or default any individual parameter value — it stores and returns what the host gave it  <!-- ubiquitous -->
-3a. WHEN the stored map carries no OWN property for a study THEN the coercion SHALL return no value for that study, never one inherited from the prototype chain  <!-- event-driven -->
-4. IF a stored payload carries a parameter value that the host's coercion rejects THEN the workspace SHALL load that study with no values rather than refusing the whole payload  <!-- unwanted-behavior -->
-5. WHEN a stored payload carries parameter values for a study that is no longer in the active list THEN the coercion SHALL drop those values  <!-- event-driven -->
-6. WHEN a payload written before this feature is loaded THEN the workspace SHALL load it without error and without a version bump, with every study carrying no values  <!-- event-driven -->
-7. WHEN a tab is duplicated THEN the copy SHALL carry the same per-study parameter values as the original  <!-- event-driven -->
+4. WHEN the stored map carries no OWN property for a study THEN the coercion SHALL return no value for that study, never one inherited from the prototype chain  <!-- event-driven -->
+5. IF a stored payload carries a parameter value that the host's coercion rejects THEN the workspace SHALL load that study with no values rather than refusing the whole payload  <!-- unwanted-behavior -->
+6. WHEN a stored payload carries parameter values for a study that is no longer in the active list THEN the coercion SHALL drop those values  <!-- event-driven -->
+7. WHEN a payload written before this feature is loaded THEN the workspace SHALL load it without error and without a version bump, with every study carrying no values  <!-- event-driven -->
+8. WHEN a tab is duplicated THEN the copy SHALL carry the same per-study parameter values as the original  <!-- event-driven -->
 
 **Independent Test**: Serialise a setup with two studies and distinct values, parse it back, assert deep equality; then parse a pre-feature payload and assert it loads with empty values and no throw.
 
@@ -283,7 +283,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | PARAM-05 | P1: Parameters survive the tab | T7 | Pending |
 | PARAM-06 | P1: Parameters survive the tab | T7 | Pending |
 | PARAM-07 | P1: Parameters survive the tab | T8, T9 | Pending |
-| PARAM-08 | P1: Parameters survive the tab | — | Pending |
+| PARAM-08 | P1: Parameters survive the tab | T7 | Pending |
 | ADAPT-01 | P1: Host draws the form, library draws the study | T13 | Pending |
 | ADAPT-02 | P1: Host draws the form, library draws the study | T13 | Pending |
 | ADAPT-03 | P1: Host draws the form, library draws the study | T13 | Pending |
@@ -307,10 +307,9 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-02 | P3: Consuming application | T10 | Pending |
 
 **Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 10 Done (GATE-01..06, IDENT-01..04). The two unmapped rows
-are recorded rather than assigned: `APP-01` is the consuming application's own manifest and lives
-outside this repository, so no task here can carry it; `PARAM-08` is not named by any task, because
-`tasks.md` spells the eighth criterion of that story `PARAM-3a` — the table numbers the story's ACs
-01..08 and the story itself numbers them 1..3, 3a, 4..7. The two spellings are the same requirement.
+are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
+lives outside this repository, so no task here can carry it. It is verified by the application's own
+suite, not by this one.
 
 ---
 

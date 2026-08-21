@@ -247,7 +247,7 @@ T15 → T16 → T17
 **Where**: `src/tabs/setup.ts`
 **Depends on**: T6
 **Reuses**: `coerceIndicators`, which is already the injected migration point
-**Requirement**: PARAM-01, PARAM-02, PARAM-03, PARAM-3a, PARAM-04, PARAM-05, PARAM-06
+**Requirement**: PARAM-01, PARAM-02, PARAM-03, PARAM-04, PARAM-05, PARAM-06, PARAM-07, PARAM-08
 
 **Tools**:
 - MCP: NONE
@@ -272,7 +272,7 @@ T15 → T16 → T17
 **Where**: `src/react/workspace/ChartWorkspace.tsx`
 **Depends on**: T7
 **Reuses**: the existing `useMemo` over `studies.resolve`
-**Requirement**: PARAM-07, ADAPT-06
+**Requirement**: ADAPT-06
 
 **Tools**:
 - MCP: NONE
@@ -296,7 +296,7 @@ T15 → T16 → T17
 **Where**: `src/index.ts`
 **Depends on**: T8
 **Reuses**: `scripts/gen-reference.mjs`
-**Requirement**: PARAM-07
+**Requirement**: enabling — ADAPT-04 and DEMO-02 cannot be built without this door
 
 **Tools**:
 - MCP: NONE
