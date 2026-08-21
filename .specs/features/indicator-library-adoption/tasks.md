@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T13 done
+**Status**: In progress — T1..T14 done
 
 ---
 
@@ -408,7 +408,7 @@ T15 → T16 → T17
 
 ---
 
-### T14: The host draws the form the library refuses to name
+### T14: The host draws the form the library refuses to name ✅
 
 **What**: A module-scope `WorkspaceSection.Body` that renders the vendor's `inputConfig` as accessible controls and writes through the published setup writer.
 **Where**: `example/studyForm.tsx`
@@ -421,11 +421,11 @@ T15 → T16 → T17
 - Skill: ecc:react-patterns, ecc:react-testing
 
 **Done when**:
-- [ ] `Body` is defined at module scope and the section is never reordered — an inline `Body` loses the caret on the first character
-- [ ] Every control has an associated label and its bounds reachable by a screen reader
-- [ ] A value the host's own coercion rejects loads the study with no values rather than refusing the payload
-- [ ] The `unknown` is narrowed here, in the host, with validation — the package cannot and must not
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] `Body` is defined at module scope and the section is never reordered — an inline `Body` loses the caret on the first character
+- [x] Every control has an associated label and its bounds reachable by a screen reader
+- [x] A value the host's own coercion rejects loads the study with no values rather than refusing the payload
+- [x] The `unknown` is narrowed here, in the host, with validation — the package cannot and must not
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full

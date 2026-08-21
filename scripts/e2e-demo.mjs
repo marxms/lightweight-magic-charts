@@ -866,6 +866,48 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Scene 11 — the host's own section on the studies rail keeps its identity.
+//
+// THE DEFECT THIS TARGETS is the one that costs a caret per keystroke. `<activeSection.Body />`
+// reconciles by the FUNCTION REFERENCE, so a host that builds its `Body` inline hands React a new
+// element type on every render and gets a remount instead of a re-render. `ChromeContext`'s churn
+// sensor already watches for exactly that and warns; nothing had ever read the warning. This does,
+// and it is the cheapest possible guard on the one host mistake the design measured as fatal.
+// ---------------------------------------------------------------------------------------------
+async function sceneHostSectionIsStable(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+
+  await openStudies(page);
+  const tab = page.locator('[data-testid="workspace-catalogue-section-params"]');
+  check('params.host-section-on-the-rail', (await tab.count()) === 1, 'the host declared one section and the rail shows it');
+
+  await tab.click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const body = page.locator('[data-testid="param-form"]');
+  check('params.host-section-body-renders', (await body.count()) === 1, 'the host Body is what the tabpanel draws');
+
+  // The rail is walked and returned to, which is what re-renders the menu repeatedly. A `Body`
+  // whose identity moved would be reported by the sensor on the first of these.
+  for (const id of ['workspace-catalogue-section-panes', 'workspace-catalogue-section-params']) {
+    await page.locator(`[data-testid="${id}"]`).click();
+    await page.waitForTimeout(120);
+  }
+  const churn = console_.warnings.filter(
+    (line) => line.includes('WorkspaceChromeProvider') && line.includes('sections'),
+  );
+  check(
+    'params.no-section-churn',
+    churn.length === 0,
+    churn.length === 0
+      ? `${console_.warnings.length} warning(s) on the page and none of them section-identity churn — the params Body kept its identity across the rail being walked`
+      : churn.slice(0, 2).join(' | '),
+  );
+
+  reportConsole('params.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
 
 const context = await esbuild.context({
   entryPoints: [join(EXAMPLE, 'main.tsx')],
@@ -933,6 +975,7 @@ try {
   await sceneAlertAddAndDragRemove(browser, base);
   await sceneAnchorDragHoldsTheRange(browser, base);
   await sceneMagnetPlacesTheAnchor(browser, base);
+  await sceneHostSectionIsStable(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

@@ -64,6 +64,7 @@ import { demoEngine } from './engine';
 import { DEMO_PANES, STUDY_CAPACITY } from './panes';
 import { DEMO_DENSITY, demoPort, demoRead } from './port';
 import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
+import { STUDY_PARAM_SECTIONS } from './studyForm';
 
 /**
  * The drop-in, mounted the way a HOST mounts it.
@@ -100,6 +101,13 @@ export function App(): ReactElement {
         density: DEMO_DENSITY,
       }}
       layout={{ heightPx: 620 }}
+      /**
+       * THE HOST'S OWN SECTION, and it is a module-scope constant for a measured reason: a
+       * `sections` array built in this render would hand `SeriesMenu` a new `Body` every time, and
+       * a new `Body` is a new element type — a remount, and the caret dies on the first character
+       * typed into it. One section, declared once, never reordered.
+       */
+      chrome={{ sections: STUDY_PARAM_SECTIONS }}
       drawing={{ vocabulary: DEMO_DRAWING_VOCABULARY, binding: demoDrawingBinding }}
       studies={{
         catalogue: DEMO_STUDY_CATALOGUE,

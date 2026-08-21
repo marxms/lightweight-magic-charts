@@ -49,39 +49,18 @@ import type {
 import { seriesId, utcSeconds } from 'lightweight-magic-charts';
 
 import manifestJson from './indicators/manifest.json';
+import { plainRecord, readStudyValues } from './studyValues';
+import type { ManifestInput, ManifestRow, StudyValue, StudyValues } from './studyValues';
 
 /* ---- what the committed manifest promises ------------------------------------------------- */
 
-export type StudyValue = number | string | boolean;
-export type StudyValues = Readonly<Record<string, StudyValue>>;
-
-/** One control the form may offer. `enum` covers the vendor's `source` and `string` alike. */
-export interface ManifestInput {
-  readonly id: string;
-  readonly type: 'int' | 'float' | 'bool' | 'enum';
-  readonly defval: StudyValue;
-  readonly fallbackTitle: string;
-  readonly min?: number;
-  readonly max?: number;
-  readonly step?: number;
-  /** The TOKENS, never a translated word. The vendor names its own sources. */
-  readonly options?: readonly string[];
-  /** This control does nothing until that one is switched on. */
-  readonly gatedBy?: string;
-}
-
-export interface ManifestRow {
-  readonly id: string;
-  readonly fallbackLabel: string;
-  readonly fallbackShortLabel: string;
-  readonly category: string;
-  readonly placement: 'over-price' | 'own-pane';
-  /** The keys the vendor DECLARES and does not hide — never assumed, never `plot0` by default. */
-  readonly plotIds: readonly string[];
-  readonly plotTitles: readonly string[];
-  readonly inputs: readonly ManifestInput[];
-  readonly guide?: number;
-}
+/**
+ * The value layer lives in `studyValues.ts` and is re-exported here, so a reader of the adapter
+ * finds the whole vocabulary in one place while the FORM can import the reader without dragging
+ * 182 KB of catalogue into the boot chunk behind it.
+ */
+export type { ManifestInput, ManifestRow, StudyValue, StudyValues } from './studyValues';
+export { acceptValue, readStudyValues } from './studyValues';
 
 const rowsOf = (raw: unknown): readonly ManifestRow[] => {
   const held = (raw as { readonly indicators?: unknown } | null)?.indicators;
@@ -208,47 +187,7 @@ export function guideOf(levels: readonly number[]): number | undefined {
   return levels.reduce((best, level) => (Math.abs(level - mid) < Math.abs(best - mid) ? level : best));
 }
 
-/* ---- `unknown` in, a checked record out ----------------------------------------------------- */
-
-const EMPTY_VALUES: StudyValues = Object.freeze({});
-
-/** A plain object and nothing else: an array, a `Date`, a `null`, a boxed primitive are not one. */
-function plainRecord(raw: unknown): Readonly<Record<string, unknown>> | null {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-  const proto: unknown = Object.getPrototypeOf(raw);
-  if (proto !== Object.prototype && proto !== null) return null;
-  return raw as Readonly<Record<string, unknown>>;
-}
-
-/** One control, one value. REFUSED, NEVER CLAMPED — a silently rewritten value was not chosen. */
-export function acceptValue(control: ManifestInput, raw: unknown): StudyValue | undefined {
-  if (control.type === 'bool') return typeof raw === 'boolean' ? raw : undefined;
-  if (control.type === 'enum') {
-    // The stored value is a TOKEN. A translated word is never a token, so it never round-trips in.
-    return typeof raw === 'string' && (control.options ?? []).includes(raw) ? raw : undefined;
-  }
-  if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined;
-  if (control.type === 'int' && !Number.isInteger(raw)) return undefined;
-  if (control.min !== undefined && raw < control.min) return undefined;
-  if (control.max !== undefined && raw > control.max) return undefined;
-  return raw;
-}
-
-/**
- * What one study holds, read against the manifest ROW — so a control this build stopped offering
- * cannot come back in through a stored payload, and one rubbish value costs itself and nothing else.
- */
-export function readStudyValues(held: StudySettings, row: ManifestRow): StudyValues {
-  const record = plainRecord(held);
-  if (record === null) return EMPTY_VALUES;
-  const out: Record<string, StudyValue> = {};
-  for (const control of row.inputs) {
-    if (!Object.prototype.hasOwnProperty.call(record, control.id)) continue;
-    const value = acceptValue(control, record[control.id]);
-    if (value !== undefined) out[control.id] = value;
-  }
-  return Object.freeze(out);
-}
+/* ---- the values a chosen study computes with ------------------------------------------------ */
 
 /** Every control that is not held keeps the vendor's own default — never a number written here. */
 export function inputsFor(row: ManifestRow, entry: VendorEntry, values: StudyValues): Readonly<Record<string, StudyValue>> {
