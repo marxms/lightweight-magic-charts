@@ -1,0 +1,522 @@
+[
+  {
+    "indicator": "bb",
+    "input": "offset",
+    "type": "int",
+    "defval": 0,
+    "title": "Offset",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "big-snapper-alerts",
+    "input": "bbLength",
+    "type": "int",
+    "defval": 20,
+    "title": "Bollinger Length",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "big-snapper-alerts",
+    "input": "bbStddev",
+    "type": "float",
+    "defval": 2,
+    "title": "Bollinger StdDevs",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "big-snapper-alerts",
+    "input": "oiLength",
+    "type": "int",
+    "defval": 8,
+    "title": "OutsideIn LookBack",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "boom-hunter-pro",
+    "input": "k22",
+    "type": "float",
+    "defval": 0.3,
+    "title": "EOT2 K2",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "cci-stochastic",
+    "input": "showArrows",
+    "type": "bool",
+    "defval": true,
+    "title": "Show Arrows",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "cm-vix-fix-v3",
+    "input": "sbcFilt",
+    "type": "bool",
+    "defval": true,
+    "title": "Highlight Filtered Entry",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "dema",
+    "input": "offset",
+    "type": "int",
+    "defval": 0,
+    "title": "Offset",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "double-macd",
+    "input": "sig1",
+    "type": "int",
+    "defval": 9,
+    "title": "MACD1 Signal",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "double-macd",
+    "input": "sig2",
+    "type": "int",
+    "defval": 9,
+    "title": "MACD2 Signal",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "dynamic-structure-indicator",
+    "input": "maxZoneSize",
+    "type": "float",
+    "defval": 2.5,
+    "title": "Max Zone Size (ATR)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "dynamic-structure-indicator",
+    "input": "newStructureReset",
+    "type": "int",
+    "defval": 25,
+    "title": "New Structure Reset",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ema-supertrend",
+    "input": "factor",
+    "type": "float",
+    "defval": 4,
+    "title": "SuperTrend Factor",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ema",
+    "input": "offset",
+    "type": "int",
+    "defval": 0,
+    "title": "Offset",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "fibonacci-levels",
+    "input": "fastPeriod",
+    "type": "int",
+    "defval": 50,
+    "title": "50 MA",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "hawkeye-volume",
+    "input": "length",
+    "type": "int",
+    "defval": 20,
+    "title": "Length",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "heikin-ashi-rsi-oscillator",
+    "input": "showStoch",
+    "type": "bool",
+    "defval": false,
+    "title": "Show Stoch RSI",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "heikin-ashi-rsi-oscillator",
+    "input": "smoothD",
+    "type": "int",
+    "defval": 3,
+    "title": "Stoch Smooth D",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "heikin-ashi-rsi-oscillator",
+    "input": "smoothK",
+    "type": "int",
+    "defval": 3,
+    "title": "Stoch Smooth K",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "heikin-ashi-rsi-oscillator",
+    "input": "stochFit",
+    "type": "int",
+    "defval": 80,
+    "title": "Stoch Scale %",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "heikin-ashi-rsi-oscillator",
+    "input": "stochLen",
+    "type": "int",
+    "defval": 14,
+    "title": "Stoch Length",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "macd-4c",
+    "input": "signalLength",
+    "type": "int",
+    "defval": 9,
+    "title": "Signal Length",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "macd-bb",
+    "input": "signalLength",
+    "type": "int",
+    "defval": 9,
+    "title": "Signal Length",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "macd-reloaded",
+    "input": "t3Volume",
+    "type": "float",
+    "defval": 0.7,
+    "title": "TILLSON T3 Volume Factor",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "momentum-zigzag",
+    "input": "qqeThreshold",
+    "type": "int",
+    "defval": 10,
+    "title": "QQE Threshold",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "normalized-qqe",
+    "input": "qqeFactor",
+    "type": "float",
+    "defval": 4.236,
+    "title": "QQE Factor",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "normalized-qqe",
+    "input": "showSignals",
+    "type": "bool",
+    "defval": false,
+    "title": "Show Crossing Signals?",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ott-bands",
+    "input": "highlight",
+    "type": "bool",
+    "defval": false,
+    "title": "Show OTT Support Line Color Changes?",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "parabolic-rsi",
+    "input": "sarInc",
+    "type": "float",
+    "defval": 0.02,
+    "title": "SAR Increment",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "parabolic-rsi",
+    "input": "sarMax",
+    "type": "float",
+    "defval": 0.2,
+    "title": "SAR Max",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "parabolic-rsi",
+    "input": "sarStart",
+    "type": "float",
+    "defval": 0.02,
+    "title": "SAR Start",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "pivot-point-supertrend",
+    "input": "atrFactor",
+    "type": "float",
+    "defval": 3,
+    "title": "ATR Factor",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "price-action-system",
+    "input": "atrLen",
+    "type": "int",
+    "defval": 14,
+    "title": "ATR Length",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "price-action-system",
+    "input": "src",
+    "type": "source",
+    "defval": "close",
+    "title": "Source",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "price-divergence-detector",
+    "input": "macdSmooth",
+    "type": "int",
+    "defval": 9,
+    "title": "MACD Signal",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "price-divergence-detector",
+    "input": "showChannel",
+    "type": "bool",
+    "defval": false,
+    "title": "Show Channel",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "realtime-volume-bars",
+    "input": "mode",
+    "type": "string",
+    "defval": "Up/Down/Neutral",
+    "title": "Mode",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "renko-chart",
+    "input": "breakoutLength",
+    "type": "int",
+    "defval": 1,
+    "title": "Length for Breakout",
+    "reason": "declared but never read by calculate (proven from source: never read from cfg)"
+  },
+  {
+    "indicator": "rs-support-resistance",
+    "input": "window1",
+    "type": "int",
+    "defval": 8,
+    "title": "Short-term Window",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "rsi",
+    "input": "calculateDivergence",
+    "type": "bool",
+    "defval": false,
+    "title": "Calculate Divergence",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "sma",
+    "input": "offset",
+    "type": "int",
+    "defval": 0,
+    "title": "Offset",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "squeeze-momentum-v2",
+    "input": "kcMult1",
+    "type": "float",
+    "defval": 1,
+    "title": "KC Mult 1 (High)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "squeeze-momentum-v2",
+    "input": "kcMult2",
+    "type": "float",
+    "defval": 1.5,
+    "title": "KC Mult 2 (Mid)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "squeeze-momentum-v2",
+    "input": "kcMult3",
+    "type": "float",
+    "defval": 2,
+    "title": "KC Mult 3 (Low)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "st0p",
+    "input": "mult",
+    "type": "float",
+    "defval": 2,
+    "title": "Multiplier",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "super-guppy",
+    "input": "lookback",
+    "type": "int",
+    "defval": 6,
+    "title": "Signal Lookback",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "supertrend-ai-clustering",
+    "input": "maxData",
+    "type": "int",
+    "defval": 10000,
+    "title": "Historical Bars Calculation",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "supertrend-ai-clustering",
+    "input": "maxIter",
+    "type": "int",
+    "defval": 1000,
+    "title": "Maximum Iteration Steps",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "tema",
+    "input": "offset",
+    "type": "int",
+    "defval": 0,
+    "title": "Offset",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "lowerBand",
+    "type": "int",
+    "defval": 20,
+    "title": "Lower Band",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "maLength",
+    "type": "int",
+    "defval": 200,
+    "title": "MA Length",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "maType",
+    "type": "string",
+    "defval": "EMA",
+    "title": "MA Type",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "middleBand",
+    "type": "int",
+    "defval": 50,
+    "title": "Middle Band",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "rsiLength",
+    "type": "int",
+    "defval": 14,
+    "title": "RSI Length",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "smoothD",
+    "type": "int",
+    "defval": 3,
+    "title": "D",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "smoothK",
+    "type": "int",
+    "defval": 3,
+    "title": "K",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "stochLength",
+    "type": "int",
+    "defval": 14,
+    "title": "Stochastic Length",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "trader-xo",
+    "input": "upperBand",
+    "type": "int",
+    "defval": 80,
+    "title": "Upper Band",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ttm-squeeze-pro",
+    "input": "kcMult1",
+    "type": "float",
+    "defval": 1,
+    "title": "KC Mult 1 (Tight)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ttm-squeeze-pro",
+    "input": "kcMult2",
+    "type": "float",
+    "defval": 1.5,
+    "title": "KC Mult 2 (Normal)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "ttm-squeeze-pro",
+    "input": "kcMult3",
+    "type": "float",
+    "defval": 2,
+    "title": "KC Mult 3 (Wide)",
+    "reason": "read by calculate but no legal value changes any plot"
+  },
+  {
+    "indicator": "vwap-mvwap-ema-crossover",
+    "input": "rsiLimit",
+    "type": "int",
+    "defval": 65,
+    "title": "RSI Limit (RISKY)",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "vwap-mvwap-ema-crossover",
+    "input": "rsiMinimum",
+    "type": "int",
+    "defval": 51,
+    "title": "RSI Minimum (WAIT FOR DIP)",
+    "reason": "declared but never read by calculate (proven from source: destructured and then never used)"
+  },
+  {
+    "indicator": "wavetrend",
+    "input": "obLevel1",
+    "type": "int",
+    "defval": 60,
+    "title": "Over Bought Level",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  },
+  {
+    "indicator": "wavetrend",
+    "input": "osLevel1",
+    "type": "int",
+    "defval": -60,
+    "title": "Over Sold Level",
+    "reason": "declared but never read by calculate (proven from source: never destructured and never accessed)"
+  }
+]

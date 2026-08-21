@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T10 done (phases 1-5)
+**Status**: In progress — T1..T11 done (phases 1-5, phase 6 started)
 
 ---
 
@@ -334,7 +334,7 @@ T15 → T16 → T17
 
 ---
 
-### T11: Every offered indicator is proven, and every offered input is proven to matter
+### T11: Every offered indicator is proven, and every offered input is proven to matter ✅
 
 **What**: Land the correctness and parameterisation proof as a script with its own CI job, including the inert-input ledger as an exact set with written reasons.
 **Where**: `scripts/indicator-proof.mjs`
@@ -347,13 +347,13 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] Every offered indicator is asserted to draw, to be deterministic, to be pure, and to sit on the declared scale
-- [ ] Every offered input is asserted to move the output, or is in the ledger with a written reason; the ledger is an EXACT set and the check discriminates in both directions
-- [ ] Bounded-range rules are asserted by exact id with the definition written beside them — never by name pattern, which fired 40 false positives when tried
-- [ ] The cross-check against `example/studies.ts` is asserted, and `example/studies.ts` is NOT deleted: it is the oracle
-- [ ] No offered control can be given a legal value that makes one recomputation exceed one second
-- [ ] A CI job runs it, separate from `npm test`, with the measured runtime recorded
-- [ ] Gate check passes: `npm run proof`
+- [x] Every offered indicator is asserted to draw, to be deterministic, to be pure, and to sit on the declared scale — 320/320
+- [x] Every offered input is asserted to move the output, or is in the ledger with a written reason; the ledger is an EXACT set and the check discriminates in both directions — proven by mutation: offering `sma.offset` and holding back `rsi.length` both turn it red
+- [x] Bounded-range rules are asserted by exact id with the definition written beside them — never by name pattern, which fired 40 false positives when tried
+- [x] The cross-check against `example/studies.ts` is asserted, and `example/studies.ts` is NOT deleted: it is the oracle — read out of the real file, stripped of its TypeScript and evaluated, so a port that drifts is red
+- [x] No offered control can be given a legal value that makes one recomputation exceed one second — 796 controls probed; `supertrend-ai-clustering.maxFactor` measured 20,276 ms unbounded and is now bounded at 100 (33 ms)
+- [x] A CI job runs it, separate from `npm test`, with the measured runtime recorded — 8.5 s
+- [x] Gate check passes: `npm run proof`
 
 **Tests**: integration
 **Gate**: proof

@@ -290,8 +290,8 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-04 | P1: Host draws the form, library draws the study | T11, T14 | Pending |
 | ADAPT-05 | P1: Host draws the form, library draws the study | T13 | Pending |
 | ADAPT-06 | P1: Host draws the form, library draws the study | T8 | Done |
-| ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Pending |
-| ADAPT-08 | P1: Host draws the form, library draws the study | T11 | Pending |
+| ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Done |
+| ADAPT-08 | P1: Host draws the form, library draws the study | T11 | Done |
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12 | Pending |
 | ADAPT-10 | P1: Host draws the form, library draws the study | T12 | Pending |
 | LANE-01 | P2: A study that did not fit says so | T17 | Pending |
@@ -306,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | — | Pending |
 | APP-02 | P3: Consuming application | T10 | Done |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 20 Done (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-06, APP-02). The two unmapped rows
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 22 Done (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-06..08, APP-02). ADAPT-04 stays Pending: T11 proves every OFFERED input moves the drawing, and T14 is what omits the rest from the form. The two unmapped rows
 are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
 lives outside this repository, so no task here can carry it. It is verified by the application's own
 suite, not by this one.

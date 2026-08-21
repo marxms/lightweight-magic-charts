@@ -114,6 +114,29 @@ nothing local is weaker than CI. `.github/workflows/ci.yml` runs these on every 
 `release.yml` runs them again on the tag, because the run that publishes is the run that most needs
 to have checked.
 
+### The check that answers for the vendor's arithmetic
+
+```sh
+npm run proof   # every offered indicator, and every offered control
+```
+
+`scripts/indicator-proof.mjs` is the owner's own acceptance condition, executed before he executes
+it: every indicator the committed manifest offers has to draw, be deterministic, be pure, be
+bar-length and index-aligned, sit on the scale it declares and break no asserted bound — and **every
+control it offers has to move the drawing**, re-proved on the spot rather than read from a cached
+census. The other half is asserted too: every control the library declares and the manifest holds
+back carries a written reason, because "held back" and "forgotten" look identical otherwise.
+
+It verifies the manifest; it does not decide what is offered. A second funnel over the same set
+would be a second source of truth about what the product offers, and two of those diverge on the
+first release.
+
+Its own command and its own CI job, for the same reason `npm run e2e` has one: it loads a 1.05 MB
+third-party library and computes three hundred indicators over 1664 bars. Measured 2026-08-21:
+`indicator-proof: 16/16 passed in 8.5 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
+are devDependencies pinned EXACTLY, and `test/boundary.spec.ts` is what keeps either of them out of
+`src/` — statically and through `import()` alike.
+
 ### The check that runs a browser, and why it is not wired in
 
 ```sh
@@ -201,6 +224,8 @@ a guard whose blind spot is unwritten gets read as covering everything.
    measure `dist/`, and they will refuse rather than report a stale number.
 2. **A green `npm run e2e` when the change can reach the page.** Anything under `example/`, and
    anything in `src/react/`, is that kind of change. The suite is the only thing here that renders.
+   **A green `npm run proof` when the change touches the indicator manifest or the vendor pin.**
+   That gate is the one that answers for somebody else's arithmetic.
 3. **Tests that assert an outcome, not an implementation.** New behaviour arrives with a test that
    would fail without it. Weakening, skipping or deleting a test to get to green is never the fix.
 4. **A ledger that only shrank.** If your change makes a recorded violator comply, take it out of the

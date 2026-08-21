@@ -1,0 +1,224 @@
+[
+ {
+  "id": "woodies-cci",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"CCI Turbo Histogram\" (plot0, style histogram) and \"CCI 14\" (plot2, style line) carry identical values on all 1011 indices, on both fixtures"
+ },
+ {
+  "id": "mavilimw",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"MavilimW\" (plot0, style line) and \"MavWOld\" (plot1, style line) carry identical values on all 946 indices, on both fixtures"
+ },
+ {
+  "id": "premier-rsi",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"Premier RSI\" (plot0, style line) and \"PRO Histo\" (plot1, style histogram) carry identical values on all 992 indices, on both fixtures"
+ },
+ {
+  "id": "chandelier-stop",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"Stop Dots\" (plot0, style circles) and \"Stop Line\" (plot1, style line) carry identical values on all 1002 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "obv-oscillator",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"OBV Oscillator\" (plot0, style line) and \"OBV Osc Area\" (plot1, style area) carry identical values on all 1004 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "premier-stochastic",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"PSO\" (plot0, style line) and \"PSO Histogram\" (plot1, style histogram) carry identical values on all 966 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "volume-accumulation-pct",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"VA%\" (plot0, style line) and \"VAPI Histogram\" (plot1, style histogram) carry identical values on all 1004 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "atr-plus",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"Long Entry Size\" (plot1, style circles) and \"Long Target Size\" (plot2, style circles) carry identical values on all 1010 indices, on both fixtures"
+ },
+ {
+  "id": "atr-plus",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"Short Entry Size\" (plot3, style circles) and \"Short Target Size\" (plot4, style circles) carry identical values on all 1010 indices, on both fixtures"
+ },
+ {
+  "id": "ema-supertrend",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"EMA 9\" (plot0, style line) and \"NovaWave Fast\" (plot8, style line) carry identical values on all 1015 indices, on both fixtures"
+ },
+ {
+  "id": "ema-supertrend",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"EMA 21\" (plot1, style line) and \"NovaWave Slow\" (plot9, style line) carry identical values on all 1003 indices, on both fixtures"
+ },
+ {
+  "id": "fx-sniper-t3-cci",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"T3-CCI\" (plot0, style line) and \"CCIH\" (histogram, style histogram) carry identical values on all 1011 indices, on both fixtures"
+ },
+ {
+  "id": "intraday-ts-bb",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"Squeeze Momentum\" (sqzMom, style line) and \"Squeeze State\" (sqzState, style cross) carry identical values on all 978 indices, on both fixtures"
+ },
+ {
+  "id": "market-cipher-b",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"Cross Dot\" (crossDot, style circles) and \"Cross Line\" (crossLine, style line) carry identical values on all 199 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "ma-shift",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"MA\" (plot0, style line) and \"MA Glow\" (plot1, style line) carry identical values on all 1004 indices, on both fixtures"
+ },
+ {
+  "id": "rsi-histoalert",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"RSI HistoAlert\" (plot0, style line) and \"RSI Histogram\" (plot1, style histogram) carry identical values on all 1010 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "td-macd",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"MACD Histogram\" (plot0, style histogram) and \"MACD\" (plot1, style line) carry identical values on all 1004 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "td-macd",
+  "class": "macd-histogram-is-the-line",
+  "excludes": true,
+  "detail": "\"MACD Histogram\" equals \"MACD\" on all 1004 indices; a MACD histogram is line - signal by definition"
+ },
+ {
+  "id": "td-macd",
+  "class": "broken-histogram-identity",
+  "excludes": true,
+  "detail": "\"MACD Histogram\" != \"MACD\" - \"Signal\"; max deviation 4.23253 over 975 indices"
+ },
+ {
+  "id": "transient-zones",
+  "class": "inverted-band",
+  "excludes": true,
+  "detail": "\"Channel High\" < \"Channel Low\" on 1644/1644 indices (100.0%), both fixtures"
+ },
+ {
+  "id": "double-macd",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"MACD 1226 Line\" (macd1Line, style line) and \"MACD 1226 Hist\" (macd1Hist, style histogram) carry identical values on all 998 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "double-macd",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"MACD 515 Line\" (macd2Line, style line) and \"MACD 515 Hist\" (macd2Hist, style histogram) carry identical values on all 1009 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "double-macd",
+  "class": "macd-histogram-is-the-line",
+  "excludes": true,
+  "detail": "\"MACD 1226 Hist\" equals \"MACD 1226 Line\" on all 998 indices; a MACD histogram is line - signal by definition"
+ },
+ {
+  "id": "double-macd",
+  "class": "time-field-not-its-own-bar",
+  "excludes": false,
+  "detail": "divBear: 96 points, divBull: 90 points \u2014 NEUTRALISED: the adapter builds every Point from bars[index].time (see the design doc \u00a72.8)"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH\" (plot0, style line) and \"RRTH2\" (plot1, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH\" (plot0, style line) and \"RRTH3\" (plot2, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH\" (plot0, style line) and \"RRTH4\" (plot3, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH2\" (plot1, style line) and \"RRTH3\" (plot2, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH2\" (plot1, style line) and \"RRTH4\" (plot3, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "rmi-trend-sniper",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"RRTH3\" (plot2, style line) and \"RRTH4\" (plot3, style line) carry identical values on all 954 indices, on both fixtures"
+ },
+ {
+  "id": "hull-butterfly-oscillator",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"HSO Histogram\" (plot0, style histogram) and \"HSO Line\" (plot1, style line) carry identical values on all 1011 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "heikin-ashi-rsi-oscillator",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"RSI Line\" (plot0, style line) and \"Histogram\" (plot5, style histogram) carry identical values on all 1010 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "open-close-cross",
+  "class": "duplicate-plot-render-variant",
+  "excludes": false,
+  "detail": "\"PCD Area\" (pcd, style histogram) and \"PCD Line\" (pcdLine, style line) carry identical values on all 976 indices, on both fixtures \u2014 RENDER VARIANT: one series, two styles. Recorded so the adapter collapses the pair; laneDraft draws both as the same line."
+ },
+ {
+  "id": "renko-chart",
+  "class": "duplicate-plot-same-quantity-SUSPECT",
+  "excludes": false,
+  "detail": "\"Renko Close\" (renkoClose, style line) and \"Renko Breakout\" (breakoutLine, style line) carry identical values on all 921 indices, on both fixtures"
+ },
+ {
+  "id": "bitcoin-log-curves",
+  "class": "absolute-levels-not-a-function-of-the-instrument",
+  "excludes": true,
+  "detail": "declared overlay:true, and its plots are ABSOLUTE Bitcoin price bands: median |value| 370956 against a price median of 116 on fixture A, and off the price neighbourhood on fixture B at 4200 as well. Correct for BTC, catastrophic for anything else \u2014 and a generic catalogue offers it against whatever instrument the workspace is showing. Repositioning it to its own pane would draw the bands correctly and still say nothing about the instrument on screen, so it is excluded rather than moved"
+ },
+ {
+  "id": "ma-shift",
+  "class": "mixed-scale-no-single-correct-placement",
+  "excludes": true,
+  "detail": "declared overlay:true; five plots sit on the price scale and `osc` (\"Oscillator\") has a median |value| of 0.35 against a price median of 116, on both fixtures. One entry carrying two scales has no single correct `placement`: over-price renders the oscillator off-axis and own-pane renders the five moving averages off-axis. Excluded rather than repositioned, because either choice draws something wrong"
+ },
+ {
+  "id": "tillson-t3",
+  "class": "promised-plot-absent-at-the-defaults",
+  "excludes": true,
+  "detail": "declares plot0 \"T3\" and plot1 \"T3fibo\", and the result carries only plot0 unless `showFibo` is true, which defaults to false. The manifest cannot promise plot1. Reducing the promise to plot0 was measured and rejected: `showFibo`, `lengthFibo` and `volumeFactorFibo` would then be three offered controls whose only effect is a plot the manifest does not draw, and holding them back would need a ledger of a third kind \u2014 they are not inert, so the inert ledger would become a lie about them. Excluding the one entry costs less than inventing that ledger"
+ }
+]

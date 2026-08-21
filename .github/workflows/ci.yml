@@ -67,6 +67,41 @@ jobs:
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
 
+  # THE OWNER'S ACCEPTANCE CONDITION, RUN BEFORE HE RUNS IT. His words: "my first action when you
+  # finish will be to test every indicator and make sure they respect the parameterisations and that
+  # they are correctly calculated". `scripts/indicator-proof.mjs` is those two claims made checkable
+  # against the committed manifest — see its own docblock for what it verifies and what it refuses
+  # to claim.
+  #
+  # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 8.5 s on
+  # 2026-08-21 against `npm test`'s ~15 s over three Node versions — and none of what it measures
+  # varies by Node runtime, only by the vendor version, which `package.json` pins EXACTLY. Paying
+  # for it three times would prove the same number three times.
+  #
+  # It does NOT build. It reads `example/indicators/manifest.json` and the vendor directly; nothing
+  # under `src/` is involved, and `test/boundary.spec.ts` is what keeps it that way.
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          # The lowest Node this package still supports. The vendor's arithmetic is what this job
+          # measures, and it does not depend on which supported Node runs it.
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Indicator proof (parameterisation sensor + correctness oracles + manifest)
+        run: npm run proof
+
   # THE ONLY JOB THAT RENDERS A PIXEL. `gate` runs 1198+ cases and none of them mount `example/` —
   # `jest.config.js`'s own docblock explains why `testEnvironment` stays browser-free by default. On
   # 2026-08-16 that gap let seven defects reach `example/` at once (an empty volume pane, an empty
