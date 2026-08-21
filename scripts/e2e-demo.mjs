@@ -48,6 +48,8 @@ import { fileURLToPath } from 'node:url';
 
 import * as esbuild from 'esbuild';
 
+import { BOOT_CHUNK_CEILING, bootChunkVerdict, splittingControl } from './boot-chunk.mjs';
+
 const chromium = await import('playwright-core').then(
   (module) => module.chromium,
   () => {
@@ -867,15 +869,53 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
 
 const context = await esbuild.context({
   entryPoints: [join(EXAMPLE, 'main.tsx')],
-  outfile: join(EXAMPLE, 'bundle.js'),
+  // The SAME configuration `scripts/build-example.mjs` uses, and it has to be the same one: a split
+  // build in one and an inlined build in the other measures nothing. `entryNames` keeps the entry at
+  // `bundle.js`, which is the relative specifier `index.html` already loads.
+  outdir: EXAMPLE,
+  entryNames: 'bundle',
+  chunkNames: 'chunk-[hash]',
+  splitting: true,
   bundle: true,
   write: false,
   format: 'esm',
   target: 'es2021',
   jsx: 'automatic',
+  metafile: true,
   logLevel: 'error',
   define: { 'process.env.NODE_ENV': '"development"' },
 });
+
+// ---------------------------------------------------------------------------------------------
+// THE BUNDLE ITSELF, before a browser is launched: what a visitor downloads before anything draws.
+// ---------------------------------------------------------------------------------------------
+
+const built = await context.rebuild();
+const overCeiling = bootChunkVerdict(
+  built.metafile,
+  'bundle.js',
+  BOOT_CHUNK_CEILING.development,
+);
+check(
+  'bundle.boot-chunk-under-its-ceiling',
+  overCeiling === null,
+  overCeiling ??
+    `the entry chunk is under ${BOOT_CHUNK_CEILING.development} B, so nothing that was written to ` +
+      'load on demand is arriving at boot',
+);
+
+const control = await splittingControl();
+check(
+  'bundle.splitting-is-what-keeps-it-small',
+  control.inlined !== null &&
+    control.split !== null &&
+    control.inlined > control.heavyBytes &&
+    control.split < control.heavyBytes / 100 &&
+    control.chunks > 1,
+  `a synthetic entry whose only weight sits behind an await import() builds to ${control.inlined} B ` +
+    `at boot with outfile and ${control.split} B across ${control.chunks} files with outdir + ` +
+    'splitting — which is the difference the ceiling above is able to see',
+);
 // Port 0 asks the OS for a free one: a suite that collides with a developer's own `npm run example`
 // on 5173 is a false red, exactly as `layout-probe.mjs` already reasons about the same collision.
 const served = await context.serve({ servedir: EXAMPLE, host: HOST, port: 0 });

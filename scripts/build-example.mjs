@@ -23,6 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 import * as esbuild from 'esbuild';
 
+import { BOOT_CHUNK_CEILING, bootChunkVerdict } from './boot-chunk.mjs';
+
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOURCE = join(ROOT, 'example');
 const OUT = join(SOURCE, 'site');
@@ -33,7 +35,13 @@ mkdirSync(OUT, { recursive: true });
 
 const result = await esbuild.build({
   entryPoints: [join(SOURCE, 'main.tsx')],
-  outfile: join(OUT, 'bundle.js'),
+  // `outdir` + `splitting`, NEVER `outfile`: with `outfile` esbuild inlines a dynamically imported
+  // module into the entry, so the bytes an `await import()` was written to defer are already on the
+  // wire. `entryNames` keeps the entry at `bundle.js`, which is what `index.html` points at.
+  outdir: OUT,
+  entryNames: 'bundle',
+  chunkNames: 'chunk-[hash]',
+  splitting: true,
   bundle: true,
   write: true,
   minify: true,
@@ -48,6 +56,12 @@ const result = await esbuild.build({
 // `index.html` already points at `./bundle.js`, a RELATIVE specifier. That is what lets the same
 // file work at a project subpath such as /lightweight-magic-charts/ without being rewritten.
 cpSync(join(SOURCE, 'index.html'), join(OUT, 'index.html'));
+
+const failed = bootChunkVerdict(result.metafile, 'bundle.js', BOOT_CHUNK_CEILING.production);
+if (failed !== null) {
+  console.error(`build-example: FAIL — ${failed}`);
+  process.exit(1);
+}
 
 const bytes = Object.values(result.metafile.outputs).reduce((sum, o) => sum + o.bytes, 0);
 console.log(`build-example: OK — ${OUT} (${bytes} B across ${Object.keys(result.metafile.outputs).length} file(s))`);

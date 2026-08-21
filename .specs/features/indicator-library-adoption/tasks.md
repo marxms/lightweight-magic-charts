@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T9 done (phases 1-4)
+**Status**: In progress — T1..T10 done (phases 1-5)
 
 ---
 
@@ -312,7 +312,7 @@ T15 → T16 → T17
 
 ---
 
-### T10: The bundler stops inlining the dynamic import
+### T10: The bundler stops inlining the dynamic import ✅
 
 **What**: Move the example and e2e builds to `outdir` with `splitting: true`, and assert the boot chunk stays small.
 **Where**: `scripts/build-example.mjs`
@@ -325,9 +325,9 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] The same change is applied to `scripts/e2e-demo.mjs` in the same commit — a split build in one and not the other measures nothing
-- [ ] A ceiling on the boot chunk's bytes is asserted, so an inlined dynamic module turns red instead of silently costing 62×
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] The same change is applied to `scripts/e2e-demo.mjs` in the same commit — a split build in one and not the other measures nothing
+- [x] A ceiling on the boot chunk's bytes is asserted, so an inlined dynamic module turns red instead of silently costing 62×
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
