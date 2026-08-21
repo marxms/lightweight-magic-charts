@@ -91,6 +91,8 @@ and `src/`. Reproduced with the repo's own TypeScript: the predicate captures a 
 2. WHEN a source under `src/` contains a dynamic import of a relative path THEN the boundary suite SHALL report no violation for it  <!-- event-driven -->
 3. The boundary suite SHALL assert both of the above against synthetic sources, so the clause discriminates rather than passing over an empty set  <!-- ubiquitous -->
 4. WHEN the layer rules are evaluated THEN a dynamic import of a bare specifier SHALL be judged by the same allow-list as a static one  <!-- event-driven -->
+5. IF a module reference is written with anything other than a plain string literal — a template literal, a variable, or a concatenation — THEN the boundary suite SHALL report it as a violation in its own right, because a specifier the guard cannot read is a specifier the guard cannot clear  <!-- unwanted-behavior -->
+6. The rule in AC-5 SHALL apply to `require(...)` on the same terms as to `import(...)`, closing a hole that predates this feature  <!-- ubiquitous -->
 
 **Independent Test**: Add the synthetic sources, run `npx jest test/boundary.spec.ts` — the new positive control fails before the predicate is fixed and passes after, with the rest of the suite unchanged.
 
@@ -136,6 +138,7 @@ anything it does not know, and `useWorkspaceSetup`/`useWorkspaceSetupWriter` are
 1. WHEN a tab carrying per-study parameter values is serialised and parsed back THEN the workspace SHALL restore each study with the same values it was saved with, keyed by the identity IDENT-01 establishes  <!-- event-driven -->
 2. WHEN a study's parameter value changes THEN the workspace SHALL keep that study's identity, its lane and its position in the list unchanged  <!-- event-driven -->
 3. The package SHALL NOT read, interpret, validate or default any individual parameter value — it stores and returns what the host gave it  <!-- ubiquitous -->
+3a. WHEN the stored map carries no OWN property for a study THEN the coercion SHALL return no value for that study, never one inherited from the prototype chain  <!-- event-driven -->
 4. IF a stored payload carries a parameter value that the host's coercion rejects THEN the workspace SHALL load that study with no values rather than refusing the whole payload  <!-- unwanted-behavior -->
 5. WHEN a stored payload carries parameter values for a study that is no longer in the active list THEN the coercion SHALL drop those values  <!-- event-driven -->
 6. WHEN a payload written before this feature is loaded THEN the workspace SHALL load it without error and without a version bump, with every study carrying no values  <!-- event-driven -->
@@ -161,7 +164,10 @@ on the `studies` identity, so editing a value recalculates without a remount.
 2. WHEN the adapter maps a vendor result THEN it SHALL take the plot key from that indicator's `plotConfig` rather than assuming `plot0`  <!-- event-driven -->
 3. IF a vendor computation throws THEN the workspace SHALL leave every other study drawn and report that one as unavailable  <!-- unwanted-behavior -->
 4. WHERE a vendor input is declared but has no effect on the computation the host catalogue SHALL omit it from the form  <!-- optional-feature -->
-7. The host catalogue SHALL exclude any vendor entry that returns no plot, and any reachable only through the untyped registry path  <!-- ubiquitous -->
+7. The host catalogue SHALL exclude any vendor entry that returns no plot, any reachable only through the untyped registry path, and any with a defect confirmed against its own declared `plotConfig`  <!-- ubiquitous -->
+8. IF a vendor input has no upper bound and its cost grows with its value THEN the host catalogue SHALL either bound it or not offer it, because a persisted value re-applies on every load  <!-- unwanted-behavior -->
+9. WHEN the catalogue manifest is generated THEN it SHALL carry, per indicator, the verification tier reached and the number of bars within which a retroactive indicator settles  <!-- event-driven -->
+10. WHEN the manifest's re-derivation check runs THEN it SHALL compare computed VALUES and not only names and shapes, so a vendor upgrade that changes a number cannot pass unseen  <!-- event-driven -->
 5. The adapter SHALL pass bars ordered ascending by time, because the library performs no validation of its input  <!-- ubiquitous -->
 6. WHEN a parameter value changes THEN the workspace SHALL redraw that study without unmounting its series  <!-- event-driven -->
 
@@ -196,15 +202,22 @@ read an absent line as a broken indicator.
 **Why P2**: `laneOrder` cuts from the end of the list at the lane count, and that cut does not appear in
 `truncated`, which counts plots inside a lane. `example/App.tsx` records the incident in its own words —
 a capacity of six against two lanes let a visitor pick six studies and silently resolved the first two.
-A 457-entry catalogue makes a host far likelier to raise `capacity` and forget `lanes`.
+
+**Why the package gains NOTHING for it**: `resolveSources` builds `views` by mapping over the list
+`laneOrder` already deduplicated and cut, so `views.length` IS the resolved count and the cut is
+`ids.length - views.length` — derivable by the host from what is already published. A `cut` member on
+`SourceResolution` was designed, measured at +44 B, and dropped: nothing inside `src/` would read it,
+so forgetting it would light nothing up, which is the exact failure mode this repository has recorded
+five times.
 
 **Acceptance Criteria**:
 
-1. WHEN the active list is longer than the lane count THEN the resolution SHALL declare how many studies were cut  <!-- event-driven -->
-2. The package SHALL NOT change which studies are cut — the cut stays at the end of the list  <!-- ubiquitous -->
+1. The published documentation SHALL state that `views.length` is the resolved count and that the cut is the difference against the list the host passed in  <!-- ubiquitous -->
+2. WHEN the host's capacity exceeds its lane count and a user fills the list THEN the host SHALL report the difference through the notice channel  <!-- event-driven -->
+3. The package SHALL NOT change which studies are cut  <!-- ubiquitous -->
 
-**Independent Test**: Resolve seven ids against three lanes and assert the declared cut is four while the
-drawn views are the first three, unchanged.
+**Independent Test**: Resolve seven ids against three lanes in the host and assert the reported
+difference is four while the drawn views are the first three, unchanged.
 
 ---
 
@@ -257,6 +270,8 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | GATE-02 | P1: Boundary gate sees a dynamic import | Design | Pending |
 | GATE-03 | P1: Boundary gate sees a dynamic import | Design | Pending |
 | GATE-04 | P1: Boundary gate sees a dynamic import | Design | Pending |
+| GATE-05 | P1: Boundary gate sees a dynamic import | Design | Pending |
+| GATE-06 | P1: Boundary gate sees a dynamic import | Design | Pending |
 | IDENT-01 | P1: A study is identified by something not on screen | Design | Pending |
 | IDENT-02 | P1: A study is identified by something not on screen | Design | Pending |
 | IDENT-03 | P1: A study is identified by something not on screen | Design | Pending |
@@ -268,6 +283,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | PARAM-05 | P1: Parameters survive the tab | Design | Pending |
 | PARAM-06 | P1: Parameters survive the tab | Design | Pending |
 | PARAM-07 | P1: Parameters survive the tab | Design | Pending |
+| PARAM-08 | P1: Parameters survive the tab | Design | Pending |
 | ADAPT-01 | P1: Host draws the form, library draws the study | Design | Pending |
 | ADAPT-02 | P1: Host draws the form, library draws the study | Design | Pending |
 | ADAPT-03 | P1: Host draws the form, library draws the study | Design | Pending |
@@ -275,8 +291,12 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-05 | P1: Host draws the form, library draws the study | Design | Pending |
 | ADAPT-06 | P1: Host draws the form, library draws the study | Design | Pending |
 | ADAPT-07 | P1: Host draws the form, library draws the study | Design | Pending |
+| ADAPT-08 | P1: Host draws the form, library draws the study | Design | Pending |
+| ADAPT-09 | P1: Host draws the form, library draws the study | Design | Pending |
+| ADAPT-10 | P1: Host draws the form, library draws the study | Design | Pending |
 | LANE-01 | P2: A study that did not fit says so | - | Pending |
 | LANE-02 | P2: A study that did not fit says so | - | Pending |
+| LANE-03 | P2: A study that did not fit says so | - | Pending |
 | DEMO-01 | P2: Example demonstrates the library | - | Pending |
 | DEMO-02 | P2: Example demonstrates the library | - | Pending |
 | DEMO-03 | P2: Example demonstrates the library | - | Pending |
@@ -286,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | - | Pending |
 | APP-02 | P3: Consuming application | - | Pending |
 
-**Coverage:** 32 total, 0 mapped to tasks, 32 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 39 total, 0 mapped to tasks, 39 unmapped ⚠️ (Tasks phase not yet run)
 
 ---
 
@@ -296,6 +316,10 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 - [ ] A workspace exported with two parameterised studies and re-imported restores both values exactly
 - [ ] A catalogue entry whose label changes while its id does not keeps the study selected and its values intact
 - [ ] Two entries resolving to one identity fire the notice instead of the second silently never activating
+- [ ] A non-literal module reference under `src/` turns the boundary suite red, for `import()` and `require()` alike
+- [ ] The coercion returns nothing for a study whose key exists only on the prototype chain
+- [ ] No offered control can be given a value that makes one recomputation exceed one second
+- [ ] The manifest's re-derivation check fails when a vendor upgrade changes a computed value
 - [ ] A payload written before this feature loads without error and without a version bump
 - [ ] `node scripts/size-gate.mjs` exits 0 and the entry stays below `PROVISIONAL_ENTRY_LIMIT`
 - [ ] `test/boundary.spec.ts` still reports zero violations for the three banned specifiers in `src/`
