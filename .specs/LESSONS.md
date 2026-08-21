@@ -104,6 +104,42 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: APP-02 / .specs/features/indicator-library-adoption/spec.md (spec)
 - last seen: 2026-08-21T05:26:04Z
 
+### L-016 - A guard that refuses an undeclared CHANGE must also refuse a DELETED baseline entry, or removing the reference is a cheaper bypass than forging it.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `gates` · harmful: 0
+- features: indicator-library-adoption
+- evidence: validation.md Fix 1 / scripts/indicator-proof/value-ledger.mjs:90 (gates)
+- last seen: 2026-08-21T06:27:10Z
+
+### L-017 - When an acceptance criterion is rewritten, write its new Independent Test in the same task; a restated criterion with no new assertion has relocated the gap, not closed it.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: indicator-library-adoption
+- evidence: validation.md Fix 2 / LANE-02 / .specs/features/indicator-library-adoption/spec.md:228 (spec)
+- last seen: 2026-08-21T06:27:18Z
+
+### L-018 - Assert the invariant on the value the consumer actually reads, not only on the helper that computes it; a unit test on the helper does not pin the caller still using it.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: indicator-library-adoption
+- evidence: validation.md mutation M-R / src/indicator/resolution.ts:78 (tests)
+- last seen: 2026-08-21T06:27:18Z
+
+### L-019 - State a defence's residual hole by the effort it actually costs an attacker; an admission that overstates the cost reads as closed to the next reader.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `docs` · harmful: 0
+- features: indicator-library-adoption
+- evidence: validation.md Fix 3 / scripts/indicator-proof/value-ledger.mjs:24-25 (docs)
+- last seen: 2026-08-21T06:27:25Z
+
+### L-020 - A criterion that publishes a formula must name the precondition under which it holds, or the test can only assert the code's number while the sentence claims a different meaning.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec-writing` · harmful: 0
+- features: indicator-library-adoption
+- evidence: .specs/features/indicator-library-adoption/spec.md:225 (spec-writing)
+- last seen: 2026-08-21T07:18:58Z
+
+### L-021 - Assert the accepting branch of a refusal rule, not only its rejecting branches: an escape hatch that stops working fails closed and so no test ever reports that the documented path died.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `scripts/` · harmful: 0
+- features: indicator-library-adoption
+- evidence: scripts/indicator-proof/value-ledger.mjs:115 (scripts/)
+- last seen: 2026-08-21T07:18:58Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

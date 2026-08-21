@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 16,
+  "next_id": 22,
   "lessons": [
     {
       "id": "L-001",
@@ -276,6 +276,114 @@
       ],
       "created": "2026-08-21T05:26:04Z",
       "last_seen": "2026-08-21T05:26:04Z"
+    },
+    {
+      "id": "L-016",
+      "key": "surviving_mutant::a guard that refuses an undeclared change must also refuse a deleted baseline entry or removing the reference is a cheaper bypass than forging it",
+      "text": "A guard that refuses an undeclared CHANGE must also refuse a DELETED baseline entry, or removing the reference is a cheaper bypass than forging it.",
+      "signal": "surviving_mutant",
+      "scope": "gates",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Fix 1 / scripts/indicator-proof/value-ledger.mjs:90 (gates)"
+      ],
+      "created": "2026-08-21T06:27:10Z",
+      "last_seen": "2026-08-21T06:27:10Z"
+    },
+    {
+      "id": "L-017",
+      "key": "ac_gap::when an acceptance criterion is rewritten write its new independent test in the same task a restated criterion with no new assertion has relocated the gap not closed it",
+      "text": "When an acceptance criterion is rewritten, write its new Independent Test in the same task; a restated criterion with no new assertion has relocated the gap, not closed it.",
+      "signal": "ac_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Fix 2 / LANE-02 / .specs/features/indicator-library-adoption/spec.md:228 (spec)"
+      ],
+      "created": "2026-08-21T06:27:18Z",
+      "last_seen": "2026-08-21T06:27:18Z"
+    },
+    {
+      "id": "L-018",
+      "key": "surviving_mutant::assert the invariant on the value the consumer actually reads not only on the helper that computes it a unit test on the helper does not pin the caller still using it",
+      "text": "Assert the invariant on the value the consumer actually reads, not only on the helper that computes it; a unit test on the helper does not pin the caller still using it.",
+      "signal": "surviving_mutant",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md mutation M-R / src/indicator/resolution.ts:78 (tests)"
+      ],
+      "created": "2026-08-21T06:27:18Z",
+      "last_seen": "2026-08-21T06:27:18Z"
+    },
+    {
+      "id": "L-019",
+      "key": "spec_precision_gap::state a defence s residual hole by the effort it actually costs an attacker an admission that overstates the cost reads as closed to the next reader",
+      "text": "State a defence's residual hole by the effort it actually costs an attacker; an admission that overstates the cost reads as closed to the next reader.",
+      "signal": "spec_precision_gap",
+      "scope": "docs",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md Fix 3 / scripts/indicator-proof/value-ledger.mjs:24-25 (docs)"
+      ],
+      "created": "2026-08-21T06:27:25Z",
+      "last_seen": "2026-08-21T06:27:25Z"
+    },
+    {
+      "id": "L-020",
+      "key": "spec_precision_gap::a criterion that publishes a formula must name the precondition under which it holds or the test can only assert the code s number while the sentence claims a different meaning",
+      "text": "A criterion that publishes a formula must name the precondition under which it holds, or the test can only assert the code's number while the sentence claims a different meaning.",
+      "signal": "spec_precision_gap",
+      "scope": "spec-writing",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        ".specs/features/indicator-library-adoption/spec.md:225 (spec-writing)"
+      ],
+      "created": "2026-08-21T07:18:58Z",
+      "last_seen": "2026-08-21T07:18:58Z"
+    },
+    {
+      "id": "L-021",
+      "key": "surviving_mutant::assert the accepting branch of a refusal rule not only its rejecting branches an escape hatch that stops working fails closed and so no test ever reports that the documented path died",
+      "text": "Assert the accepting branch of a refusal rule, not only its rejecting branches: an escape hatch that stops working fails closed and so no test ever reports that the documented path died.",
+      "signal": "surviving_mutant",
+      "scope": "scripts/",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/indicator-proof/value-ledger.mjs:115 (scripts/)"
+      ],
+      "created": "2026-08-21T07:18:58Z",
+      "last_seen": "2026-08-21T07:18:58Z"
     }
   ]
 }

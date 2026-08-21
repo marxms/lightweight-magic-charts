@@ -222,7 +222,7 @@ closing hour of this one.
 **Acceptance Criteria**:
 
 1. The published documentation SHALL state that `views.length` is the resolved count and that the cut is the difference against the list the host passed in  <!-- ubiquitous -->
-2. WHERE a host writes a study capacity larger than its lane count, the cut SHALL be derivable by that host as `ids.length - views.length` from values this package already publishes, and surfacing it is the host's own business in the host's own vocabulary; the example removes the condition instead of reporting it, writing its capacity and its lane count as ONE symbol  <!-- optional-feature -->
+2. WHERE a host writes a study capacity larger than its lane count, the number of chosen studies that are NOT drawn SHALL be derivable by that host as `ids.length - views.length` from values this package already publishes — a difference that counts a repeated id alongside the lane cut, because `laneOrder` collapses duplicates BEFORE it cuts, so it is not the lane cut alone — and surfacing it is the host's own business in the host's own vocabulary; the example removes the condition instead of reporting it, writing its capacity and its lane count as ONE symbol  <!-- optional-feature -->
 3. The package SHALL NOT change which studies are cut  <!-- ubiquitous -->
 
 **Independent Test**: Resolve seven ids against three lanes and assert `views.length` is three, so a
