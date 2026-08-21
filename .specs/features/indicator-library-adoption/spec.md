@@ -210,14 +210,24 @@ a capacity of six against two lanes let a visitor pick six studies and silently 
 so forgetting it would light nothing up, which is the exact failure mode this repository has recorded
 five times.
 
+**And why AC-2 does not say "through the notice channel"**: it said so in the draft, and no host could
+have obeyed it. `notice.report` is a private member of `WorkspaceBody` (`src/react/workspace/ChartWorkspace.tsx:183`)
+and `ChartWorkspaceProps` (`:126-141`) publishes no `onNotice` — the notice channel is the library
+talking to its own chrome, not a door a host can reach. Writing a requirement against a door that does
+not exist is how a criterion gets marked Done on a vacuous truth: the example's `lanes: STUDY_CAPACITY`
+made the antecedent permanently false, and that equality predates this feature. The missing door is
+recorded as a gap in `.specs/STATE.md`, and it is a feature of its own — not something to add in the
+closing hour of this one.
+
 **Acceptance Criteria**:
 
 1. The published documentation SHALL state that `views.length` is the resolved count and that the cut is the difference against the list the host passed in  <!-- ubiquitous -->
-2. WHEN the host's capacity exceeds its lane count and a user fills the list THEN the host SHALL report the difference through the notice channel  <!-- event-driven -->
+2. WHERE a host writes a study capacity larger than its lane count, the cut SHALL be derivable by that host as `ids.length - views.length` from values this package already publishes, and surfacing it is the host's own business in the host's own vocabulary; the example removes the condition instead of reporting it, writing its capacity and its lane count as ONE symbol  <!-- optional-feature -->
 3. The package SHALL NOT change which studies are cut  <!-- ubiquitous -->
 
-**Independent Test**: Resolve seven ids against three lanes in the host and assert the reported
-difference is four while the drawn views are the first three, unchanged.
+**Independent Test**: Resolve seven ids against three lanes and assert `views.length` is three, so a
+host reads a cut of four out of published values alone; then assert the demo writes its capacity and
+its lane count as one symbol, so no cut can arise there to be reported.
 
 ---
 
@@ -295,7 +305,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12, T19 | Done |
 | ADAPT-10 | P1: Host draws the form, library draws the study | T12, T18 | Done |
 | LANE-01 | P2: A study that did not fit says so | T17 | Done |
-| LANE-02 | P2: A study that did not fit says so | T16 | Done |
+| LANE-02 | P2: A study that did not fit says so | T16, T20 | Done |
 | LANE-03 | P2: A study that did not fit says so | T17 | Done |
 | DEMO-01 | P2: Example demonstrates the library | T10, T15 | Done |
 | DEMO-02 | P2: Example demonstrates the library | T14, T16 | Done |

@@ -560,7 +560,7 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 ---
 
-### T20: LANE-02 says what a host can actually do ⬜
+### T20: LANE-02 says what a host can actually do ✅
 
 **What**: Rewrite LANE-02 to the invariant the host enforces, and record the missing notice door as a gap rather than building it.
 **Where**: `.specs/features/indicator-library-adoption/spec.md`, `.specs/STATE.md`
@@ -573,10 +573,10 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 - Skill: NONE
 
 **Done when**:
-- [ ] LANE-02 states the derivable cut and the one-symbol invariant, not a channel no host can reach
-- [ ] The absent host-facing notice channel is named in the Handoff as a candidate feature of its own
-- [ ] No `onNotice` is added to `ChartWorkspaceProps`
-- [ ] Gate check passes: `npm test && npm run e2e`
+- [x] LANE-02 states the derivable cut and the one-symbol invariant, not a channel no host can reach
+- [x] The absent host-facing notice channel is named in the Handoff as a candidate feature of its own
+- [x] No `onNotice` is added to `ChartWorkspaceProps`
+- [x] Gate check passes: `npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full

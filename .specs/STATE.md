@@ -47,10 +47,20 @@ clause stands and `test/boundary.spec.ts` still fails on either vendor name.
    volume 110 + six lanes at 120 does not fit in 620 — but from the reader's side it is
    indistinguishable from a study that computed nothing. It is a different subsystem from the lane
    cut and was deliberately not folded into this feature.
-2. **LANE-02 is satisfied by removing its antecedent, not by reporting.** The demo writes its
-   ceiling and its lane count as ONE symbol, asserted in the e2e, so the difference cannot arise.
-   A host that genuinely wants to report a cut has no door: the notice channel is internal to
-   `ChartWorkspace` and there is no `onNotice` on the props. If that is wanted, it is a seam change.
+2. **THERE IS NO PUBLISHED NOTICE CHANNEL FOR A HOST, and this is a real API gap — candidate for a
+   feature of its own.** `notice.report` is a private member of `WorkspaceBody`
+   (`src/react/workspace/ChartWorkspace.tsx:183`); `ChartWorkspaceProps` (`:126-141`) publishes no
+   `onNotice`. The channel is the library talking to its own chrome. So **any requirement of the
+   form "the host reports X through the notice channel" is not satisfiable today** — LANE-02 was
+   written that way, no host could have obeyed it, and it has been rewritten to the cut the host
+   derives from `ids.length - views.length` and surfaces in its own vocabulary. The demo removes the
+   condition altogether by writing its ceiling and its lane count as ONE symbol, asserted in the e2e
+   (`params.the-ceiling-and-the-lane-count-are-one-number`) — and that equality predates this
+   feature, so the assertion pins a pre-existing condition rather than recording new behaviour.
+   Publishing the door is a seam change: one prop, one contract about what the library may say
+   through it, and a decision about whether the host or the library owns the wording. It was NOT
+   done here — growing the public surface in the closing hour of a feature with 2 B of entry margin
+   is precisely what this project's discipline exists to prevent.
 3. **`PROVISIONAL_ENTRY_LIMIT` margin is now 2 B** — entry 104992 against 104994. This feature paid
    for every byte it spent with measured shrinkage, one candidate per re-pin, but the next feature
    starts with almost nothing. Do not raise the ceiling.
