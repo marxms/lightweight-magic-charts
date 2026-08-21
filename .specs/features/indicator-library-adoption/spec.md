@@ -283,7 +283,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | GATE-05 | P1: Boundary gate sees a dynamic import | T1 | Done |
 | GATE-06 | P1: Boundary gate sees a dynamic import | T1 | Done |
 | IDENT-01 | P1: A study is identified by something not on screen | T5 | Done |
-| IDENT-02 | P1: A study is identified by something not on screen | T5 | Done |
+| IDENT-02 | P1: A study is identified by something not on screen | T5, T21 | Done |
 | IDENT-03 | P1: A study is identified by something not on screen | T5 | Done |
 | IDENT-04 | P1: A study is identified by something not on screen | T6 | Done |
 | PARAM-01 | P1: Parameters survive the tab | T7 | Done |

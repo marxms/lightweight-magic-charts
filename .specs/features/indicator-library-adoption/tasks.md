@@ -583,7 +583,7 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 ---
 
-### T21: IDENT-02's second conjunct is asserted ⬜
+### T21: IDENT-02's second conjunct is asserted ✅
 
 **What**: Assert that a study keeps its parameter values across a label change, in the same mounted composition that asserts it stays selected.
 **Where**: `test/chartWorkspace.spec.tsx`
@@ -596,9 +596,9 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 - Skill: NONE
 
 **Done when**:
-- [ ] A value is written before the label changes and read back after it
-- [ ] The assertion dies when identity goes back to being the label
-- [ ] Gate check passes: `npm test`
+- [x] A value is written before the label changes and read back after it
+- [x] The assertion dies when identity goes back to being the label
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick

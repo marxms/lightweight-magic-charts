@@ -1168,18 +1168,62 @@ describe('what identifies a study, which is not the text on screen', () => {
     expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
   });
 
-  it('keeps the study selected when the LABEL changes and the id does not', async () => {
+  /**
+   * IDENT-02 IS A CONJUNCTION, so both halves are asserted here: the study stays selected AND it
+   * keeps its parameter values. The second half needs a value to exist before the translation, so
+   * this mounts the host's own form and the real `WorkspaceStore` rather than the bare catalogue.
+   *
+   * What makes the value clause discriminate is that it reads the id and the map's key TOGETHER. A
+   * build whose identity went back to being the label still hands the host back the value it wrote —
+   * the key is the host's, and the host never changed it — so an assertion on `settings` alone would
+   * pass over the defect. What cannot survive is the pair agreeing after the label moved.
+   */
+  it('keeps the study selected AND its values when the LABEL changes and the id does not', async () => {
+    const calls: ResolveCall[] = [];
+    const held = memoryStore();
     const props = minimalProps(fakePort());
-    const { rerender } = render(<ChartWorkspace {...props} studies={identifiedStudies('Moving average')} />);
+    const tabs = { store: held.store };
+    const { rerender } = render(
+      <ChartWorkspace {...props} studies={recordingStudies(calls, 'Moving average')} chrome={HOST_CHROME} tabs={tabs} />,
+    );
     await settle();
     openCatalogue();
     fireEvent.click(catalogueChip());
     await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
-
-    // The product is translated between two renders. The stored identity did not move.
-    rerender(<ChartWorkspace {...props} studies={identifiedStudies('Média móvel')} />);
     await settle();
 
+    // A value is typed BEFORE the translation, through the host's form and the published writer —
+    // so the clause below is not reading a map that was empty on both sides.
+    openHostForm();
+    expect(screen.getByTestId('host-period')).toHaveTextContent('unset');
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+    expect(calls[calls.length - 1].settings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // The product is translated between two renders. The stored identity did not move.
+    rerender(
+      <ChartWorkspace {...props} studies={recordingStudies(calls, 'Média móvel')} chrome={HOST_CHROME} tabs={tabs} />,
+    );
+    await settle();
+
+    // The form is still open and still reading its own value out of the setup, under the new label.
+    expect(screen.getByTestId('host-period')).toHaveTextContent('50');
+
+    // IT KEPT ITS VALUES — asserted first, so this is the clause that reports when it stops holding.
+    // The list and the map agree on ONE string after the label moved.
+    const last = calls[calls.length - 1];
+    expect(last.ids).toEqual([STUDY_ID]);
+    expect(last.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    // And so does what left the machine: the same identity, the same value, through the real store.
+    const written = JSON.parse(held.written[held.written.length - 1]) as {
+      tabs: readonly { setup: { indicators: readonly string[]; studySettings?: unknown } }[];
+    };
+    expect(written.tabs[0].setup.indicators).toEqual([STUDY_ID]);
+    expect(written.tabs[0].setup.studySettings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // AND IT STAYED SELECTED. The chips are one rail tab away from the form, so the catalogue is
+    // opened again to read them.
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
     expect(screen.getByText('Média móvel')).toBeInTheDocument();
     expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
@@ -1604,8 +1648,11 @@ const STUDY_ID = 'study.moving-average';
 const twoParameterResolve: NonNullable<ChartWorkspaceProps['studies']>['resolve'] = (ids, bars) =>
   resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
 
-const recordingStudies = (calls: ResolveCall[]): NonNullable<ChartWorkspaceProps['studies']> => ({
-  ...identifiedStudies('Moving average'),
+const recordingStudies = (
+  calls: ResolveCall[],
+  label = 'Moving average',
+): NonNullable<ChartWorkspaceProps['studies']> => ({
+  ...identifiedStudies(label),
   resolve: (ids, bars, settings) => {
     calls.push({ ids, barCount: bars.length, settings });
     return resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
