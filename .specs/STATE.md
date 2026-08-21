@@ -20,26 +20,50 @@
 
 ## Handoff
 
-**indicator-library-adoption: every task is implemented and committed. The independent Verifier has
-NOT run yet — that is the next step, and this branch is not done until it reports.**
+**indicator-library-adoption: the independent Verifier ran and returned FAIL on COVERAGE — every
+gate green, 17 of 18 mutations killed, but one criterion with no evidence, one conjunction covered on
+half of itself, and one mutation that survived by construction. Its five ranked gaps are closed as
+T18..T23. THE NEXT STEP IS A FRESH VERIFIER over `b056321..HEAD`: the `validation.md` on file is the
+FAILing report, and the agent who wrote the fixes is the one agent who may not mark it PASS.**
 
-Branch `feat/indicator-library-adoption`, 17 commits, one per task, no push. `package.json` is
-`0.2.1`.
+Branch `feat/indicator-library-adoption`, 30 commits, no push. `package.json` is `0.2.1`.
 
-**Green, measured directly and not quoted:** `npm test` 107 suites / 1320 tests · `npm run e2e`
-71/71 · `npm run proof` 27/27 in 11.4 s · `node scripts/size-gate.mjs` exit 0, entry **104992**
+**Green, measured directly and not quoted:** `npm test` 107 suites / **1321** tests · `npm run e2e`
+71/71 · `npm run proof` **29/29** in 11.5 s · `node scripts/size-gate.mjs` exit 0, entry **104992**
 against a ceiling of 104994 · `node scripts/verify-package-paths.mjs` exit 0 ·
 `node scripts/build-indicator-manifest.mjs --check` exit 0.
+`validate_state.py indicator-library-adoption` exits 1, correctly: the standing verdict is FAIL until
+an author who did not write this code says otherwise.
+
+**What the five fixes changed, and nothing else did:**
+
+1. **A digest may not move without a declaration** (T18). The Verifier planted an inverted-weight
+   `wma`, 2.1% wrong, regenerated the artefacts the way a vendor release arrives, and every check
+   passed — because regenerating the fingerprints is PART of taking a release. So
+   `example/indicators/value-changes.json` now carries the same doctrine `renames.json` does one
+   level up, and the generator refuses both to write and to pass `--check` while a number moved and
+   nothing says why. Four directions asserted in the proof.
+2. **The claim matches the evidence** (T19). Parameterisation and drift are exhaustive; numeric
+   correctness is tiered — 6 pinned, 111 constrained, 203 structural — and `ci.yml`, the proof's own
+   docblock and `CONTRIBUTING.md` all say so instead of implying 320 were checked numerically.
+3. **LANE-02 asks for something a host can do** (T20). See follow-up 2 below.
+4. **IDENT-02's second conjunct is asserted** (T21) and **the loading-edit edge case is pinned**
+   (T23), both in the mounted composition with a real `WorkspaceStore`.
+5. **The traceability count agrees with its table** (T22): 39 total, 37 mapped and Done, 2 unmapped
+   and Pending. `APP-02` moved beside `APP-01` — what T10 proves is the example, and the example is
+   not the application.
 
 **What the package gained, and it is only two things:** a study identified by something other than
 the text on screen, and a per-tab map of parameter values it stores and is forbidden by the compiler
 to read. Everything else — 320 indicators, 1021 controls, the form, the adapter, the loader — is in
-`example/`, which is why the entry moved by zero bytes across the whole of phases 7 and 8.
+`example/`, which is why the entry moved by zero bytes across the whole of phases 7 and 8, and again
+across phase 9: T18..T23 touched `scripts/`, `example/indicators/`, `test/`, `.specs/`, `.github/`
+and `CONTRIBUTING.md`, and not one byte of `src/`.
 
 **The reversal is recorded.** AD-019 supersedes AD-006 on its example clause only; AD-006's `src/`
 clause stands and `test/boundary.spec.ts` still fails on either vendor name.
 
-**Six follow-ups. None blocks the Verifier; all are the owner's call.**
+**Six follow-ups. None blocks the re-verification; all are the owner's call.**
 
 1. **A chosen study can have no lane because the HEIGHT BUDGET sank it, and nothing says so.**
    Measured on the demo while writing the e2e: six own-lane studies chosen at `heightPx: 620`
