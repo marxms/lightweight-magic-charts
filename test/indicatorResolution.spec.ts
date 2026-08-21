@@ -67,6 +67,50 @@ describe('laneOrder — the list sanitised against the RESOURCE', () => {
   });
 });
 
+/**
+ * LANE-02, LANE-03 — the cut a host reads out of values this package already publishes.
+ *
+ * The criterion names this test and it had never been written: seven ids against three lanes,
+ * `views.length` is three, so the cut is `ids.length - views.length`. The gap was behavioural
+ * rather than editorial. A `resolveSources` that deduplicates but never cuts at the lane count —
+ * `laneOrder` itself untouched — passed 1321 tests and the whole e2e, which is the incident
+ * `example/App.tsx` records in its own words, restated: studies the reader chose are never drawn
+ * and the difference reads zero while it happens. Asserting `laneOrder` alone does not reach it,
+ * because the number a host divides by comes out of `views`.
+ */
+describe('LANE-02 — views.length IS the resolved count, so the cut is derivable', () => {
+  const THREE_LANES = resolutionPolicy({ lanes: 3, plotsPerLane: 4 });
+  const lookupOf = (ids: readonly string[]): SourceLookup => scanLookup(ids.map((id) => source({ id })));
+
+  it('seven ids against three lanes resolve THREE, and the host reads a cut of four', () => {
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    const lookup = lookupOf(ids);
+    const resolution = resolveSources(ids, lookup, BARS, THREE_LANES);
+
+    expect(resolution.views).toHaveLength(3);
+    expect(ids.length - resolution.views.length).toBe(4);
+    // Cut from the END, and the three that fit are UNCHANGED by the four that did not: resolving
+    // them on their own produces the same views, member for member.
+    expect(resolution.views.map((view) => view.id)).toEqual(['a', 'b', 'c']);
+    expect(resolution.views).toEqual(resolveSources(['a', 'b', 'c'], lookup, BARS, THREE_LANES).views);
+    // And the ones that did not fit are absent from everything a lane spends, not merely unlisted.
+    expect(resolution.activePaneIds.size).toBe(3);
+    expect(resolution.activePaneIds.has(lanePaneId(3))).toBe(false);
+    expect(resolution.readings.has(seriesId(laneSeriesId(3, 0)))).toBe(false);
+  });
+
+  it('a repeated id collapses BEFORE the cut, so the difference is not the cut alone', () => {
+    // `ids.length - views.length` counts every entry of the list that draws nothing of its own, and
+    // a duplicate is one of those. Reporting that number as "studies the lanes could not fit" would
+    // be a second wrong count standing beside the one this story exists for.
+    const ids = ['a', 'a', 'b', 'c', 'd'];
+    const resolution = resolveSources(ids, lookupOf(['a', 'b', 'c', 'd']), BARS, THREE_LANES);
+
+    expect(resolution.views.map((view) => view.id)).toEqual(['a', 'b', 'c']);
+    expect(ids.length - resolution.views.length).toBe(2);
+  });
+});
+
 describe('LMC-18 — the resolver takes the LOOKUP, never the catalogue', () => {
   it('the lane comes from the list position, and removing the first PROMOTES the second', () => {
     const lookup = scanLookup([source({ id: 'a' }), source({ id: 'b' })]);

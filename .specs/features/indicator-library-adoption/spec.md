@@ -305,8 +305,8 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12, T19 | Done |
 | ADAPT-10 | P1: Host draws the form, library draws the study | T12, T18, T24, T26 | Done |
 | LANE-01 | P2: A study that did not fit says so | T17 | Done |
-| LANE-02 | P2: A study that did not fit says so | T16, T20 | Done |
-| LANE-03 | P2: A study that did not fit says so | T17 | Done |
+| LANE-02 | P2: A study that did not fit says so | T16, T20, T25 | Done |
+| LANE-03 | P2: A study that did not fit says so | T17, T25 | Done |
 | DEMO-01 | P2: Example demonstrates the library | T10, T15 | Done |
 | DEMO-02 | P2: Example demonstrates the library | T14, T16 | Done |
 | DEMO-03 | P2: Example demonstrates the library | T15, T17 | Done |

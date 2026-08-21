@@ -686,7 +686,7 @@ T23 → T24 → T25 → T26
 
 ---
 
-### T25: Seven ids against three lanes, which is the test LANE-02 already names
+### T25: Seven ids against three lanes, which is the test LANE-02 already names ✅
 
 **What**: Write LANE-02's own Independent Test — the resolved count is the lane count, so the host reads the cut as the difference.
 **Where**: `test/indicatorResolution.spec.ts`
@@ -699,11 +699,11 @@ T23 → T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] Seven ids against three lanes resolve three views, and `ids.length - views.length` reads four
-- [ ] The three that survive are the first three, in order and identical to resolving them alone
-- [ ] A repeated id in the list is counted honestly: the difference covers the duplicate too, so it is not called a cut
-- [ ] The test dies when `resolveSources` dedups without cutting at the lane count
-- [ ] Gate check passes: `npm test`
+- [x] Seven ids against three lanes resolve three views, and `ids.length - views.length` reads four
+- [x] The three that survive are the first three, in order and identical to resolving them alone
+- [x] A repeated id in the list is counted honestly: the difference covers the duplicate too, so it is not called a cut
+- [x] The test dies when `resolveSources` dedups without cutting at the lane count
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick
