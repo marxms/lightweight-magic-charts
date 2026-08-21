@@ -270,10 +270,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
       <div {...aria} role="tabpanel" style={COLUMN}>
         <div style={HEADER}>
           <SymbolTrigger symbol={data.symbol} onSymbolRequest={data.onSymbolRequest ?? noop} />
-          <IntervalRegion
-            options={catalogue.servedTimeframes}
-            onRequest={data.onTimeframeRequest}
-          />
+          <IntervalRegion options={catalogue.servedTimeframes} onRequest={data.onTimeframeRequest} />
           <GridControls
             grid={{
               maxCells: catalogue.maxGridCells,

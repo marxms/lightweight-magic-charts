@@ -136,7 +136,6 @@ export const WorkspaceChromeProvider = memo(function WorkspaceChromeProvider({
     Notice: noticeSlot,
     labels,
     // SECTIONS BY SHAPE, NOT BY ARRAY IDENTITY.
-    // See docs/explanation/react-chrome.md#chromecontext-sections-carry-live-counts
     sections: sectionShape(sections),
   });
 

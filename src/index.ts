@@ -331,7 +331,6 @@ export type {
 } from './react/workspace/ChartWorkspace';
 export { ChartWorkspace } from './react/workspace/ChartWorkspace';
 // The two vocabularies a host hands the composed component, as TYPES only.
-// See docs/explanation/entry.md#the-composed-component
 export type { CandlePatternChoice } from './react/workspace/PatternChipsSection';
 export type { DrawingVocabulary } from './react/workspace/DrawingRail';
 // Where the tab set is kept between visits. The port is `WorkspaceStore`, published above.

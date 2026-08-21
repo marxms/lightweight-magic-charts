@@ -51,7 +51,6 @@ export const Tooltip = memo(function Tooltip({ content, children, theme, disable
 
   return (
     // The wrapper is not the control: it delegates. The listeners sit here, not on the trigger.
-    // See docs/explanation/react-chrome.md#tooltip-the-wrapper-is-the-whole-trick
     // biome-ignore lint/a11y/noStaticElementInteractions: see the comment above.
     <span
       ref={wrapperRef}

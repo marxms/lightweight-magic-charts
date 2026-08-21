@@ -67,7 +67,6 @@ export interface Session {
    * One verdict per repair, because `outcome` already settled and a settled promise cannot carry
    * the result of anything that happens later. Refuses without touching the network when there is
    * nothing to repair, when the cursor is not back yet, or when the repair ceiling is spent.
-   * See docs/explanation/port.md#a-stranded-scope-asks-again
    */
   readonly reseed: () => Promise<SeedOutcome>;
   /** M5 — the closure IS the token. Idempotent: calling it twice is not an error. */

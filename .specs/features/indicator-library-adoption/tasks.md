@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1 done
+**Status**: In progress — T1, T2 done
 
 ---
 
@@ -124,7 +124,7 @@ T15 → T16 → T17
 
 ---
 
-### T2: Give the comment budget its line back
+### T2: Give the comment budget its line back ✅
 
 **What**: Delete comment lines that duplicate another comment line in the same file, and write the pick's JSX at the density the line above it already uses.
 **Where**: `src/react/workspace/ChartWorkspace.tsx`
@@ -137,12 +137,12 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] `ChartWorkspace.tsx` is at most 348 code lines, measured by the gate's own counter
-- [ ] The comment aggregate leaves at least one line of slack under 0.20
-- [ ] No deleted line carries a block's closing marker (two candidates do; deleting them breaks the build)
-- [ ] No prose was cut — only exact duplicates within one file
-- [ ] `node scripts/size-gate.mjs` shows the entry unchanged: this task moves 0 B
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] `ChartWorkspace.tsx` is at most 348 code lines, measured by the gate's own counter
+- [x] The comment aggregate leaves at least one line of slack under 0.20
+- [x] No deleted line carries a block's closing marker (two candidates do; deleting them breaks the build)
+- [x] No prose was cut — only exact duplicates within one file
+- [x] `node scripts/size-gate.mjs` shows the entry unchanged: this task moves 0 B
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: none
 **Gate**: build

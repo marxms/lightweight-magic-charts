@@ -159,7 +159,6 @@ export function SeriesMenu({
 
   /**
    * A rail has ONE tab stop, not one per tab; with a search typed in, it is the first one.
-   * See docs/explanation/react.md#arrows-and-one-tab-stop-on-the-tablist-rail
    */
   const selectedTabIndex = searching ? -1 : tabIds.indexOf(selected ?? '');
   const tabStopIndex = selectedTabIndex === -1 ? 0 : selectedTabIndex;

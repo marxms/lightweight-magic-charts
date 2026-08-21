@@ -29,7 +29,6 @@ export interface FuturePoint {
 
 /**
  * The columns past the last bar, spaced by what the last two bars measured.
- * See docs/explanation/domain.md#the-future-room-is-whitespace-not-candles
  */
 export function futureTail(bars: readonly Bar[], count: number): readonly FuturePoint[] {
   if (count <= 0 || bars.length < 2) return [];
