@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 12,
+  "next_id": 16,
   "lessons": [
     {
       "id": "L-001",
@@ -204,6 +204,78 @@
       ],
       "created": "2026-08-20T14:46:29Z",
       "last_seen": "2026-08-20T14:46:29Z"
+    },
+    {
+      "id": "L-012",
+      "key": "ac_gap::do not mark a conditional requirement done when the implementation makes its antecedent unreachable restate it as the invariant actually enforced",
+      "text": "Do not mark a conditional requirement Done when the implementation makes its antecedent unreachable; restate it as the invariant actually enforced.",
+      "signal": "ac_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "LANE-02 / example/App.tsx:43 (spec)"
+      ],
+      "created": "2026-08-21T05:25:57Z",
+      "last_seen": "2026-08-21T05:25:57Z"
+    },
+    {
+      "id": "L-013",
+      "key": "ac_gap::when an acceptance criterion conjoins two outcomes assert both by value covering only the first conjunct leaves the second uncovered",
+      "text": "When an acceptance criterion conjoins two outcomes, assert both by value; covering only the first conjunct leaves the second uncovered.",
+      "signal": "ac_gap",
+      "scope": "tests",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "IDENT-02 / test/chartWorkspace.spec.tsx:1184 (tests)"
+      ],
+      "created": "2026-08-21T05:26:04Z",
+      "last_seen": "2026-08-21T05:26:04Z"
+    },
+    {
+      "id": "L-014",
+      "key": "surviving_mutant::a fingerprint regenerated from the dependency it checks detects drift never a defect already present in the pinned version pair it with an independent oracle before claiming correctness",
+      "text": "A fingerprint regenerated from the dependency it checks detects drift, never a defect already present in the pinned version; pair it with an independent oracle before claiming correctness.",
+      "signal": "surviving_mutant",
+      "scope": "vendor",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "sensor mutation 18 / scripts/indicator-proof.mjs:560 (vendor)"
+      ],
+      "created": "2026-08-21T05:26:04Z",
+      "last_seen": "2026-08-21T05:26:04Z"
+    },
+    {
+      "id": "L-015",
+      "key": "spec_precision_gap::scope every acceptance criterion to a subject this repository can gate a criterion about an out of repository consumer cannot be closed by an in repository proxy",
+      "text": "Scope every acceptance criterion to a subject this repository can gate; a criterion about an out-of-repository consumer cannot be closed by an in-repository proxy.",
+      "signal": "spec_precision_gap",
+      "scope": "spec",
+      "status": "candidate",
+      "features": [
+        "indicator-library-adoption"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "APP-02 / .specs/features/indicator-library-adoption/spec.md (spec)"
+      ],
+      "created": "2026-08-21T05:26:04Z",
+      "last_seen": "2026-08-21T05:26:04Z"
     }
   ]
 }

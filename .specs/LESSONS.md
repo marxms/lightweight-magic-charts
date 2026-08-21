@@ -80,6 +80,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: spec.md:121-122 vs src/drawing/magnet.ts:59-61 (spec/edge-cases)
 - last seen: 2026-08-20T14:46:29Z
 
+### L-012 - Do not mark a conditional requirement Done when the implementation makes its antecedent unreachable; restate it as the invariant actually enforced.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: indicator-library-adoption
+- evidence: LANE-02 / example/App.tsx:43 (spec)
+- last seen: 2026-08-21T05:25:57Z
+
+### L-013 - When an acceptance criterion conjoins two outcomes, assert both by value; covering only the first conjunct leaves the second uncovered.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `tests` · harmful: 0
+- features: indicator-library-adoption
+- evidence: IDENT-02 / test/chartWorkspace.spec.tsx:1184 (tests)
+- last seen: 2026-08-21T05:26:04Z
+
+### L-014 - A fingerprint regenerated from the dependency it checks detects drift, never a defect already present in the pinned version; pair it with an independent oracle before claiming correctness.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `vendor` · harmful: 0
+- features: indicator-library-adoption
+- evidence: sensor mutation 18 / scripts/indicator-proof.mjs:560 (vendor)
+- last seen: 2026-08-21T05:26:04Z
+
+### L-015 - Scope every acceptance criterion to a subject this repository can gate; a criterion about an out-of-repository consumer cannot be closed by an in-repository proxy.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec` · harmful: 0
+- features: indicator-library-adoption
+- evidence: APP-02 / .specs/features/indicator-library-adoption/spec.md (spec)
+- last seen: 2026-08-21T05:26:04Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
