@@ -627,7 +627,7 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 ---
 
-### T23: The value edited while history is loading ⬜
+### T23: The value edited while history is loading ✅
 
 **What**: Add the direct test for the listed edge case: a value edited before the window arrives recomputes against the bars present and draws gaps.
 **Where**: `test/chartWorkspace.spec.tsx`
@@ -640,10 +640,10 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 - Skill: NONE
 
 **Done when**:
-- [ ] The write happens while the port's history has not resolved
-- [ ] `resolve` is reached with the value and the bars present, and nothing throws
-- [ ] What is drawn for the warm-up is a declared gap, never a zero
-- [ ] Gate check passes: `npm test`
+- [x] The write happens while the port's history has not resolved
+- [x] `resolve` is reached with the value and the bars present, and nothing throws
+- [x] What is drawn for the warm-up is a declared gap, never a zero
+- [x] Gate check passes: `npm test`
 
 **Tests**: unit
 **Gate**: quick

@@ -1770,3 +1770,130 @@ describe('editing a parameter value redraws the study', () => {
     expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
   });
 });
+
+/**
+ * A PORT WHOSE HISTORY HAS NOT ARRIVED, and a handle that decides when it does.
+ *
+ * `useCandleLane` seeds history and live as one transaction, so a `fetchBars` that has not settled
+ * is the workspace's genuine loading state: `lane` is still `null` and `bars` is the hoisted empty.
+ * A test that simply passed zero bars would assert against a window that had ALREADY arrived and was
+ * empty — a different thing, and the one the resolution suite already covers.
+ */
+function pendingPort(bars: readonly Bar[]): { readonly port: MarketDataPort; readonly arrive: () => void } {
+  let release: () => void = () => undefined;
+  const arrived = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return {
+    port: {
+      describe: () => [],
+      subscribe: (_scope: Scope, _sink: FrameSink): Unsubscribe => () => undefined,
+      fetchBars: async (): Promise<HistoryResult> => {
+        await arrived;
+        return { bars, exhausted: true };
+      },
+    },
+    arrive: () => release(),
+  };
+}
+
+/**
+ * A study with a WARM-UP, which is what makes "gaps rather than an error" observable at all: the
+ * first bar of whatever window it is handed carries no `value`, exactly as a mean's does. With a
+ * provider that reads every bar, a window that never arrived and a full one look the same.
+ */
+const WARMING_LOOKUP: SourceLookup = (id) =>
+  id !== STUDY_ID
+    ? undefined
+    : {
+        id,
+        label: 'Moving average',
+        placement: 'own-pane',
+        series: () => [
+          {
+            spec: { id: seriesId('ma-plot'), label: 'Moving average', shape: 'line', color: '#fff' },
+            provider: {
+              id: seriesId('ma-plot'),
+              compute: (bars: readonly Bar[]) =>
+                bars.map((bar, at) => (at === 0 ? { time: bar.time } : { time: bar.time, value: bar.close })),
+            },
+          },
+        ],
+      };
+
+describe('a value edited while the history is still loading', () => {
+  it('recomputes against the bars present, and draws gaps rather than throwing', async () => {
+    const calls: ResolveCall[] = [];
+    const { port, arrive } = pendingPort(BARS);
+    const studies: NonNullable<ChartWorkspaceProps['studies']> = {
+      ...identifiedStudies('Moving average'),
+      resolve: (ids, bars, settings) => {
+        calls.push({ ids, barCount: bars.length, settings });
+        return resolveSources(ids, WARMING_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+      },
+    };
+    const ledger = noLedger();
+    const props = minimalProps(port);
+
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{ ...props.data, engine: makeEngine(ledger) }}
+        studies={studies}
+        chrome={HOST_CHROME}
+      />,
+    );
+    await settle();
+
+    // THE PRECONDITION, asserted rather than assumed: the window has not arrived.
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+    await settle();
+    const whileLoading = calls[calls.length - 1];
+    expect(whileLoading.ids).toEqual([STUDY_ID]);
+    expect(whileLoading.barCount).toBe(0);
+
+    // What the composition is saying about the empty window BEFORE the edit. The edit may not add
+    // to it: "the window has not arrived" is not a diagnosis of the value that was typed.
+    const saidWhileEmpty = screen.queryByRole('alert')?.textContent ?? null;
+    expect(saidWhileEmpty).toContain('No bars');
+
+    // THE EDIT, made before a single bar exists.
+    openHostForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+
+    // It recomputed against WHATEVER BARS ARE PRESENT — none — carrying the value that was typed,
+    // and the study is still on the chart rather than an error in place of one.
+    const stillLoading = calls[calls.length - 1];
+    expect(stillLoading.barCount).toBe(0);
+    expect(stillLoading.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
+    // NOT ONE WORD MORE than was already being said. The edit produced no diagnosis of its own —
+    // an error raised here would be the failure this edge case exists to forbid.
+    expect(screen.queryByRole('alert')?.textContent ?? null).toBe(saidWhileEmpty);
+
+    // And nothing was DRAWN for it against the empty window — no reading, and no zero standing in
+    // for one. A study computed over no bars says nothing rather than saying nought.
+    const writes = ledger.drawn as ReadonlyArray<ReadonlyArray<Record<string, unknown>>>;
+    const carriesReading = (write: ReadonlyArray<Record<string, unknown>>): boolean =>
+      write.some((point) => 'value' in point);
+    expect(writes.filter(carriesReading)).toEqual([]);
+    const beforeArrival = writes.length;
+
+    // THEN THE WINDOW ARRIVES. The value typed against nothing is still the value applied.
+    arrive();
+    await settle();
+    const seeded = calls[calls.length - 1];
+    expect(seeded.barCount).toBe(BARS.length);
+    expect(seeded.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // AND THE WARM-UP IS A GAP. Two bars in, ONE reading out: the bar the study cannot answer for
+    // draws no point at all, which is how a line carries a hole, and the bar it can answer for
+    // carries its own number. A point at 1000 would be this edge case's failure dressed as data.
+    const study = writes.slice(beforeArrival).filter(carriesReading).at(-1);
+    expect(study).toBeDefined();
+    expect(study).toEqual([{ time: 2000, value: BARS[1].close }]);
+  });
+});

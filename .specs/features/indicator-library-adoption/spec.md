@@ -267,7 +267,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 - IF the library fails to load in the host THEN the workspace SHALL mount with an empty study catalogue rather than failing
 - IF a stored payload declares parameter values as a non-object THEN the coercion SHALL treat it as absent
 - IF a stored identity matches no catalogue entry THEN the workspace SHALL keep it in the list and draw nothing for it, as it does today — a catalogue that shrank is not a corrupt payload
-- IF a parameter value is edited while history is still loading THEN the workspace SHALL recompute against whatever bars are present, producing gaps rather than an error
+- IF a parameter value is edited while history is still loading THEN the workspace SHALL recompute against whatever bars are present, producing gaps rather than an error — pinned by T23 (`test/chartWorkspace.spec.tsx`, `a value edited while the history is still loading`)
 - WHEN the entry bundle is measured after this feature THEN it SHALL remain below `PROVISIONAL_ENTRY_LIMIT`
 
 ---
