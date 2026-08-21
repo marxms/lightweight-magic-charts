@@ -314,12 +314,23 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | DOC-01 | P2: The wiring is documented | T17 | Done |
 | DOC-02 | P2: The wiring is documented | T17 | Done |
 | APP-01 | P3: Consuming application | — | Pending |
-| APP-02 | P3: Consuming application | T10 | Done |
+| APP-02 | P3: Consuming application | — | Pending |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 38 Done — every requirement mapped to a task (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-01..10, LANE-01..03, DEMO-01..04, DOC-01..02, APP-02). ADAPT-04 stays Pending: T11 proves every OFFERED input moves the drawing, and T14 is what omits the rest from the form. The two unmapped rows
-are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
-lives outside this repository, so no task here can carry it. It is verified by the application's own
-suite, not by this one.
+**Coverage:** 39 total · 37 mapped to tasks and Done · 2 unmapped and Pending. The mapped rows are
+GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-01..10, LANE-01..03, DEMO-01..04 and DOC-01..02 —
+6 + 4 + 8 + 10 + 3 + 4 + 2 = 37, which is the table's own arithmetic and no longer a different number
+from it.
+
+`ADAPT-04` is **Done**, carried by two tasks rather than one: T11 proves that every input the
+catalogue OFFERS moves the drawing, and T14 is what keeps the rest off the form. An earlier draft of
+this line called it Pending while the table called it Done; the table was right.
+
+The two unmapped rows are the P3 story, recorded rather than assigned, because both are claims about
+the consuming application and it lives outside this repository. `APP-01` is that application's own
+manifest. `APP-02` is that application deferring the library behind the first study — which T10 and
+`scripts/e2e-demo.mjs:969` prove for the EXAMPLE, and the example is not the application. Marking it
+Done on the example's evidence is the substitution this table exists to prevent; DEMO-01 already
+carries what the example owes. Both are verified by that application's own suite, not by this one.
 
 ---
 

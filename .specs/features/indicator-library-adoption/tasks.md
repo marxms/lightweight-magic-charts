@@ -605,7 +605,7 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 ---
 
-### T22: The traceability arithmetic agrees with its own table ⬜
+### T22: The traceability arithmetic agrees with its own table ✅
 
 **What**: Recount the coverage line, resolve ADAPT-04 to one status, and scope APP-02 to what is provable here.
 **Where**: `.specs/features/indicator-library-adoption/spec.md`
@@ -618,9 +618,9 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 - Skill: NONE
 
 **Done when**:
-- [ ] The counts match the rows
-- [ ] ADAPT-04 reads one status in the table and in the prose
-- [ ] Gate check passes: `npm test`
+- [x] The counts match the rows
+- [x] ADAPT-04 reads one status in the table and in the prose
+- [x] Gate check passes: `npm test`
 
 **Tests**: none
 **Gate**: quick
