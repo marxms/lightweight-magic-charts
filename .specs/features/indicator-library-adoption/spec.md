@@ -275,7 +275,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | IDENT-01 | P1: A study is identified by something not on screen | T5 | Done |
 | IDENT-02 | P1: A study is identified by something not on screen | T5 | Done |
 | IDENT-03 | P1: A study is identified by something not on screen | T5 | Done |
-| IDENT-04 | P1: A study is identified by something not on screen | T6 | Pending |
+| IDENT-04 | P1: A study is identified by something not on screen | T6 | Done |
 | PARAM-01 | P1: Parameters survive the tab | T7 | Pending |
 | PARAM-02 | P1: Parameters survive the tab | T7 | Pending |
 | PARAM-03 | P1: Parameters survive the tab | T7 | Pending |
@@ -306,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | — | Pending |
 | APP-02 | P3: Consuming application | T10 | Pending |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 9 Done (GATE-01..06, IDENT-01..03). The two unmapped rows
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 10 Done (GATE-01..06, IDENT-01..04). The two unmapped rows
 are recorded rather than assigned: `APP-01` is the consuming application's own manifest and lives
 outside this repository, so no task here can carry it; `PARAM-08` is not named by any task, because
 `tasks.md` spells the eighth criterion of that story `PARAM-3a` — the table numbers the story's ACs

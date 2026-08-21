@@ -27,7 +27,7 @@ import { MAX_WORKSPACE_TABS, reduceTabs } from '../../tabs/workspaceTabs';
 import type { TabsAction, TabsState } from '../../tabs/workspaceTabs';
 import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeContext';
 import type { WorkspaceChromeProviderProps, WorkspaceSection } from '../chrome/ChromeContext';
-import { laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
+import { duplicateStudyNotice, laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
 import { studyIdentity } from '../SeriesMenu';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 import type { PaneView, SeriesReader } from '../surface/ChartSurface';
@@ -292,8 +292,11 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
               onMove: (id, step) => write({ indicators: movedIndicator(setup.indicators, id, step) }),
             }}
             onSelect={(entry) => {
+              const held = studyIdentity(entry);
+              const duplicate = labels.notices.duplicateStudy ?? duplicateStudyNotice;
+              if (setup.indicators.includes(held)) return notice.report(duplicate(held));
               if (setup.indicators.length >= capacity) return notice.report(labels.notices.studyLimit(capacity));
-              write({ indicators: [...setup.indicators, studyIdentity(entry)] });
+              write({ indicators: [...setup.indicators, held] });
             }}
           />
           <StylePickerRegion

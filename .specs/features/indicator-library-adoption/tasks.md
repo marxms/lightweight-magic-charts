@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T5 done
+**Status**: In progress — T1..T6 done (phases 1-3)
 
 ---
 
@@ -218,7 +218,7 @@ T15 → T16 → T17
 
 ---
 
-### T6: Two entries cannot share one identity
+### T6: Two entries cannot share one identity ✅
 
 **What**: Refuse a pick whose identity is already held, reporting it through the notice channel with an optional label and a default.
 **Where**: `src/react/workspace/ChartWorkspace.tsx`
@@ -231,10 +231,10 @@ T15 → T16 → T17
 - Skill: ecc:react-patterns, ecc:react-testing
 
 **Done when**:
-- [ ] The label member is OPTIONAL with a default, so a host that typed the whole group still compiles
-- [ ] The labels contract member count moves 85 → 86 in the same commit
-- [ ] A test picks the same identity twice and asserts the notice fires and the list does not grow
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] The label member is OPTIONAL with a default, so a host that typed the whole group still compiles
+- [x] The labels contract member count moves 85 → 86 in the same commit
+- [x] A test picks the same identity twice and asserts the notice fires and the list does not grow
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build

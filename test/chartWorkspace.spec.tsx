@@ -363,9 +363,9 @@ describe('the pane list, named by the catalogue', () => {
 
 describe('what the root owns because no region may', () => {
   it('owns the error channel, and it is written from six places', () => {
-    // SIX since the tab store landed: a stored layout that cannot be read is the sixth writer, and
-    // it has to be a writer rather than a throw — a hand-edited payload cannot cost a white screen.
-    expect(noticeWriters(rootSource())).toBe(6);
+    // SEVEN since a pick that repeats an identity became a refusal with a reason: `laneOrder`
+    // deduplicates by exact string, so the second entry never activated and nothing said why.
+    expect(noticeWriters(rootSource())).toBe(7);
   });
 
   it('shows the notice a region cannot show for itself, and clears it on dismiss', () => {
@@ -1199,6 +1199,101 @@ describe('what identifies a study, which is not the text on screen', () => {
       expect(screen.getByTestId('workspace-catalogue-entry-alpha')).toHaveAttribute('aria-pressed', 'true'),
     );
     expect(screen.getByTestId('workspace-active-Alpha')).toBeInTheDocument();
+  });
+});
+
+/** Resolves whatever id it is handed, so a control case can put TWO studies on the chart. */
+const ANY_LOOKUP: SourceLookup = (id) => ({
+  id,
+  label: id,
+  placement: 'own-pane',
+  series: () => [
+    {
+      spec: { id: seriesId(id), label: id, shape: 'line', color: '#fff' },
+      provider: {
+        id: seriesId(id),
+        compute: (bars: readonly Bar[]) => bars.map((bar) => ({ time: bar.time, value: bar.close })),
+      },
+    },
+  ],
+});
+
+/** Two entries, two labels, two provider ids — and, when `twin` is true, ONE identity between them. */
+const pairedStudies = (twin: boolean): NonNullable<ChartWorkspaceProps['studies']> => ({
+  catalogue: [
+    {
+      provider: { id: seriesId('first-provider'), compute: () => [] },
+      id: 'study.moving-average',
+      label: 'Moving average',
+      category: 'Trend',
+    },
+    {
+      provider: { id: seriesId('second-provider'), compute: () => [] },
+      id: twin ? 'study.moving-average' : 'study.momentum',
+      label: 'Moving average, longer',
+      category: 'Trend',
+    },
+  ],
+  capacity: 2,
+  lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
+  resolve: (ids, bars) =>
+    resolveSources(ids, ANY_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+});
+
+const activeStudies = (): HTMLElement[] => screen.getAllByTestId(/^workspace-active-/);
+
+describe('two entries that resolve to one identity', () => {
+  it('reports the second through the notice channel instead of dropping it in silence', async () => {
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={pairedStudies(true)} />);
+    await settle();
+    openCatalogue();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    // Nothing has been refused yet, so the clause below is not reading a notice left over.
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    // `laneOrder` deduplicates by exact string, so the second entry would never have activated —
+    // the user picks, nothing happens, and nothing says why.
+    expect(screen.getByRole('alert')).toHaveTextContent('study.moving-average');
+    expect(activeStudies()).toHaveLength(1);
+  });
+
+  it('lets two entries with DIFFERENT identities both land, and says nothing', async () => {
+    // The other direction. Without it, a handler that refused every second pick would pass above.
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={pairedStudies(false)} />);
+    await settle();
+    openCatalogue();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    await waitFor(() => expect(activeStudies()).toHaveLength(2));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('names the study in a sentence the HOST can replace, and defaults when it does not', async () => {
+    // The member is OPTIONAL on its group: a host that typed the whole of `notices` by hand before
+    // this existed must still compile, so the package cannot require it. The default is what the
+    // clause above reads; this one proves the host's own words reach the same channel.
+    render(
+      <ChartWorkspace
+        {...minimalProps(fakePort())}
+        studies={pairedStudies(true)}
+        chrome={{ labels: { notices: { duplicateStudy: (name) => `já: ${name}` } } }}
+      />,
+    );
+    await settle();
+    openCatalogue();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    // non-english-fixture: host words in another language — English here would prove nothing
+    expect(screen.getByRole('alert')).toHaveTextContent('já: study.moving-average');
   });
 });
 

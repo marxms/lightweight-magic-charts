@@ -25,6 +25,8 @@ export interface WorkspaceNoticeLabels {
   readonly unverifiedSeam: (symbol: string) => string;
   readonly degenerate: (px: number) => string;
   readonly studyLimit: (capacity: number) => string;
+  /** OPTIONAL, so a host that typed the whole group before this member existed still compiles. */
+  readonly duplicateStudy?: (name: string) => string;
   readonly tabLimit: (capacity: number) => string;
   readonly unreadableTabs: string;
 }
@@ -170,6 +172,9 @@ export const DEFAULT_MAGNET_LABEL = 'Magnet';
  * Four contexts each spelled it their own way, and one rule in four places is four to keep in step.
  * See docs/explanation/react-workspace.md#the-rail-throws-outside-its-provider
  */
+export const duplicateStudyNotice = (name: string): string =>
+  `${name} is already on the chart.`;
+
 export const outsideProvider = (hook: string, provider: string): string =>
   `${hook} was called outside ${provider}. Mount the provider above the regions that read it.`;
 
@@ -191,6 +196,7 @@ export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
         `History could not be proven aligned to the live feed for ${symbol}.`,
       degenerate: (px) => `The height budget leaves ${px}px for the chart, which cannot hold one.`,
       studyLimit: (capacity) => `Study limit of ${capacity} reached — remove one first.`,
+      duplicateStudy: duplicateStudyNotice,
       tabLimit: (capacity) => `Tab limit of ${capacity} reached.`,
       unreadableTabs: 'The saved layout could not be read, so this workspace opened on the defaults.',
     },

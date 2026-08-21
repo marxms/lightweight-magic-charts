@@ -130,13 +130,18 @@ const SYMBOLS_AT_CUTOVER = 13;
  * stored the label. Spent from the 484 B the two factories above gave back, so nothing was raised
  * that had not first been paid for. Estimated +42 B; measured +22, because the optional `id` member
  * the estimate charged for is erased by the compiler.
+ * RE-PINNED 2026-08-20, entry 104511 -> 104658 (+147 B) and ChartWorkspace 95240 -> 95387 (+147 B):
+ * a pick whose identity is already held is refused through the notice channel instead of vanishing
+ * into `laneOrder`'s deduplication. The label member is optional with a default, and the contract's
+ * member count moves 85 -> 86 in the same commit. Estimated +175 B, measured +147. Still spent from
+ * the 484 B the two factories gave back: the entry sits 315 B below where this feature found it.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104511,
+  '*': 104658,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -149,7 +154,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95240,
+  ChartWorkspace: 95387,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
