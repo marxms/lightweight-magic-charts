@@ -120,13 +120,17 @@ const SYMBOLS_AT_CUTOVER = 13;
  * are one document section now and the sentence is a template read four times. Both rows move by
  * the same number because all four doors are reachable from the composed root. Measured as ONE
  * candidate on a zero-slack row, so the limit descends with the measurement.
+ * RE-PINNED DOWN 2026-08-20, entry 104654 -> 104489 (-165 B) and ChartWorkspace 95383 -> 95218
+ * (-165 B): the rail's two tab kinds became one style factory. Nine properties were declared twice
+ * and only the leading box differs. Its own candidate in its own commit — one per re-pin is what
+ * makes a delta attributable. Estimated -159 B, measured -165 B; the measurement is written down.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104654,
+  '*': 104489,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -139,7 +143,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95383,
+  ChartWorkspace: 95218,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

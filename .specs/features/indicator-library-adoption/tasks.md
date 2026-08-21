@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1, T2, T3 done
+**Status**: In progress — T1..T4 done
 
 ---
 
@@ -172,7 +172,7 @@ T15 → T16 → T17
 
 ---
 
-### T4: One factory for the rail-tab style
+### T4: One factory for the rail-tab style ✅
 
 **What**: Collapse the duplicated rail-tab style literals in the series menu into a single factory.
 **Where**: `src/react/SeriesMenu.tsx`
@@ -185,9 +185,9 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] The two literals are one call; rendered output is byte-identical
-- [ ] `size-budget.json` re-pinned DOWN separately from T3 — one measured candidate per re-pin
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] The two literals are one call; rendered output is byte-identical
+- [x] `size-budget.json` re-pinned DOWN separately from T3 — one measured candidate per re-pin
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build

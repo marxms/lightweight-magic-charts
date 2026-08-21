@@ -83,6 +83,21 @@ function chipStyle(theme: WorkspaceTheme, active: boolean): CSSProperties {
   };
 }
 
+function railTabStyle(theme: WorkspaceTheme, active: boolean, lead: CSSProperties): CSSProperties {
+  return {
+    ...lead,
+    width: '100%',
+    textAlign: 'left',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    border: 'none',
+    borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
+    background: active ? theme.accentFill : 'transparent',
+    color: active ? theme.accentText : theme.text,
+    fontSize: 11.5,
+  };
+}
+
 export function SeriesMenu({
   catalogue,
   selected: chosenIds = [],
@@ -252,21 +267,12 @@ export function SeriesMenu({
                 onClick={() => pickSection(entry.id)}
                 onMouseEnter={() => hoverSection(entry.id)}
                 onMouseLeave={hover.cancel}
-                style={{
+                style={railTabStyle(theme, active, {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 6,
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
-                  background: active ? theme.accentFill : 'transparent',
-                  color: active ? theme.accentText : theme.text,
-                  fontSize: 11.5,
-                }}
+                })}
               >
                 <span>{entry.label}</span>
                 {entry.count > 0 ? (
@@ -291,18 +297,7 @@ export function SeriesMenu({
                 onClick={() => pickSection(name)}
                 onMouseEnter={() => hoverSection(name)}
                 onMouseLeave={hover.cancel}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
-                  background: active ? theme.accentFill : 'transparent',
-                  color: active ? theme.accentText : theme.text,
-                  fontSize: 11.5,
-                }}
+                style={railTabStyle(theme, active, { display: 'block' })}
               >
                 {name}
               </button>
