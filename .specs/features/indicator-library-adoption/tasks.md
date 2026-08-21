@@ -538,10 +538,10 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 ---
 
-### T19: The CI comment claims what the proof proves ✅
+### T19: The claim says what the proof proves ✅
 
 **What**: Rewrite the owner-facing text around the proof job so no sentence implies 320 indicators were checked numerically.
-**Where**: `.github/workflows/ci.yml`
+**Where**: `.github/workflows/ci.yml`, `scripts/indicator-proof.mjs`, `CONTRIBUTING.md`
 **Depends on**: T18
 **Reuses**: the seal's own three tiers, which are already honest
 **Requirement**: ADAPT-07, ADAPT-09

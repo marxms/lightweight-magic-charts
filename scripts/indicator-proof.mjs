@@ -1,10 +1,28 @@
 #!/usr/bin/env node
 /**
- * THE INDICATOR PROOF — the owner's acceptance condition, executed before he executes it.
+ * THE INDICATOR PROOF — and it answers the two halves of the acceptance condition unequally.
  *
- * His words: "my first action when you finish will be to test every indicator and make sure they
- * respect the parameterisations and that they are correctly calculated, so you will do this before
- * me." This script is those two claims, made checkable.
+ * The condition was "test every indicator and make sure they respect the parameterisations and that
+ * they are correctly calculated". THE FIRST HALF IS PROVEN EXHAUSTIVELY. THE SECOND IS PROVEN AT A
+ * TIER, and the tier is published per indicator rather than averaged into a claim.
+ *
+ * ── WHAT IT PROVES, EXACTLY ────────────────────────────────────────────────────────────────────
+ *
+ * PARAMETERISATION, exhaustive: 320 offered indicators, 1021 offered controls, every one of them
+ * demonstrably moving the drawing — and every control HELD BACK sitting in an exact-set ledger with
+ * a written reason (46 inert, 2 colour, 120 moving only a channel this package cannot draw). Both
+ * directions are asserted, so the ledger cannot be padded or thinned unnoticed.
+ *
+ * VENDOR DRIFT, exhaustive: 320 digests of computed values, re-derived and compared, with a moved
+ * digest refused outright unless `example/indicators/value-changes.json` declares it.
+ *
+ * NUMERIC CORRECTNESS, tiered and NOT uniform: 6 pinned against hand-computed golden vectors, 6
+ * series cross-checked against this repository's own `example/studies.ts` to ~1e-13, 111 holding a
+ * family invariant that does not depend on the implementation, and 203 `structural` — they draw,
+ * are deterministic, pure, aligned and on the scale they declare, and nothing is claimed about
+ * their values. `seal.every-offered-indicator-carries-a-tier` prints that tally on every run for
+ * exactly this reason. Uniform numeric verification of 320 indicators needs an independent oracle
+ * per family; it is not this script, and this script does not imply it.
  *
  * ── WHAT IT IS, AND WHAT IT IS NOT ─────────────────────────────────────────────────────────────
  *

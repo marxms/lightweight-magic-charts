@@ -120,12 +120,23 @@ to have checked.
 npm run proof   # every offered indicator, and every offered control
 ```
 
-`scripts/indicator-proof.mjs` is the owner's own acceptance condition, executed before he executes
-it: every indicator the committed manifest offers has to draw, be deterministic, be pure, be
+`scripts/indicator-proof.mjs` answers **parameterisation** exhaustively and **numeric correctness**
+at a tier, and the difference is the point rather than a caveat.
+
+Exhaustive: every indicator the committed manifest offers has to draw, be deterministic, be pure, be
 bar-length and index-aligned, sit on the scale it declares and break no asserted bound — and **every
 control it offers has to move the drawing**, re-proved on the spot rather than read from a cached
 census. The other half is asserted too: every control the library declares and the manifest holds
-back carries a written reason, because "held back" and "forgotten" look identical otherwise.
+back carries a written reason, because "held back" and "forgotten" look identical otherwise. That is
+320 indicators and 1021 controls, in both directions.
+
+Tiered: 6 indicators are pinned against hand-computed golden vectors and 6 series are cross-checked
+against this repository's own `example/studies.ts` to ~1e-13; 111 hold a family invariant that does
+not depend on the implementation; 203 carry `structural`, which says they draw and are well-behaved
+and says **nothing about their values**. The run prints that tally — `pinned 6 · constrained 111 ·
+structural 203` — so nobody has to infer it, and the manifest carries the tier per indicator. Read
+"every indicator is correctly calculated" nowhere in this: verifying 320 numerically needs an
+independent oracle per family, and that is a feature of its own.
 
 It verifies the manifest; it does not decide what is offered. A second funnel over the same set
 would be a second source of truth about what the product offers, and two of those diverge on the

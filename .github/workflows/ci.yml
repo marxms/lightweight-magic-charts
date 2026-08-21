@@ -67,11 +67,28 @@ jobs:
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
 
-  # THE OWNER'S ACCEPTANCE CONDITION, RUN BEFORE HE RUNS IT. His words: "my first action when you
-  # finish will be to test every indicator and make sure they respect the parameterisations and that
-  # they are correctly calculated". `scripts/indicator-proof.mjs` is those two claims made checkable
-  # against the committed manifest — see its own docblock for what it verifies and what it refuses
-  # to claim.
+  # WHAT THIS JOB PROVES, AND WHAT IT DOES NOT. Stated in full because the honest answer is not the
+  # same for both halves of the owner's acceptance condition, and a job named after the condition
+  # would imply it was.
+  #
+  # PARAMETERISATION — proven exhaustively. All 320 offered indicators and all 1021 offered controls:
+  # every control demonstrably moves the drawing, and every control HELD BACK is in an exact-set
+  # ledger with a written reason (46 inert, 2 colour, 120 moving only a channel this package cannot
+  # draw). Both directions are asserted, so the ledger cannot be padded or thinned unnoticed.
+  #
+  # VENDOR DRIFT — proven exhaustively. 320 digests of computed VALUES, re-derived here and compared;
+  # a release that moves a reading by one part in a billion turns this red and names the indicator.
+  # And since it is regenerating the digests that would launder such a move, a digest may only change
+  # when `example/indicators/value-changes.json` says who changed it and why.
+  #
+  # NUMERIC CORRECTNESS — proven at the TIER each indicator carries, which is not uniform and is not
+  # claimed to be. 6 are pinned against hand-computed golden vectors; 6 series are cross-checked
+  # against this repository's own `example/studies.ts` and agree to ~1e-13; 111 hold a family
+  # invariant that does not depend on the implementation; 203 carry `structural` — they draw, are
+  # deterministic, pure, aligned and on the scale they declare, and NOTHING is claimed about their
+  # values. The manifest publishes that tally, and a run whose measured tiers disagree with it fails.
+  # Uniform numeric verification of all 320 would need an independent oracle per family; it is not
+  # this job and this job does not imply it.
   #
   # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
   # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 11.2 s on
@@ -99,12 +116,14 @@ jobs:
 
       - run: npm ci
 
-      - name: Indicator proof (parameterisation sensor + correctness oracles + manifest)
+      - name: Indicator proof (parameterisation sensor + tiered correctness + manifest)
         run: npm run proof
 
       # THE COMMITTED CATALOGUE IS THE GENERATOR'S OUTPUT, or it is stale. `--check` derives it
       # again and writes nothing: an edit by hand, or a vendor release the manifest has not been
-      # regenerated against, fails here rather than being discovered by a visitor.
+      # regenerated against, fails here rather than being discovered by a visitor. A digest that
+      # moved is refused outright rather than reported as stale — "re-run the generator" is the
+      # instruction that laundered the change in the first place.
       - name: The catalogue is what the generator produces
         run: node scripts/build-indicator-manifest.mjs --check
 
