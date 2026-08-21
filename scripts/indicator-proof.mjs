@@ -677,7 +677,7 @@ check(
   // the fingerprints is PART of taking the release. A digest may now only move when a human says
   // what moved it.
   const onFile = VALUE_CHANGES.changes ?? [];
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES });
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id) });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -693,20 +693,33 @@ check(
     const was = { wma: { values: A, confirmsWithinBars: 0 } };
     const now = { wma: { values: B, confirmsWithinBars: 0 } };
     const reason = 'the vendor corrected the weighting so the newest bar carries the heaviest one';
-    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes } });
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes }, offered: ['wma'] });
     const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why });
     const silent = judge();
     const correct = judge(entry(A, B));
     const wrongFrom = judge(entry(C, B));
     const thin = judge(entry(A, B, 'vendor update'));
+    // AND THE TWO THAT LOOK IDENTICAL FROM THE DIGESTS ALONE. Deleting `entries.wma` is cheaper than
+    // forging a sha256, and it reaches the same place through the sanctioned regeneration command —
+    // so the committed MANIFEST decides which of the two an absent digest is. Both directions are
+    // asserted: a proof that vanished is refused, an indicator that genuinely appeared is not.
+    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [] }, offered: ['wma'] });
+    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [] }, offered: [] });
     const named = (list, fault) => list.some((f) => f.id === 'wma' && f.fault === fault);
-    const verdicts = [named(silent, 'undeclared'), correct.length === 0, named(wrongFrom, 'wrong-from'), named(thin, 'no-reason')];
+    const verdicts = [
+      named(silent, 'undeclared'),
+      correct.length === 0,
+      named(wrongFrom, 'wrong-from'),
+      named(thin, 'no-reason'),
+      named(deleted, 'vanished-fingerprint'),
+      debut.length === 0,
+    ];
     check(
-      'catalogue.the-declaration-rule-discriminates-in-four-directions',
+      'catalogue.the-declaration-rule-discriminates-in-six-directions',
       verdicts.every(Boolean),
       verdicts.every(Boolean)
-        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; and a declaration whose reason says only what the git log already says is refused for having no reason'
-        : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}`,
+        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; a declaration whose reason says only what the git log already says is refused for having no reason; a fingerprint DELETED for an id the committed manifest still offers is refused as a proof that vanished rather than waved through as an indicator that appeared; and an id the committed manifest does not offer passes undeclared, because that one really is new'
+        : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}, deleted-entry→red ${verdicts[4]}, genuinely-new→green ${verdicts[5]}`,
     );
   }
 }

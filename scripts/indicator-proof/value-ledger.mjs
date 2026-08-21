@@ -19,11 +19,24 @@
  * ── WHAT THIS CLOSES, AND WHAT IT DOES NOT ────────────────────────────────────────────────────
  *
  * It closes the regeneration path: no run of the generator can overwrite a digest that nobody
- * declared, and no `--check` reports a moved digest as merely stale. It does NOT make a hand-forged
- * `fingerprints.json` impossible — a digest typed in by hand to match a hand-patched vendor agrees
- * with itself. That forgery is two files edited against the doctrine written at the top of both,
- * visible as such in a diff, and it is the same trust boundary `renames.json` and `size-budget.json`
- * already sit on. Overclaiming here would be the defect this file exists to catch.
+ * declared, and no `--check` reports a moved digest as merely stale.
+ *
+ * AND IT CLOSES THE CHEAPER PATH, which is not forging a digest but DELETING one. An absent entry
+ * read as "a new indicator has nothing to declare" hands the sanctioned command back the hole this
+ * file was written to close: measured, the same inverted-weight `wma` with `entries.wma` removed
+ * from `fingerprints.json` regenerated in silence, `--check` exited 0 and the proof reported every
+ * case passing, with the wrong number inside. So an id the COMMITTED MANIFEST still offers and the
+ * fingerprint file no longer covers is a proof that vanished, not an indicator that appeared, and it
+ * is refused on the same terms — while an id the committed manifest does not offer is genuinely new
+ * and needs no declaration.
+ *
+ * It does NOT make a hand-forged `fingerprints.json` impossible — a digest typed in by hand to match
+ * a hand-patched vendor agrees with itself — and it does not stop an editor who deletes the
+ * indicator from the manifest AND the fingerprints in the same edit, which offers it back as new at
+ * the cost of moving a whole catalogue entry in the diff. Both are hand-edited artefacts against the
+ * doctrine written at the top of the file being edited, visible as such in a diff, and they are the
+ * same trust boundary `renames.json` and `size-budget.json` already sit on. Overclaiming here would
+ * be the defect this file exists to catch.
  */
 
 /** A digest is a sha256 in lower-case hex, and anything else is a typo before it is a declaration. */
@@ -40,13 +53,19 @@ const short = (digest) => `${String(digest).slice(0, 12)}…`;
  * Every fault the ledger and the digests carry between them, each named with its measurement.
  *
  * `committed` and `derived` are both `{ [id]: { values, confirmsWithinBars } }` — the first read out
- * of `fingerprints.json`, the second computed by this run.
+ * of `fingerprints.json`, the second computed by this run. `offered` is the ids the COMMITTED
+ * manifest offers, and it is what tells an absent digest apart from a new indicator: without it the
+ * two are the same shape, and the cheapest way past this rule is to make a proof look like a debut.
  */
-export function valueLedgerFaults({ committed, derived, ledger }) {
+export function valueLedgerFaults({ committed, derived, ledger, offered }) {
   const changes = Array.isArray(ledger?.changes) ? ledger.changes : null;
   if (changes === null) {
     return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `changes` array' }];
   }
+  if (!Array.isArray(offered) && !(offered instanceof Set)) {
+    return [{ id: '—', fault: 'unreadable', detail: 'the caller did not say which ids the committed manifest offers, and an absent digest cannot be told from a new indicator without that' }];
+  }
+  const offers = new Set(offered);
 
   const faults = [];
   const say = (id, fault, detail) => faults.push({ id, fault, detail });
@@ -86,8 +105,18 @@ export function valueLedgerFaults({ committed, derived, ledger }) {
   /* ---- then every digest that moved, against what was declared for it ---- */
   for (const [id, row] of Object.entries(derived)) {
     const was = committed[id];
-    // A NEW indicator has no old value, so there is nothing to declare and nothing to launder.
-    if (was === undefined) continue;
+    if (was === undefined) {
+      // A NEW indicator has no old value, so there is nothing to declare and nothing to launder —
+      // but "new" is a claim the committed manifest can check. An id it still OFFERS had a digest
+      // and no longer has one, which is a proof that was deleted, and deleting it is exactly what
+      // gets a moved number through the sanctioned regeneration command.
+      if (!offers.has(id)) continue;
+      const restated = changes.some((entry) => entry?.id === id && entry.to === row.values);
+      if (!restated) {
+        say(id, 'vanished-fingerprint', `the committed manifest offers it and no digest is on file for it — an entry that was there and is gone is not a new indicator; restore it, or declare the move to ${short(row.values)} like any other`);
+      }
+      continue;
+    }
     const movedValue = was.values !== row.values;
     const movedSettle = was.confirmsWithinBars !== row.confirmsWithinBars;
     if (!movedValue && !movedSettle) continue;
@@ -126,6 +155,8 @@ export function valueLedgerRefusal(faults, ledgerPath) {
     'CANNOT see whether the vendor fixed a defect or shipped one, and those two have opposite',
     'consequences for every chart drawn from it. Write which — the id, the digest it moved from, the',
     `digest it moved to and the reason — in ${ledgerPath},`,
-    'which is append-only. A wrong number only gets through a red build.',
+    'which is append-only. A digest that is ABSENT is not a new indicator either: while the committed',
+    'manifest still offers the id, the entry was deleted rather than born, and deleting it is the',
+    'cheapest way past this rule. A wrong number only gets through a red build.',
   ].join('\n');
 }

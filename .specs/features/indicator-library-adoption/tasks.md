@@ -9,8 +9,8 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: T1..T17 done. The independent Verifier returned FAIL on coverage
-(`validation.md`); T18..T23 are its ranked gaps, routed back as fix tasks
+**Status**: T1..T23 done. The second independent Verifier pass returned FAIL on two Major gaps and
+one Minor (`validation.md`); T24..T26 are those gaps, routed back as fix tasks
 
 ---
 
@@ -104,6 +104,18 @@ recounted.
 
 ```
 T17 → T18 → T19 → T20 → T21 → T22 → T23
+```
+
+### Phase 10: The second pass's gaps, closed
+
+Routed back from the second `validation.md`. Two Major and one Minor, all measured: a fingerprint
+entry DELETED launders a wrong number through the sanctioned command (T24), the rewritten LANE-02
+still has no behavioural evidence and a mutation falsifying it survives every gate (T25), and the
+file a forger edits carries none of the doctrine that governs it (T26). The mechanism lands before
+the doctrine written about it.
+
+```
+T23 → T24 → T25 → T26
 ```
 
 ---
@@ -647,3 +659,74 @@ T17 → T18 → T19 → T20 → T21 → T22 → T23
 
 **Tests**: unit
 **Gate**: quick
+
+---
+
+### T24: A deleted fingerprint is a proof that vanished, not an indicator that appeared ✅
+
+**What**: Refuse an id the committed manifest offers whose fingerprint entry is absent, on the same terms as an undeclared move, and assert both directions of the new discrimination.
+**Where**: `scripts/indicator-proof/value-ledger.mjs`, `scripts/build-indicator-manifest.mjs`, `scripts/indicator-proof.mjs`
+**Depends on**: T23
+**Reuses**: the refusal and the four-direction discrimination T18 already built
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The generator REFUSES to write, and `--check` refuses to pass, while an id the committed manifest offers has no committed fingerprint and nothing declares it
+- [x] An id the committed manifest does NOT offer still enters with no declaration — a new indicator is not a deleted proof
+- [x] The absence can be declared: a `value-changes.json` entry ending at the derived digest carries it, like any other move
+- [x] The rule discriminates in both new directions, and stubbing the new clause leaves the proof red
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T25: Seven ids against three lanes, which is the test LANE-02 already names
+
+**What**: Write LANE-02's own Independent Test — the resolved count is the lane count, so the host reads the cut as the difference.
+**Where**: `test/indicatorResolution.spec.ts`
+**Depends on**: T24
+**Reuses**: `scanLookup`, `source` and `BARS` already in the file
+**Requirement**: LANE-02, LANE-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] Seven ids against three lanes resolve three views, and `ids.length - views.length` reads four
+- [ ] The three that survive are the first three, in order and identical to resolving them alone
+- [ ] A repeated id in the list is counted honestly: the difference covers the duplicate too, so it is not called a cut
+- [ ] The test dies when `resolveSources` dedups without cutting at the lane count
+- [ ] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T26: The file a forger edits carries the doctrine that governs it
+
+**What**: Name `value-changes.json` and the refusal in `fingerprints.json`'s own preamble, and correct the sentence that claimed the doctrine was already written there.
+**Where**: `scripts/build-indicator-manifest.mjs`, `example/indicators/fingerprints.json`, `scripts/indicator-proof/value-ledger.mjs`
+**Depends on**: T25
+**Reuses**: the preambles `value-changes.json` and `renames.json` already carry
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] `grep -c value-changes example/indicators/fingerprints.json` is no longer 0
+- [ ] The preamble is generated, not typed, so it cannot drift from the generator that writes the file
+- [ ] The admission in `value-ledger.mjs` describes the forgery's real cost, one file and the doctrine at its top
+- [ ] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
+
+**Tests**: integration
+**Gate**: proof

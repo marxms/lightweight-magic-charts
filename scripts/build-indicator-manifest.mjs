@@ -337,11 +337,15 @@ for (const row of indicators) {
  * Same doctrine as the block above, one level down: that one refuses while an ID has vanished and
  * nothing says whether it was renamed or removed; this one refuses while a VALUE has moved and
  * nothing says whether the vendor fixed a defect or shipped one. Regenerating the digests as part
- * of taking a release is what turned the fingerprint check into a check of itself.
+ * of taking a release is what turned the fingerprint check into a check of itself. The committed
+ * manifest comes in with it because an ABSENT digest and a NEW indicator are the same shape, and
+ * only the manifest knows which of the two this is — deleting the entry is cheaper than forging it.
  * See scripts/indicator-proof/value-ledger.mjs for what it closes and what it does not.       */
 {
+  const onFile = readJson('manifest');
+  const offered = (onFile.indicators ?? onFile).map((row) => row.id);
   const committed = readJson('fingerprints').entries ?? {};
-  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES });
+  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered });
   if (faults.length > 0) {
     console.error(valueLedgerRefusal(faults, MANIFEST_PATHS.valueChanges));
     process.exit(1);
