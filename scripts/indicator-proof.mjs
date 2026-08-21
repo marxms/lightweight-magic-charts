@@ -49,6 +49,7 @@ import { drawablePlotIds, movesSomethingUndrawn, movesTheDrawing } from './indic
 import { ASSERTED_BOUNDS, IFT_BOUNDED } from './indicator-proof/taxonomy.mjs';
 import { cases as GOLDEN } from './indicator-proof/golden.mjs';
 import * as counter from './indicator-proof/counter-impl.mjs';
+import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
 import { EXCLUSION_MEASUREMENTS, digestOf, settleWithinBars, vendorPin } from './indicator-proof/manifest-shape.mjs';
@@ -646,6 +647,258 @@ check(
       ? `${renames.length} recorded rename(s); the generator REFUSES to write while an id has vanished from the library and neither this file nor the defect ledger says why, because it cannot tell a rename from a removal and a host's saved workspace can`
       : `renamed to an id nothing offers: ${dangling.join(', ')}`,
   );
+}
+
+// ---------------------------------------------------------------------------------------------
+// STAGE 11 — THE ADAPTER. Vendor numbers in, this domain's points out.
+//
+// Loaded from `example/indicators.ts` itself rather than ported here: a port drifts, and the day
+// somebody corrects the adapter while the port keeps the old rule, this stage goes on printing PASS
+// about a fossil. `adapter-source.mjs` declares the two substitutions it makes and why.
+//
+// The synthetic entries below are the discrimination half. A sweep over 320 real indicators says
+// the adapter does not break on what the vendor actually emits; it says nothing about what the
+// adapter would do with what the vendor emits RARELY — a point stamped with a neighbour's bar time,
+// a plot key that is not `plot0`, a computation that throws. Each of those is built here on purpose,
+// with its answer known in advance.
+// ---------------------------------------------------------------------------------------------
+
+{
+  const { module: adapter } = await loadAdapter();
+
+  /** A vendor entry the harness builds: `plots` is whatever the case is about. */
+  const syntheticEntry = (plots, { plotConfig, throws = false, count = { calls: 0 } } = {}) => ({
+    id: 'synthetic',
+    defaultInputs: {},
+    plotConfig: plotConfig ?? Object.keys(plots).map((id) => ({ id })),
+    calculate: () => {
+      count.calls += 1;
+      if (throws) throw new Error('the vendor computation failed');
+      return { plots };
+    },
+    calls: count,
+  });
+  const syntheticRow = (plotIds, extra = {}) => ({
+    id: 'synthetic',
+    fallbackLabel: 'Synthetic',
+    fallbackShortLabel: 'SYN',
+    category: 'Harness',
+    placement: 'own-pane',
+    plotIds,
+    plotTitles: plotIds,
+    inputs: [],
+    ...extra,
+  });
+  const pointsOf = (source, bars) => source.series().map((plot) => plot.provider.compute(bars));
+
+  /* ---- every point is timed by ITS bar, whatever the vendor stamped on it ------------------- */
+  {
+    const grid = BARS_A;
+    // The `double-macd` shape, distilled: value i carried on bar i-2's timestamp. That timestamp IS
+    // on the grid, so `alignReadings` does not discard the point — it overwrites bar i-2's reading.
+    const shifted = grid.map((bar, i) => ({ time: grid[Math.max(0, i - 2)].time, value: i }));
+    const source = adapter.studySourceFor(
+      syntheticRow(['plot0']),
+      syntheticEntry({ plot0: shifted }),
+      {},
+    );
+    const [points] = pointsOf(source, grid);
+    const misplaced = points.filter((point, i) => point.time !== grid[i].time).length;
+    const wrongValue = points.filter((point, i) => point.value !== i).length;
+
+    const offenders = [];
+    let series = 0;
+    let plotted = 0;
+    const lookup = adapter.sourceLookupFor({ indicatorRegistry: registry }, undefined);
+    for (const row of MANIFEST) {
+      const live = lookup(row.id);
+      if (live === undefined) { offenders.push(`${row.id}: the lookup does not know it`); continue; }
+      for (const plot of live.series()) {
+        series += 1;
+        let emitted;
+        try { emitted = plot.provider.compute(grid); } catch (error) { offenders.push(`${row.id}: threw — ${error.message}`); continue; }
+        if (emitted.length !== grid.length) { offenders.push(`${row.id}.${plot.spec.id}: ${emitted.length} points against ${grid.length} bars`); continue; }
+        const off = emitted.findIndex((point, i) => point.time !== grid[i].time);
+        if (off >= 0) offenders.push(`${row.id}.${plot.spec.id}: point ${off} carries ${emitted[off].time}, bar ${off} is ${grid[off].time}`);
+        plotted += emitted.filter((point) => 'value' in point).length;
+      }
+    }
+    check(
+      'adapter.every-point-is-timed-by-its-own-bar',
+      misplaced === 0 && wrongValue === 0 && offenders.length === 0,
+      offenders.length === 0 && misplaced === 0 && wrongValue === 0
+        ? `a series stamped two bars back round-trips with the grid intact and value i on bar i, and all ${series} plot series of the ${MANIFEST.length} offered entries land one point per bar over ${grid.length} bars (${plotted} finite readings) — the timestamp is the host's, only the value is the vendor's`
+        : misplaced > 0 || wrongValue > 0
+          ? `the shifted-point control failed: ${misplaced} points off their bar, ${wrongValue} carrying the wrong value`
+          : `${offenders.length}: ${offenders.slice(0, 6).join('; ')}`,
+    );
+  }
+
+  /* ---- the bars reach the vendor ASCENDING, because the library validates nothing ---------- */
+  {
+    const grid = BARS_A.slice(0, 8);
+    const descending = [...grid].reverse();
+    let seen = null;
+    const source = adapter.studySourceFor(
+      syntheticRow(['plot0']),
+      {
+        id: 'synthetic',
+        defaultInputs: {},
+        plotConfig: [{ id: 'plot0' }],
+        calculate: (bars) => {
+          seen = bars.map((bar) => bar.time);
+          return { plots: { plot0: bars.map((_bar, i) => ({ value: i })) } };
+        },
+      },
+      {},
+    );
+    const [points] = pointsOf(source, descending);
+    const climbing = seen !== null && seen.every((time, i) => i === 0 || time > seen[i - 1]);
+    const untouched = descending[0].time === grid[grid.length - 1].time;
+    const onTheSortedGrid = points.every((point, i) => point.time === grid[i].time);
+    check(
+      'adapter.the-bars-reach-the-vendor-ascending',
+      climbing && untouched && onTheSortedGrid && points.length === grid.length,
+      `${descending.length} bars handed over newest-first arrive at the vendor oldest-first, the caller's own array is left in the order it was given, and the points come back on the SAME order the vendor computed against — an adapter that sorted a copy for the vendor and timed the points off the original would silently transpose every reading`,
+    );
+  }
+
+  /* ---- a value that is not a finite number is a DECLARED GAP, never a zero ------------------ */
+  {
+    const grid = BARS_A.slice(0, 6);
+    const source = adapter.studySourceFor(
+      syntheticRow(['plot0']),
+      syntheticEntry({ plot0: [{ value: 7 }, { value: NaN }, { value: null }, { value: Infinity }, { value: '3' }, undefined] }),
+      {},
+    );
+    const [points] = pointsOf(source, grid);
+    const carries = points.map((point) => 'value' in point);
+    // A short series is gaps to the end of the grid, never a short array: `alignReadings` reads by
+    // index and a missing row would silently shorten the study rather than declare its absence.
+    const short = adapter.studySourceFor(syntheticRow(['plot0']), syntheticEntry({ plot0: [{ value: 1 }] }), {});
+    const [tail] = pointsOf(short, grid);
+    check(
+      'adapter.a-non-finite-value-becomes-a-declared-gap',
+      JSON.stringify(carries) === JSON.stringify([true, false, false, false, false, false])
+        && points[0].value === 7
+        && points.every((point) => point.value !== 0)
+        && tail.length === grid.length
+        && tail.filter((point) => 'value' in point).length === 1,
+      `7 -> a reading, and NaN, null, Infinity, a string and a missing row -> a point with no value at all (never a zero); a one-point series over ${grid.length} bars yields ${tail.length} points of which ${tail.filter((p) => 'value' in p).length} carries a reading`,
+    );
+  }
+
+  /* ---- the plot key comes from the manifest, which read it off `plotConfig` ----------------- */
+  {
+    // The negative control that matters: the result ALSO carries a full `plot0`, and the row does
+    // not promise it. An adapter that assumed `plot0` would draw those numbers instead.
+    const source = adapter.studySourceFor(
+      syntheticRow(['alpha']),
+      syntheticEntry({ alpha: [{ value: 11 }, { value: 12 }], plot0: [{ value: 91 }, { value: 92 }] }),
+      {},
+    );
+    const drawn = source.series();
+    const [points] = pointsOf(source, BARS_A.slice(0, 2));
+    const readings = points.map((point) => point.value);
+
+    const named = MANIFEST.filter((row) => row.plotIds.some((key) => !/^plot\d+$/.test(key)));
+    const lookup = adapter.sourceLookupFor({ indicatorRegistry: registry }, undefined);
+    const wrongKeys = MANIFEST.filter((row) => {
+      const ids = (lookup(row.id)?.series() ?? []).map((plot) => String(plot.spec.id));
+      return ids.join('|') !== row.plotIds.map((key) => `${row.id}.${key}`).join('|');
+    }).map((row) => row.id);
+    // Every key the manifest promises is a key the vendor DECLARES and does not hide, so a hidden
+    // level never becomes a line: `drawablePlotIds` is the same predicate the generator used.
+    const undeclared = MANIFEST.filter((row) => {
+      const entry = byId.get(row.id);
+      const drawable = entry === undefined ? [] : drawablePlotIds(entry);
+      return row.plotIds.some((key) => !drawable.includes(key));
+    }).map((row) => row.id);
+
+    check(
+      'adapter.the-plot-key-comes-from-the-plot-config',
+      drawn.length === 1 && String(drawn[0].spec.id) === 'synthetic.alpha'
+        && JSON.stringify(readings) === JSON.stringify([11, 12])
+        && wrongKeys.length === 0 && undeclared.length === 0 && named.length > 0,
+      wrongKeys.length === 0 && undeclared.length === 0
+        ? `an entry whose only promised plot is \`alpha\` draws alpha and never the \`plot0\` sitting beside it in the same result; all ${MANIFEST.length} offered entries draw exactly the keys the manifest promises, ${named.length} of them under a key that is not \`plotN\`, and every one of those keys is declared and unhidden in the vendor's own plotConfig`
+        : `${wrongKeys.length} draw keys the manifest does not promise (${wrongKeys.slice(0, 5).join(', ')}); ${undeclared.length} promise a key the vendor hides or never declares (${undeclared.slice(0, 5).join(', ')})`,
+    );
+  }
+
+  /* ---- a computation that throws costs ONE study, and ONE attempt --------------------------- */
+  {
+    const grid = BARS_A.slice(0, 4);
+    const failing = { calls: 0 };
+    const passing = { calls: 0 };
+    const broken = adapter.studySourceFor(
+      syntheticRow(['plot0', 'plot1', 'plot2']),
+      syntheticEntry({}, { throws: true, count: failing }),
+      {},
+    );
+    const whole = adapter.studySourceFor(
+      syntheticRow(['plot0', 'plot1', 'plot2']),
+      syntheticEntry({ plot0: [{ value: 1 }], plot1: [{ value: 2 }], plot2: [{ value: 3 }] }, { count: passing }),
+      {},
+    );
+    let threw = 0;
+    for (const plot of broken.series()) {
+      try { plot.provider.compute(grid); } catch { threw += 1; }
+    }
+    const neighbour = pointsOf(whole, grid);
+    check(
+      'adapter.a-computation-that-throws-costs-one-study-and-one-attempt',
+      threw === 3 && failing.calls === 1
+        && passing.calls === 1 && neighbour.length === 3
+        && neighbour.every((points) => points.length === grid.length)
+        && neighbour[2][0].value === 3,
+      `a three-plot study whose computation throws reports on all ${threw} of its plots — which is where \`resolveSources\` catches it per plot and leaves every other study drawn — after exactly ${failing.calls} attempt, not one per plot; the study beside it computes ${passing.calls} time and draws all ${neighbour.length} of its lines`,
+    );
+  }
+
+  /* ---- the `unknown` is narrowed HERE, and out of range is REFUSED, never clamped ----------- */
+  {
+    const row = syntheticRow(['plot0'], {
+      inputs: [
+        { id: 'len', type: 'int', defval: 14, fallbackTitle: 'Length', min: 1, max: 500 },
+        { id: 'mult', type: 'float', defval: 2, fallbackTitle: 'Multiplier', min: 0.001 },
+        { id: 'src', type: 'enum', defval: 'close', fallbackTitle: 'Source', options: ['close', 'open'] },
+        { id: 'on', type: 'bool', defval: false, fallbackTitle: 'Enabled' },
+      ],
+    });
+    const read = (held) => adapter.readStudyValues(held, row);
+    const notAnObject = [null, undefined, 7, 'x', true, [1, 2], new Date()].map((raw) => JSON.stringify(read(raw)));
+    const inherited = read(Object.create({ len: 20 }));
+    const refused = read({ len: 0, mult: 2 });
+    const notAnInteger = read({ len: 1.5 });
+    const overMax = read({ len: 900 });
+    const translated = read({ src: 'fechamento' });
+    const undeclared = read({ nothingDeclaresThis: 3 });
+    const kept = read({ len: 30, mult: 1.5, src: 'open', on: true });
+
+    const settings = adapter.coerceStudySettingsFor([row])(
+      { synthetic: { len: 30 }, gone: { len: 30 } },
+      ['synthetic'],
+    );
+    const dropped = adapter.coerceStudySettingsFor([row])({ synthetic: { len: 30 } }, []);
+    const preFeature = adapter.coerceStudySettingsFor([row])(undefined, ['synthetic']);
+
+    check(
+      'adapter.a-stored-value-is-refused-rather-than-clamped',
+      notAnObject.every((seen) => seen === '{}')
+        && JSON.stringify(inherited) === '{}'
+        && JSON.stringify(refused) === '{"mult":2}'
+        && JSON.stringify(notAnInteger) === '{}'
+        && JSON.stringify(overMax) === '{}'
+        && JSON.stringify(translated) === '{}'
+        && JSON.stringify(undeclared) === '{}'
+        && JSON.stringify(kept) === '{"len":30,"mult":1.5,"src":"open","on":true}'
+        && JSON.stringify(settings) === '{"synthetic":{"len":30}}'
+        && JSON.stringify(dropped) === '{}'
+        && JSON.stringify(preFeature) === '{}',
+      'null, undefined, 7, "x", true, [1,2] and a Date all narrow to no values; a key reachable only through the prototype chain yields none; 0 against min 1 and 900 against max 500 are REFUSED rather than rewritten to the bound, and the neighbouring value in the same study survives; 1.5 against an int and a translated word against an enum are refused; a study no longer in the list is dropped, and a payload written before this feature loads with no values and no throw',
+    );
+  }
 }
 
 const failed = checks.filter((c) => !c.ok);

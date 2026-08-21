@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T12 done (phases 1-6)
+**Status**: In progress — T1..T13 done
 
 ---
 
@@ -384,7 +384,7 @@ T15 → T16 → T17
 
 ---
 
-### T13: The vendor's numbers become this domain's points
+### T13: The vendor's numbers become this domain's points ✅
 
 **What**: Write the adapter — plot key from `plotConfig`, each `Point` built from the bar index, non-finite becomes a declared gap, placement from `metadata.overlay`.
 **Where**: `example/indicators.ts`
@@ -397,11 +397,11 @@ T15 → T16 → T17
 - Skill: ecc:e2e-testing
 
 **Done when**:
-- [ ] Each `Point` takes its time from `bars[index].time` and only its value from the vendor, which neutralises the shifted-point class for all of them
-- [ ] A non-finite value becomes a point with no `value`
-- [ ] The plot key comes from `plotConfig`; `plot0` is never assumed
-- [ ] A vendor computation that throws costs one study and nothing else
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] Each `Point` takes its time from `bars[index].time` and only its value from the vendor, which neutralises the shifted-point class for all of them
+- [x] A non-finite value becomes a point with no `value`
+- [x] The plot key comes from `plotConfig`; `plot0` is never assumed
+- [x] A vendor computation that throws costs one study and nothing else
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full

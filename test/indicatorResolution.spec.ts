@@ -96,6 +96,66 @@ describe('LMC-18 — the resolver takes the LOOKUP, never the catalogue', () => 
     });
   });
 
+  /**
+   * ADAPT-03 — a third-party computation that throws costs THAT source and nothing else.
+   *
+   * The guarantee is two nested catches and it had no test. `series()` is wrapped because a source
+   * can fail while building its plots; each `compute` is wrapped separately because one plot of a
+   * study can fail while its neighbours are fine. With the host now handing this resolver a vendor
+   * catalogue of three hundred entries, "one bad study empties the chart" stops being hypothetical
+   * and becomes the most likely way a release breaks.
+   *
+   * BOTH CLAUSES ARE NEEDED. Deleting the per-plot catch leaves the per-source one green, because a
+   * source whose `series()` succeeds still throws from inside `compute`.
+   */
+  it('a source that throws costs itself and leaves every other one drawn', () => {
+    const exploding = source({
+      id: 'throws-building',
+      series: () => {
+        throw new Error('the vendor computation failed');
+      },
+    });
+    const halfDead = source({
+      id: 'throws-computing',
+      series: () => [
+        {
+          spec: { id: seriesId('dead'), label: 'Dead', shape: 'line', color: '#fff', lineWidth: 1 },
+          provider: {
+            compute: () => {
+              throw new Error('the vendor computation failed');
+            },
+          },
+        } as unknown as PlottedSeries,
+        plot('alive', (i) => i * 2),
+      ],
+    });
+    const lookup = scanLookup([exploding, halfDead, source({ id: 'whole' })]);
+
+    const resolution = resolveSources(
+      ['throws-building', 'throws-computing', 'whole'],
+      lookup,
+      BARS,
+      POLICY,
+    );
+
+    // The one whose `series()` threw is reported, by name, as unavailable — never dropped from the
+    // list, because a study the user chose has to stay visible enough to be turned off again.
+    expect(resolution.views[0]).toMatchObject({
+      id: 'throws-building',
+      label: 'THROWS-BUILDING',
+      availability: 'empty',
+      drawn: 0,
+    });
+    // The one whose plot threw keeps the plots that did not: a dead line occupies neither lane nor
+    // legend, and its neighbour is untouched.
+    expect(resolution.views[1]).toMatchObject({ id: 'throws-computing', drawn: 1 });
+    expect(resolution.labels.get(seriesId(laneSeriesId(1, 0)))).toBe('alive');
+    expect(resolution.readings.get(seriesId(laneSeriesId(1, 0)))?.[3]).toBe(6);
+    // And the study beside them is drawn exactly as it would have been alone.
+    expect(resolution.views[2]).toMatchObject({ id: 'whole', drawn: 1, availability: 'ok' });
+    expect(resolution.readings.get(seriesId(laneSeriesId(2, 0)))?.[3]).toBe(3);
+  });
+
   it('with no bars, the LIST is still the list — and nothing is ASSERTED about it', () => {
     const lookup = scanLookup([source({ id: 'a' })]);
     const resolution = resolveSources(['a'], lookup, [], POLICY);
