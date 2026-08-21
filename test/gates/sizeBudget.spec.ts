@@ -130,6 +130,13 @@ const SYMBOLS_AT_CUTOVER = 13;
  * stored the label. Spent from the 484 B the two factories above gave back, so nothing was raised
  * that had not first been paid for. Estimated +42 B; measured +22, because the optional `id` member
  * the estimate charged for is erased by the compiler.
+ * RE-PINNED 2026-08-21, entry 104919 -> 104992 (+73 B), and `ChartWorkspace` does NOT move: the
+ * entry publishes `studyIdentity`, the `StudySettings` type and the two setup hooks, and
+ * `setupContext` was already inside the composed root's graph — what the entry pays for is the
+ * re-export surface alone. Estimated +53 B, measured +73. The provisional ceiling is untouched and
+ * the entry now sits 2 B under it, which is written down because it is the smallest margin this
+ * ledger has ever recorded: the next growth in `src/` has to be paid for by a measured shrinkage
+ * first, not by raising anything.
  * RE-PINNED 2026-08-21, entry 104887 -> 104919 (+32 B) and ChartWorkspace 95616 -> 95648 (+32 B):
  * `resolve` gained an optional third parameter and the memo the matching dependency. Measured in a
  * mounted workspace before it shipped: `MEMO afterPick=4 afterIdleRerender=4`, and after a write
@@ -155,7 +162,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104919,
+  '*': 104992,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,

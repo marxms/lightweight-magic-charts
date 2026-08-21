@@ -24,6 +24,7 @@ export const setup: WorkspaceSetup = defaultWorkspaceSetup(policy);
 - **`defaultWorkspaceSetup`** · value · `(policy: WorkspaceSetupPolicy) => WorkspaceSetup`
 - **`reconcileGridCells`** · value · `(raw: unknown, servedTimeframes: readonly string[], fallbackCells: readonly string[], maxCells: number) => string[]`
 - **`seedWorkspaceTabs`** · value · `(initialTabs: readonly WorkspaceTab<WorkspaceSetup>[] | undefined, policy: WorkspaceSetupPolicy, defaultName: (index: number) => string) => TabsState<WorkspaceSetup>`
+- **`StudySettings`** · type · `type StudySettings = unknown`
 - **`WorkspaceLayoutMode`** · type · `type WorkspaceLayoutMode = 'foco' | 'grade'`
 - **`WorkspaceSetup`** · type · `interface WorkspaceSetup { timeframe: string | null; layoutMode: WorkspaceLayoutMode; gridCells: readonly string[]; panes: readonly PaneConfig[]; density: DensityTuning; showDensity: boolean; showProfile: boolean; autoFit: boolean; indicators: readonly string[]; seriesStyles: Readonly<Record<string, string>>; studySettings?: Readonly<Record<string, unknown>> | undefined }`
 - **`WorkspaceSetupPolicy`** · type · `interface WorkspaceSetupPolicy { catalogue: readonly PaneCatalogueEntry[]; servedTimeframes: readonly string[]; gridFallback: readonly string[]; maxGridCells: number; density: DensityTuning; showDensity: boolean; showProfile: boolean; autoFit: boolean; coerceIndicators: (raw: unknown, legacy: unknown) => readonly string[]; coerceStudySettings?: ((raw: unknown, indicators: readonly string[]) => Readonly<Record<string, StudySettings>>) | undefined }`

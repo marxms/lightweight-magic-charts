@@ -67,6 +67,7 @@ export type {
   WorkspaceTab,
 } from './tabs/workspaceTabs';
 export type {
+  StudySettings,
   WorkspaceLayoutMode,
   WorkspaceSetup,
   WorkspaceSetupPolicy,
@@ -319,7 +320,7 @@ export type {
 } from './react/surface/ChartSurface';
 export { ChartSurface, seriesStyleKey } from './react/surface/ChartSurface';
 
-// THE COMPOSED COMPONENT — the only one this entry publishes out of `react/workspace/`.
+// THE COMPOSED COMPONENT — the only COMPONENT this entry publishes out of `react/workspace/`.
 // See docs/explanation/entry.md#the-composed-component
 export type {
   ChartWorkspaceProps,
@@ -330,6 +331,7 @@ export type {
   WorkspaceStudies,
 } from './react/workspace/ChartWorkspace';
 export { ChartWorkspace } from './react/workspace/ChartWorkspace';
+export { useWorkspaceSetup, useWorkspaceSetupWriter } from './react/workspace/setupContext';
 // The two vocabularies a host hands the composed component, as TYPES only.
 export type { CandlePatternChoice } from './react/workspace/PatternChipsSection';
 export type { DrawingVocabulary } from './react/workspace/DrawingRail';
@@ -353,7 +355,7 @@ export type {
 export { DEFAULT_DRAWING_TOOLBAR_LABELS, DrawingToolbar } from './react/DrawingToolbar';
 
 export type { SeriesCatalogueEntry, SeriesMenuLabels, SeriesMenuProps } from './react/SeriesMenu';
-export { DEFAULT_SERIES_MENU_LABELS, SeriesMenu } from './react/SeriesMenu';
+export { DEFAULT_SERIES_MENU_LABELS, SeriesMenu, studyIdentity } from './react/SeriesMenu';
 
 export type {
   WorkspaceTabsBarItem,

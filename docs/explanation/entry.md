@@ -97,11 +97,16 @@ interface would be the worse of the two options.
 `ChartWorkspace` is the only component this entry publishes out of `react/workspace/`. Every other
 module of that layer is internal, and a second component leaving it here fails the shell suite.
 
+Two hooks leave that layer beside it, and they are not components: `useWorkspaceSetup` and
+`useWorkspaceSetupWriter`. They are the only doors a host's own section body has onto the setup of
+the tab that is showing, and that body is a call site the composition already renders inside both
+providers. Publishing them freezes nothing new — `WorkspaceSetup` is published above — which is what
+separates them from the rail hook this entry still refuses.
+
 The two vocabularies a host hands the composed component — `CandlePatternChoice` and
 `DrawingVocabulary` — are declared by the regions that read them, and published as TYPES only: the
-regions themselves stay internal, and the composed component is the one value this layer publishes.
-`WorkspaceTabsOptions` is published for the same reason and says where the tab set is kept between
-visits; the port itself is `WorkspaceStore`, published further up.
+regions themselves stay internal. `WorkspaceTabsOptions` is published for the same reason and says
+where the tab set is kept between visits; the port itself is `WorkspaceStore`, published further up.
 
 ### The two absorbed bindings
 

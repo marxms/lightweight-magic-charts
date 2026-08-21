@@ -1298,9 +1298,19 @@ describe('two entries that resolve to one identity', () => {
 });
 
 describe('the published surface of the composition', () => {
-  it('publishes exactly one composed component out of the workspace layer', () => {
+  it('publishes one composed component out of the workspace layer, and the two setup doors', () => {
+    // The equality still covers EVERY value export of the layer, so a region leaving it fails here
+    // exactly as before. What changed is the contents, not the strength: `useWorkspaceSetup` and
+    // `useWorkspaceSetupWriter` are hooks, not components, and they are the only way a host's own
+    // section body can read and write the setup of the tab that is showing. AD-017 refused
+    // `useDrawingRail` because it would freeze ten members of `DrawingRailValue` to hand a host one
+    // boolean; these two freeze nothing new, because `WorkspaceSetup` is already published.
     const indexText = readFileSync(join(LIB_ROOT, 'src', 'index.ts'), 'utf8');
-    expect(composedExports(indexText)).toEqual(['ChartWorkspace']);
+    expect(composedExports(indexText)).toEqual([
+      'ChartWorkspace',
+      'useWorkspaceSetup',
+      'useWorkspaceSetupWriter',
+    ]);
   });
 
   it('fails the same count when a second component leaves the layer', () => {

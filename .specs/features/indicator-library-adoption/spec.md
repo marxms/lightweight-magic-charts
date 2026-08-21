@@ -282,7 +282,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | PARAM-04 | P1: Parameters survive the tab | T7 | Done |
 | PARAM-05 | P1: Parameters survive the tab | T7 | Done |
 | PARAM-06 | P1: Parameters survive the tab | T7 | Done |
-| PARAM-07 | P1: Parameters survive the tab | T8, T9 | Pending |
+| PARAM-07 | P1: Parameters survive the tab | T8, T9 | Done |
 | PARAM-08 | P1: Parameters survive the tab | T7 | Done |
 | ADAPT-01 | P1: Host draws the form, library draws the study | T13 | Pending |
 | ADAPT-02 | P1: Host draws the form, library draws the study | T13 | Pending |
@@ -306,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | — | Pending |
 | APP-02 | P3: Consuming application | T10 | Pending |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 18 Done (GATE-01..06, IDENT-01..04, PARAM-01..06, PARAM-08, ADAPT-06). The two unmapped rows
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 19 Done (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-06). The two unmapped rows
 are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
 lives outside this repository, so no task here can carry it. It is verified by the application's own
 suite, not by this one.

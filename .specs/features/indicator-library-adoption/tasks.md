@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T8 done (phases 1-3, phase 4 started)
+**Status**: In progress — T1..T9 done (phases 1-4)
 
 ---
 
@@ -290,7 +290,7 @@ T15 → T16 → T17
 
 ---
 
-### T9: The host gets a door to the setup
+### T9: The host gets a door to the setup ✅
 
 **What**: Publish `studyIdentity`, the `StudySettings` type and the two setup hooks, and regenerate the derived reference.
 **Where**: `src/index.ts`
@@ -303,9 +303,9 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] The three publications appear in the derived reference byte-for-byte, regenerated in the same commit
-- [ ] `verify-package-paths.mjs` exits 0
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+- [x] The three publications appear in the derived reference byte-for-byte, regenerated in the same commit
+- [x] `verify-package-paths.mjs` exits 0
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
 
 **Tests**: unit
 **Gate**: build

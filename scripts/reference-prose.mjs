@@ -571,6 +571,28 @@ declare const choices: readonly CandlePatternChoice[];
 export const first: CandlePatternChoice | undefined = choices[0];`,
   },
 
+  'react/workspace/setupContext': {
+    title: 'the active tab\u2019s setup, read one field at a time and written as a patch',
+    summary: `The two doors a host section body has onto the setup of the tab that is showing.
+\`useWorkspaceSetup\` takes a selector and re-renders its caller only when THAT field moves;
+\`useWorkspaceSetupWriter\` returns a writer that takes a PATCH, never the whole setup. Both throw
+when called outside \`ChartWorkspace\`, which mounts the provider above every region — including the
+section bodies a host brings.`,
+    example: `import {
+  useWorkspaceSetup,
+  useWorkspaceSetupWriter,
+  type StudySettings,
+} from 'lightweight-magic-charts';
+
+export function periodOf(id: string): number {
+  const held = useWorkspaceSetup((setup) => setup.studySettings);
+  const write = useWorkspaceSetupWriter();
+  const value: StudySettings = held?.[id];
+  write({ studySettings: { ...held, [id]: { period: 20 } } });
+  return typeof value === 'object' && value !== null ? Object.keys(value).length : 0;
+}`,
+  },
+
   'react/workspace/usePersistedTabs': {
     title: 'where a tab set is between visits',
     summary: `The options a host brings for persistence: a synchronous store, a version, a migration for

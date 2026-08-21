@@ -41,6 +41,7 @@ changes in the code changes here.
 - **`SeriesMenu`** · value · `({ catalogue, selected: chosenIds, onSelect, capacity, labels, theme, testIdPrefix, maxResults, sections, onClose, }: SeriesMenuProps) => ReactElement`
 - **`SeriesMenuLabels`** · type · `interface SeriesMenuLabels { title: string; search: string; searchResults: string; categories: string; chosenCount: (chosen: number, capacity: number | null) => string; atCapacity: string; empty: string; close?: string | undefined }`
 - **`SeriesMenuProps`** · type · `interface SeriesMenuProps { catalogue: readonly SeriesCatalogueEntry[]; selected?: readonly string[] | undefined; onSelect: (entry: SeriesCatalogueEntry) => void; capacity?: number | undefined; labels?: SeriesMenuLabels | undefined; theme?: WorkspaceTheme | undefined; testIdPrefix?: string | undefined; maxResults?: number | undefined; sections?: readonly WorkspaceSection[] | undefined; onClose?: (() => void) | undefined }`
+- **`studyIdentity`** · value · `(entry: SeriesCatalogueEntry) => string`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).
