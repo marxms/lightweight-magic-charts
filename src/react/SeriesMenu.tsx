@@ -21,6 +21,7 @@ import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
 export interface SeriesCatalogueEntry {
   /** The instance the host built. Handed straight back on assignment, so no lookup table is needed. */
   readonly provider: SeriesProvider;
+  readonly id?: string;
   readonly label: string;
   readonly category: string;
   /** Shown on hover. The host's own words about what this computes. */
@@ -39,6 +40,9 @@ export interface SeriesMenuLabels {
   /** Name of the close button. OPTIONAL for compatibility. See docs/explanation/react.md#the-optional-close-label */
   readonly close?: string;
 }
+
+/** The ONE answer to "which study is this": the stored id, or the label when a catalogue predates it. */
+export const studyIdentity = (entry: SeriesCatalogueEntry): string => entry.id ?? entry.label;
 
 /** The same object the whole contract carries — a second copy would drift on the first edit. */
 export const DEFAULT_SERIES_MENU_LABELS: SeriesMenuLabels = DEFAULT_WORKSPACE_CHROME_LABELS.seriesMenu;
@@ -323,7 +327,7 @@ export function SeriesMenu({
           ) : (
             results.map((entry) => {
               const id = String(entry.provider.id);
-              const active = chosen.has(id);
+              const active = chosen.has(studyIdentity(entry));
               return (
                 <button
                   key={id}

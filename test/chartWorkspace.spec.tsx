@@ -1105,6 +1105,103 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
   });
 });
 
+/**
+ * THREE DIFFERENT STRINGS ON PURPOSE — the stored id, the displayed label, and the provider's own
+ * id. Every existing fixture lets two of the three coincide, which is precisely why the defect
+ * survived: `chrome.spec.tsx` mounts `SeriesMenu` alone with provider ids for `selected`, so the
+ * menu agrees with itself over a value the composition never stores.
+ */
+const IDENTIFIED_LOOKUP: SourceLookup = (id) =>
+  id !== 'study.moving-average'
+    ? undefined
+    : {
+        id,
+        label: 'Moving average',
+        placement: 'own-pane',
+        series: () => [
+          {
+            spec: { id: seriesId('ma-plot'), label: 'Moving average', shape: 'line', color: '#fff' },
+            provider: {
+              id: seriesId('ma-plot'),
+              compute: (bars: readonly Bar[]) => bars.map((bar) => ({ time: bar.time, value: bar.close })),
+            },
+          },
+        ],
+      };
+
+const identifiedStudies = (label: string): NonNullable<ChartWorkspaceProps['studies']> => ({
+  catalogue: [
+    {
+      provider: { id: seriesId('ma-provider'), compute: () => [] },
+      id: 'study.moving-average',
+      label,
+      category: 'Trend',
+    },
+  ],
+  capacity: 2,
+  lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
+  resolve: (ids, bars) =>
+    resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+});
+
+/** The catalogue chip for the entry above, by the test id it has always had: the PROVIDER's id. */
+const catalogueChip = (): HTMLElement => screen.getByTestId('workspace-catalogue-entry-ma-provider');
+
+function openCatalogue(): void {
+  openStudies();
+  fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+}
+
+describe('what identifies a study, which is not the text on screen', () => {
+  it('lights the chip of the study just picked, with id, label and provider id all different', async () => {
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={identifiedStudies('Moving average')} />);
+    await settle();
+    openCatalogue();
+
+    // Nothing is chosen yet, so the clause below is not passing over an already-pressed chip.
+    expect(catalogueChip()).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+
+    // And what was STORED is the id, not the label: the resolved study is listed under it.
+    expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
+  });
+
+  it('keeps the study selected when the LABEL changes and the id does not', async () => {
+    const props = minimalProps(fakePort());
+    const { rerender } = render(<ChartWorkspace {...props} studies={identifiedStudies('Moving average')} />);
+    await settle();
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+
+    // The product is translated between two renders. The stored identity did not move.
+    rerender(<ChartWorkspace {...props} studies={identifiedStudies('Média móvel')} />);
+    await settle();
+
+    expect(screen.getByText('Média móvel')).toBeInTheDocument();
+    expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
+  });
+
+  it('falls back to the label for a catalogue entry that carries no id', async () => {
+    // The other direction, and the compatibility half of the rule: a catalogue built before the id
+    // existed still resolves and still lights, because the label stands in for the identity.
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={STUDIES} />);
+    await settle();
+    openCatalogue();
+
+    const chip = screen.getByTestId('workspace-catalogue-entry-alpha');
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(chip);
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-catalogue-entry-alpha')).toHaveAttribute('aria-pressed', 'true'),
+    );
+    expect(screen.getByTestId('workspace-active-Alpha')).toBeInTheDocument();
+  });
+});
+
 describe('the published surface of the composition', () => {
   it('publishes exactly one composed component out of the workspace layer', () => {
     const indexText = readFileSync(join(LIB_ROOT, 'src', 'index.ts'), 'utf8');

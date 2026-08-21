@@ -28,6 +28,7 @@ import type { TabsAction, TabsState } from '../../tabs/workspaceTabs';
 import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeContext';
 import type { WorkspaceChromeProviderProps, WorkspaceSection } from '../chrome/ChromeContext';
 import { laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
+import { studyIdentity } from '../SeriesMenu';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 import type { PaneView, SeriesReader } from '../surface/ChartSurface';
 import { CanvasRow } from './CanvasRow';
@@ -292,7 +293,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
             }}
             onSelect={(entry) => {
               if (setup.indicators.length >= capacity) return notice.report(labels.notices.studyLimit(capacity));
-              write({ indicators: [...setup.indicators, entry.label] });
+              write({ indicators: [...setup.indicators, studyIdentity(entry)] });
             }}
           />
           <StylePickerRegion

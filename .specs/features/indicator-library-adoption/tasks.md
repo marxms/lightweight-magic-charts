@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T4 done
+**Status**: In progress — T1..T5 done
 
 ---
 
@@ -194,7 +194,7 @@ T15 → T16 → T17
 
 ---
 
-### T5: A study is identified by something that is not on screen
+### T5: A study is identified by something that is not on screen ✅
 
 **What**: Add the optional `id` to a catalogue entry, export `studyIdentity`, and make the menu's pressed state and the pick agree on it.
 **Where**: `src/react/SeriesMenu.tsx`
@@ -207,11 +207,11 @@ T15 → T16 → T17
 - Skill: ecc:react-patterns, ecc:react-testing
 
 **Done when**:
-- [ ] `studyIdentity(entry) = entry.id ?? entry.label`, and the pressed state compares against it
-- [ ] The DOM test id is unchanged, so every existing test id stays where it was
-- [ ] A test mounts `<ChartWorkspace>` with a fixture where `id`, `label` and `provider.id` are three different strings, picks, and asserts the chip lights — it does not today
-- [ ] A test changes the label while holding the id and asserts the study stays selected
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] `studyIdentity(entry) = entry.id ?? entry.label`, and the pressed state compares against it
+- [x] The DOM test id is unchanged, so every existing test id stays where it was
+- [x] A test mounts `<ChartWorkspace>` with a fixture where `id`, `label` and `provider.id` are three different strings, picks, and asserts the chip lights — it does not today
+- [x] A test changes the label while holding the id and asserts the study stays selected
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
