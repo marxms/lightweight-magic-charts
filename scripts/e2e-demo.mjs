@@ -64,6 +64,8 @@ const chromium = await import('playwright-core').then(
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EXAMPLE = join(HERE, '..', 'example');
+/** The committed catalogue, so "what the form offers" is compared against the artefact, not a copy. */
+const CATALOGUE = JSON.parse(readFileSync(join(HERE, '..', 'example', 'indicators', 'manifest.json'), 'utf8'));
 const HOST = '127.0.0.1';
 const VIEWPORT = { width: 1400, height: 900 };
 /** How long the demo's own settle timers (ResizeObserver, chart auto-fit) need before a read is honest. */
@@ -1033,6 +1035,126 @@ async function sceneCatalogueFailureStillMounts(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Scene 14 — an edited input changes what is DRAWN, and changes nothing else.
+//
+// THE ASSERTION THIS FEATURE STANDS OR FALLS ON. Everything else can be green while the value the
+// visitor typed goes into a payload and never reaches the arithmetic: `studySettings` was neither an
+// argument of `resolve` nor a dependency of the memo that calls it, and the symptom of that is a
+// chart drawing the old numbers with no error anywhere. So the reading is taken off the LEGEND —
+// a number the page computed — and the negative control puts the value back and demands the
+// original number returns. Without it the check passes on "any edit redraws something", which is
+// not the claim.
+//
+// NO SCREENSHOT, NO GOLDEN FILE: the same rule as every other scene here.
+// ---------------------------------------------------------------------------------------------
+async function sceneEditedInputRedraws(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+
+  await openStudies(page);
+  // The locator is built from `provider.id` while the persisted list keys on `studyIdentity`. The
+  // adapter puts the vendor id in BOTH on purpose; if they ever diverge this scene fails first,
+  // because the chip would render under one name while the pick was stored under another.
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const readLane = async () => {
+    const text = (await page.locator('[data-testid="workspace-legend-ind1"]').textContent()) ?? '';
+    return (text.match(/-?\d+(?:\.\d+)?/g) ?? []).join(',');
+  };
+  const chips = () => page.locator('[data-testid^="workspace-active-"]').count();
+
+  const before = await readLane();
+  const beforeChips = await chips();
+
+  await page.locator('[data-testid="workspace-catalogue-section-params"]').click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+
+  // OFFERED IS WHAT THE MANIFEST OFFERS, and the manifest is read off disk rather than restated: a
+  // control that moves nothing was held back at generation time, and a form drawing it anyway would
+  // be a control the visitor can turn with nothing happening.
+  const promised = (CATALOGUE.indicators.find((row) => row.id === 'rsi')?.inputs ?? [])
+    .map((input) => input.id)
+    .sort();
+  const drawn = (
+    await page.locator('[data-testid^="param-rsi-"]').evaluateAll((nodes) =>
+      nodes
+        .filter(
+          (node) =>
+            node.tagName === 'INPUT' ||
+            node.tagName === 'SELECT' ||
+            node.getAttribute('role') === 'switch',
+        )
+        .map((node) => node.getAttribute('data-testid')?.replace('param-rsi-', '') ?? ''),
+    )
+  ).sort();
+  check(
+    'params.the-form-offers-exactly-the-controls-the-manifest-offers',
+    promised.length > 0 && drawn.join(',') === promised.join(','),
+    drawn.join(',') === promised.join(',')
+      ? `${drawn.length} controls drawn and ${promised.length} promised, the same set: ${drawn.join(', ')}`
+      : `drawn [${drawn.join(', ')}] against promised [${promised.join(', ')}]`,
+  );
+
+  // REACHED BY ITS LABEL. `getByLabel` resolves through the accessibility tree, so a field whose
+  // `label`/`htmlFor` pair does not associate is not found at all.
+  const field = page.getByLabel('RSI Length');
+  check(
+    'params.every-control-is-reachable-by-its-label',
+    (await field.count()) === 1 &&
+      (await field.getAttribute('aria-describedby')) === 'param-rsi-length-bounds',
+    `the length field answers to its own label and points at ${await field.getAttribute('aria-describedby')}, which reads ${JSON.stringify(await page.locator('#param-rsi-length-bounds').textContent())}`,
+  );
+
+  await field.fill('50');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const after = await readLane();
+  check(
+    'params.edit-changes-the-drawing',
+    before.length > 0 && after.length > 0 && before !== after,
+    `ind1 legend readings: ${before} -> ${after} after setting the length 14 -> 50`,
+  );
+  check(
+    'params.edit-keeps-the-study',
+    (await chips()) === beforeChips && beforeChips > 0,
+    `${beforeChips} chosen chip(s) before the edit, ${await chips()} after — a redraw, never a remount`,
+  );
+
+  // THE NEGATIVE CONTROL. Put it back and the number comes back.
+  await field.fill('14');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const restored = await readLane();
+  check(
+    'params.edit-is-reversible',
+    restored === before,
+    `back to ${restored}, which is what it read before the edit`,
+  );
+
+  // AND THE REFUSAL IS VISIBLE ON THE PAGE: below the declared minimum nothing is written, so the
+  // drawing does not move and the field says why.
+  await field.fill('0');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  check(
+    'params.an-out-of-range-value-is-refused-not-drawn',
+    (await readLane()) === before && (await field.getAttribute('aria-invalid')) === 'true',
+    `0 against a declared minimum of 1: aria-invalid=${await field.getAttribute('aria-invalid')} and the lane still reads ${await readLane()}`,
+  );
+
+  const editChurn = console_.warnings.filter(
+    (line) => line.includes('WorkspaceChromeProvider') && line.includes('sections'),
+  );
+  check(
+    'params.no-churn-across-the-edit',
+    editChurn.length === 0,
+    editChurn.length === 0
+      ? 'four values typed into the same field and no section-identity churn warning — the Body was re-rendered, never remounted'
+      : editChurn.slice(0, 2).join(' | '),
+  );
+
+  reportConsole('params.edit-console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
 
 const context = await esbuild.context({
   entryPoints: [join(EXAMPLE, 'main.tsx')],
@@ -1099,6 +1221,34 @@ check(
   );
 }
 
+/**
+ * THE CEILING THE PANEL OFFERS AND THE LANE COUNT THE RESOLVER TRUNCATES TO ARE ONE NUMBER.
+ *
+ * `resolveSources` starts with `laneOrder(active, policy.lanes)`, which cuts the chosen list to
+ * that many entries — overlays included. A host whose `capacity` exceeds `policy.lanes` therefore
+ * lets a visitor choose studies that are silently never resolved, and this page shipped exactly
+ * that: a capacity of six against two lanes, six chosen, two drawn, nothing said. The fix was not a
+ * report; it was REMOVING THE CONDITION, by writing the two as one symbol. So the assertion is on
+ * the symbol — a literal in either position brings the divergence back, and there is no cut left to
+ * report because there is no cut.
+ */
+{
+  // Comments are stripped first: this file's own prose quotes the defect (`capacity: 6`), and a
+  // guard that read the description of the bug instead of the code would be reporting on itself.
+  const app = readFileSync(join(EXAMPLE, 'App.tsx'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const laneCount = /resolutionPolicy\(\{\s*lanes:\s*([\w$]+)/.exec(app)?.[1] ?? null;
+  const offered = /\bcapacity:\s*([\w$]+)/.exec(app)?.[1] ?? null;
+  check(
+    'params.the-ceiling-and-the-lane-count-are-one-number',
+    laneCount !== null && laneCount === offered,
+    laneCount !== null && laneCount === offered
+      ? `the panel's ceiling and the resolver's lane count both read \`${laneCount}\`, so the host's capacity cannot exceed its lane count and there is nothing for it to report`
+      : `lanes reads ${JSON.stringify(laneCount)} and capacity reads ${JSON.stringify(offered)} — a divergence here is a study a visitor can choose and never see`,
+  );
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -1131,6 +1281,7 @@ try {
   await sceneHostSectionIsStable(browser, base);
   await sceneCatalogueBeforeTheLibrary(browser, base);
   await sceneCatalogueFailureStillMounts(browser, base);
+  await sceneEditedInputRedraws(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

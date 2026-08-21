@@ -287,7 +287,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-01 | P1: Host draws the form, library draws the study | T13 | Done |
 | ADAPT-02 | P1: Host draws the form, library draws the study | T13 | Done |
 | ADAPT-03 | P1: Host draws the form, library draws the study | T13 | Done |
-| ADAPT-04 | P1: Host draws the form, library draws the study | T11, T14 | Pending |
+| ADAPT-04 | P1: Host draws the form, library draws the study | T11, T14 | Done |
 | ADAPT-05 | P1: Host draws the form, library draws the study | T13 | Done |
 | ADAPT-06 | P1: Host draws the form, library draws the study | T8 | Done |
 | ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Done |
@@ -295,10 +295,10 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12 | Done |
 | ADAPT-10 | P1: Host draws the form, library draws the study | T12 | Done |
 | LANE-01 | P2: A study that did not fit says so | T17 | Pending |
-| LANE-02 | P2: A study that did not fit says so | T16 | Pending |
+| LANE-02 | P2: A study that did not fit says so | T16 | Done |
 | LANE-03 | P2: A study that did not fit says so | T17 | Pending |
 | DEMO-01 | P2: Example demonstrates the library | T10, T15 | Done |
-| DEMO-02 | P2: Example demonstrates the library | T14, T16 | Pending |
+| DEMO-02 | P2: Example demonstrates the library | T14, T16 | Done |
 | DEMO-03 | P2: Example demonstrates the library | T15, T17 | Pending |
 | DEMO-04 | P2: Example demonstrates the library | T15 | Done |
 | DOC-01 | P2: The wiring is documented | T17 | Pending |
@@ -306,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | — | Pending |
 | APP-02 | P3: Consuming application | T10 | Done |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 30 Done (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-01..03, ADAPT-05..10, DEMO-01, DEMO-04, APP-02). ADAPT-04 stays Pending: T11 proves every OFFERED input moves the drawing, and T14 is what omits the rest from the form. The two unmapped rows
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 33 Done (GATE-01..06, IDENT-01..04, PARAM-01..08, ADAPT-01..10, LANE-02, DEMO-01, DEMO-02, DEMO-04, APP-02). ADAPT-04 stays Pending: T11 proves every OFFERED input moves the drawing, and T14 is what omits the rest from the form. The two unmapped rows
 are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
 lives outside this repository, so no task here can carry it. It is verified by the application's own
 suite, not by this one.

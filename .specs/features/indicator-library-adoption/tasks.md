@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T15 done (phase 7 closed)
+**Status**: In progress — T1..T16 done
 
 ---
 
@@ -456,7 +456,7 @@ T15 → T16 → T17
 
 ---
 
-### T16: The page proves an edited input changed the drawing
+### T16: The page proves an edited input changed the drawing ✅
 
 **What**: Add the e2e assertion that toggling a study and editing its input changes a drawn value while the study count holds.
 **Where**: `scripts/e2e-demo.mjs`
@@ -469,10 +469,10 @@ T15 → T16 → T17
 - Skill: ecc:e2e-testing
 
 **Done when**:
-- [ ] The assertion reads a legend value or a counter, never a screenshot compared to a golden file
-- [ ] The study count is unchanged across the edit, proving no remount
-- [ ] The churn warning stays silent, proving the `Body` is stable
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] The assertion reads a legend value or a counter, never a screenshot compared to a golden file
+- [x] The study count is unchanged across the edit, proving no remount
+- [x] The churn warning stays silent, proving the `Body` is stable
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
