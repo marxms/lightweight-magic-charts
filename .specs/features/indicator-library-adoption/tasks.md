@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T14 done
+**Status**: In progress — T1..T15 done (phase 7 closed)
 
 ---
 
@@ -432,7 +432,7 @@ T15 → T16 → T17
 
 ---
 
-### T15: The demo offers the catalogue before the library loads
+### T15: The demo offers the catalogue before the library loads ✅
 
 **What**: Wire the manifest-driven catalogue and the deferred `import()` into the example's workspace mount.
 **Where**: `example/App.tsx`
@@ -445,11 +445,11 @@ T15 → T16 → T17
 - Skill: ecc:e2e-testing
 
 **Done when**:
-- [ ] The catalogue lists names from the manifest with the library still unloaded
-- [ ] The library loads on the first study, never at boot
-- [ ] If it fails to load, the workspace mounts with an empty catalogue rather than failing
-- [ ] `package.json` still declares zero runtime dependencies and exactly two peers
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] The catalogue lists names from the manifest with the library still unloaded
+- [x] The library loads on the first study, never at boot
+- [x] If it fails to load, the workspace mounts with an empty catalogue rather than failing
+- [x] `package.json` still declares zero runtime dependencies and exactly two peers
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full

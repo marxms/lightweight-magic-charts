@@ -31,6 +31,13 @@ import * as esbuild from 'esbuild';
  *   production, minified   702,078 B  -> ceiling 772,285 (band C's 10%)
  *   development, plain   1,886,983 B  -> ceiling 2,075,681 (band C's 10%)
  *
+ * RE-MEASURED 2026-08-21 once the example split into five files, now over the entry AND the
+ * transitive closure of its static imports: production 707,648 B, development 1,898,703 B. Both
+ * stay under the ceilings above, so the ceilings do NOT move — a ratchet that rises to meet its
+ * measurement is a number, not a gate. The 1,097,033 B of indicator library and the 185,299 B of
+ * committed catalogue are reached through `dynamic-import` edges and are correctly outside the
+ * closure; turning either into a static import puts it inside and turns this red.
+ *
  * The slack is band C's, for the same reason the byte budget gives it: growth here is a design event
  * somebody has to defend, and 10% is wide enough for the host code this example is still gaining and
  * far too narrow to hide a 1.05 MB library arriving at boot.
@@ -40,11 +47,32 @@ export const BOOT_CHUNK_CEILING = Object.freeze({
   development: 2075681,
 });
 
-/** Bytes of the ENTRY output, which is the only file the page loads before it can draw. */
+/**
+ * Bytes of everything the page must have before the entry can run: the entry output plus the
+ * transitive closure of its STATIC imports.
+ *
+ * IT USED TO BE THE ENTRY ALONE, and that stopped being the same number the moment the example
+ * gained a second chunk. With `splitting: true` esbuild hoists shared code out of the entry into a
+ * chunk the entry then imports with a plain `import` statement — so a dependency that quietly
+ * became static would leave the entry small and arrive at boot anyway, which is precisely the
+ * regression this ceiling exists to see. A `dynamic-import` edge is NOT followed: that is the
+ * deferral being measured.
+ */
 export function bootChunkBytes(metafile, entryFile) {
   const outputs = Object.entries(metafile.outputs);
   const entry = outputs.find(([file]) => file.endsWith(entryFile));
-  return entry === undefined ? null : entry[1].bytes;
+  if (entry === undefined) return null;
+  const seen = new Set();
+  const walk = (file) => {
+    if (seen.has(file)) return 0;
+    seen.add(file);
+    const output = metafile.outputs[file];
+    if (output === undefined) return 0;
+    return (output.imports ?? [])
+      .filter((edge) => edge.kind === 'import-statement')
+      .reduce((sum, edge) => sum + walk(edge.path), output.bytes);
+  };
+  return walk(entry[0]);
 }
 
 /** The verdict, as a sentence: `null` when it is under, and the reason when it is not. */

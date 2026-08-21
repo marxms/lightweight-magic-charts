@@ -43,6 +43,7 @@
  * Exit code 0 means every check passed. Anything else is a failure — including a failure to even
  * launch a browser, which prints a sentence naming what is missing rather than a stack trace.
  */
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -881,10 +882,21 @@ async function sceneHostSectionIsStable(browser, base) {
   const tab = page.locator('[data-testid="workspace-catalogue-section-params"]');
   check('params.host-section-on-the-rail', (await tab.count()) === 1, 'the host declared one section and the rail shows it');
 
+  // A THIRD-PARTY STUDY FIRST, and not for the study: it is what makes the host's own `App`
+  // re-render, because the arithmetic arriving is state. Without a host re-render the sensor below
+  // has nothing to compare and would pass over an inline `Body` — measured.
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+
   await tab.click();
   await page.waitForTimeout(ACTION_SETTLE_MS);
   const body = page.locator('[data-testid="param-form"]');
-  check('params.host-section-body-renders', (await body.count()) === 1, 'the host Body is what the tabpanel draws');
+  const fields = await page.locator('[data-testid^="param-rsi-"]').count();
+  check(
+    'params.host-section-body-renders',
+    (await body.count()) === 1 && fields > 0,
+    `the host Body is what the tabpanel draws, with ${fields} node(s) for the chosen study`,
+  );
 
   // The rail is walked and returned to, which is what re-renders the menu repeatedly. A `Body`
   // whose identity moved would be reported by the sensor on the first of these.
@@ -904,6 +916,119 @@ async function sceneHostSectionIsStable(browser, base) {
   );
 
   reportConsole('params.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 12 — the catalogue lists the third-party names before a byte of the library exists, and
+// the library arrives only when a study asks for it.
+//
+// THE TWO ARTEFACTS ARE TOLD APART ON THE WIRE, not by the page's own report of itself. A page
+// that quietly imported the library at boot would still render a perfect catalogue; only the bytes
+// say which happened. The entry is excluded by name — this build is DEVELOPMENT, so React's own
+// warning codebase makes `bundle.js` larger than the committed catalogue — and the two CHUNKS then
+// differ by an order of magnitude: the manifest is ~190 KB and the library ~2.1 MB, so the floor
+// sits between them with a decade of room on either side.
+// ---------------------------------------------------------------------------------------------
+const LIBRARY_BYTES_FLOOR = 1_000_000;
+
+async function sceneCatalogueBeforeTheLibrary(browser, base) {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const console_ = watchConsole(page);
+  const heavy = [];
+  page.on('response', (response) => {
+    const file = response.url().split('/').pop() ?? '';
+    const declared = Number(response.headers()['content-length'] ?? 0);
+    if (/^chunk-.*\.js$/.test(file) && declared >= LIBRARY_BYTES_FLOOR) heavy.push(`${file} ${declared} B`);
+  });
+
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-testid="workspace-root"]').waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(SETTLE_MS);
+
+  await openStudies(page);
+  await page.locator('[data-testid="workspace-catalogue-category-Oscillators"]').click();
+  await page.waitForTimeout(150);
+  const listed = await page
+    .locator('[data-testid="workspace-catalogue-results"] [data-testid^="workspace-catalogue-entry-"]')
+    .count();
+  const beforePick = [...heavy];
+  check(
+    'params.catalogue-lists-before-the-library',
+    listed > 0 && beforePick.length === 0,
+    beforePick.length === 0
+      ? `${listed} third-party studies listed under "Oscillators" and nothing over ${LIBRARY_BYTES_FLOOR} B has crossed the wire`
+      : `the library arrived at boot: ${beforePick.join(', ')}`,
+  );
+
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+  check(
+    'params.library-fetched-on-demand',
+    heavy.length > 0,
+    heavy.length > 0
+      ? `the chunk arrived with the first study and not before: ${heavy.join(', ')}`
+      : 'no chunk over the floor ever arrived, so the study cannot be drawing vendor arithmetic',
+  );
+
+  // AND IT DRAWS. A catalogue that lists names and resolves nothing is the silent toggle the spec
+  // forbids, so the lane it landed in has to read a number.
+  const laneText = (await page.locator('[data-testid="workspace-legend-ind1"]').textContent()) ?? '';
+  check(
+    'params.third-party-study-reads-numeric',
+    /\d/.test(laneText) && !/—/.test(laneText),
+    `own-lane legend after picking rsi: ${JSON.stringify(laneText)}`,
+  );
+
+  reportConsole('params.on-demand-console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 13 — the catalogue fails to arrive and the page still draws.
+//
+// The spec's edge case, executed rather than asserted from the source: the manifest chunk is
+// refused at the network, which is the one failure a visitor can actually meet.
+// ---------------------------------------------------------------------------------------------
+async function sceneCatalogueFailureStillMounts(browser, base) {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const console_ = watchConsole(page);
+  // The manifest chunk is the only file over 100 KB that is fetched without being imported by the
+  // entry, so it is identified by what it holds rather than by a hash that changes every build.
+  await page.route('**/chunk-*.js', async (route) => {
+    const response = await route.fetch().catch(() => null);
+    const body = response === null ? '' : await response.text();
+    if (body.includes('fallbackShortLabel')) return route.abort();
+    return response === null ? route.abort() : route.fulfill({ response, body });
+  });
+
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-testid="workspace-root"]').waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(SETTLE_MS);
+
+  await openStudies(page);
+  const vendorTab = await page.locator('[data-testid="workspace-catalogue-category-Oscillators"]').count();
+  const ownTab = await page.locator('[data-testid="workspace-catalogue-category-Own-lane"]').count();
+  const priceLegend = (await page.locator('[data-testid="workspace-legend-price"]').textContent()) ?? '';
+  check(
+    'params.a-failed-catalogue-still-mounts',
+    vendorTab === 0 && ownTab === 1 && /C\xa0\d/.test(priceLegend),
+    vendorTab === 0 && ownTab === 1
+      ? `the third-party catalogue is refused at the network and the workspace mounts anyway: no "Oscillators" tab, the demo's own studies still offered, price still reading ${JSON.stringify(priceLegend.slice(0, 24))}`
+      : `${vendorTab} third-party tab(s) and ${ownTab} demo tab(s) after refusing the catalogue chunk`,
+  );
+
+  // The refused fetch itself is reported by the browser, and that report is the point rather than
+  // a defect. What may NOT appear is anything else — an uncaught exception from the import
+  // rejecting is exactly the failure this scene exists to refuse.
+  const unexpected = console_.errors.filter((line) => !line.includes('Failed to load resource'));
+  check(
+    'params.a-failed-catalogue-throws-nothing',
+    unexpected.length === 0,
+    unexpected.length === 0
+      ? `${console_.errors.length} console error(s), every one of them the browser reporting the refused chunk, and no uncaught exception behind it`
+      : unexpected.slice(0, 3).join(' | '),
+  );
   await page.close();
 }
 
@@ -946,6 +1071,34 @@ check(
       'load on demand is arriving at boot',
 );
 
+/**
+ * THE PACKAGE STILL DECLARES NOTHING IT DOES NOT SHIP.
+ *
+ * The example now takes a 1.05 MB indicator library and its required peer, and the whole point of
+ * putting them in the HOST is that the published package gains neither. `packaging.spec.ts` says
+ * this too, and it is one of the three suites `jest.config.js` skips outside the monorepo — so
+ * outside the monorepo this is the only place the claim is measured, next to the bundle it is a
+ * claim about.
+ */
+{
+  const manifest = JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8'));
+  const runtime = Object.keys(manifest.dependencies ?? {});
+  const peers = Object.keys(manifest.peerDependencies ?? {}).sort();
+  const vendorAsDev = ['lightweight-charts-indicators', 'oakscriptjs'].filter(
+    (name) => typeof manifest.devDependencies?.[name] === 'string',
+  );
+  check(
+    'params.the-package-declares-zero-dependencies-and-two-peers',
+    runtime.length === 0 &&
+      peers.length === 2 &&
+      peers.join(', ') === 'lightweight-charts, react' &&
+      vendorAsDev.length === 2,
+    runtime.length === 0 && peers.length === 2 && vendorAsDev.length === 2
+      ? `zero runtime dependencies, exactly two peers (${peers.join(', ')}), and ${vendorAsDev.join(' + ')} declared where the example can reach them and an installer cannot`
+      : `${runtime.length} runtime dependenc(ies) [${runtime.join(', ')}], ${peers.length} peer(s) [${peers.join(', ')}], ${vendorAsDev.length}/2 vendor devDependencies`,
+  );
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -976,6 +1129,8 @@ try {
   await sceneAnchorDragHoldsTheRange(browser, base);
   await sceneMagnetPlacesTheAnchor(browser, base);
   await sceneHostSectionIsStable(browser, base);
+  await sceneCatalogueBeforeTheLibrary(browser, base);
+  await sceneCatalogueFailureStillMounts(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();
