@@ -131,11 +131,26 @@ It verifies the manifest; it does not decide what is offered. A second funnel ov
 would be a second source of truth about what the product offers, and two of those diverge on the
 first release.
 
+It also re-derives the committed FINGERPRINTS, which are digests of computed VALUES rather than of
+names and shapes — a vendor release that moves one number by one part in a billion turns it red and
+says which indicator. The catalogue itself is generated:
+
+```sh
+node scripts/build-indicator-manifest.mjs           # regenerate
+node scripts/build-indicator-manifest.mjs --check   # derive again, write nothing, fail if stale
+```
+
+The generator REFUSES to write when an id in the committed manifest has vanished from the library
+and neither `example/indicators/renames.json` nor the defect ledger says why. It can see that the id
+is gone; it cannot tell a rename from a removal, and a host's saved workspace can — so silent loss
+only gets through a red build.
+
 Its own command and its own CI job, for the same reason `npm run e2e` has one: it loads a 1.05 MB
 third-party library and computes three hundred indicators over 1664 bars. Measured 2026-08-21:
-`indicator-proof: 16/16 passed in 8.5 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
-are devDependencies pinned EXACTLY, and `test/boundary.spec.ts` is what keeps either of them out of
-`src/` — statically and through `import()` alike.
+`indicator-proof: 21/21 passed in 11.2 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
+are devDependencies pinned EXACTLY — a range would let every digest move while the check stayed
+green — and `test/boundary.spec.ts` is what keeps either of them out of `src/`, statically and
+through `import()` alike.
 
 ### The check that runs a browser, and why it is not wired in
 

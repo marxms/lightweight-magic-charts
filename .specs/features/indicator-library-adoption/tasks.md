@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T11 done (phases 1-5, phase 6 started)
+**Status**: In progress — T1..T12 done (phases 1-6)
 
 ---
 
@@ -360,7 +360,7 @@ T15 → T16 → T17
 
 ---
 
-### T12: The catalogue cannot change behind the check
+### T12: The catalogue cannot change behind the check ✅
 
 **What**: Generate the committed catalogue manifest with a verification tier and settle-window per indicator, plus per-indicator value fingerprints, and a re-derivation check that compares values.
 **Where**: `scripts/build-indicator-manifest.mjs`
@@ -373,11 +373,11 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] The manifest carries, per indicator, the tier reached and the bars within which a retroactive indicator settles
-- [ ] Fingerprints are digests of computed VALUES, so a vendor upgrade that changes a number turns the check red
-- [ ] The vendor version is pinned EXACTLY, not by range
-- [ ] The three definitional exclusions are named with their measurement
-- [ ] Gate check passes: `npm run build && npm test && npm run proof`
+- [x] The manifest carries, per indicator, the tier reached and the bars within which a retroactive indicator settles — 313 of 320 never restate a closed bar, the other seven settle within 28
+- [x] Fingerprints are digests of computed VALUES, so a vendor upgrade that changes a number turns the check red — proven by mutation, in both the digest and the settle window
+- [x] The vendor version is pinned EXACTLY, not by range — asserted against `package.json`, the manifest and what is installed; a `^` turns it red naming the field
+- [x] The three definitional exclusions are named with their measurement — `td-macd`, `double-macd`, `transient-zones`, alongside the three T11 measured
+- [x] Gate check passes: `npm run build && npm test && npm run proof`
 
 **Tests**: integration
 **Gate**: proof

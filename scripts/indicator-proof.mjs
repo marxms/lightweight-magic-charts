@@ -45,16 +45,22 @@ import { indicatorRegistry as registry } from 'lightweight-charts-indicators';
 import { FIXTURE_A, FIXTURE_B, describeFixture } from './indicator-proof/bars.mjs';
 import { candidatesFor, diffResults, senseIndicator } from './indicator-proof/sensor.mjs';
 import { guideFor } from './indicator-proof/guide.mjs';
+import { drawablePlotIds, movesSomethingUndrawn, movesTheDrawing } from './indicator-proof/drawing.mjs';
 import { ASSERTED_BOUNDS, IFT_BOUNDED } from './indicator-proof/taxonomy.mjs';
 import { cases as GOLDEN } from './indicator-proof/golden.mjs';
 import * as counter from './indicator-proof/counter-impl.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
+import { EXCLUSION_MEASUREMENTS, digestOf, settleWithinBars, vendorPin } from './indicator-proof/manifest-shape.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const read = (path) => JSON.parse(readFileSync(join(HERE, path), 'utf8'));
 
-const MANIFEST = read('../example/indicators/manifest.json');
+const CATALOGUE = read('../example/indicators/manifest.json');
+const MANIFEST = CATALOGUE.indicators;
+const FINGERPRINTS = read('../example/indicators/fingerprints.json');
+const RENAMES = read('../example/indicators/renames.json');
+const PACKAGE = read('../package.json');
 const INERT = read('./indicator-proof/INERT_INPUTS.json');
 const DEFECTS = read('./indicator-proof/DEFECT_LEDGER.json');
 
@@ -124,35 +130,6 @@ if (checks.some((c) => !c.ok)) {
   process.exit(2);
 }
 
-/** Does any legal value of this control move a plotted reading or the guide, on either fixture? */
-function movesTheDrawing(entry, declared, fixtures) {
-  const gates = [null, ...(entry.inputConfig ?? []).filter(
-    (i) => i.id !== declared.id && (i.type === 'bool' || (i.type === 'string' && Array.isArray(i.options))),
-  )];
-  for (const bars of fixtures) {
-    for (const gate of gates) {
-      const settings = gate === null ? [undefined] : [entry.defaultInputs[gate.id], ...candidatesFor(gate).slice(0, 4)];
-      for (const value of settings) {
-        const base = gate === null ? { ...entry.defaultInputs } : { ...entry.defaultInputs, [gate.id]: value };
-        let baseline;
-        try { baseline = entry.calculate(bars, base); } catch { continue; }
-        const level = guideFor(entry, baseline);
-        for (const candidate of candidatesFor(declared)) {
-          let probe;
-          try { probe = entry.calculate(bars, { ...base, [declared.id]: candidate }); } catch { continue; }
-          if (diffResults(baseline, probe).value) {
-            return { how: 'a plotted value', gate: gate?.id ?? null, candidate };
-          }
-          if (guideFor(entry, probe) !== level) {
-            return { how: `the guide (${level} -> ${guideFor(entry, probe)})`, gate: gate?.id ?? null, candidate };
-          }
-        }
-      }
-    }
-  }
-  return null;
-}
-
 // ---------------------------------------------------------------------------------------------
 // STAGE 2b — the same predicate, measured in BOTH directions and behind a gate.
 //
@@ -167,14 +144,21 @@ function movesTheDrawing(entry, declared, fixtures) {
 
 {
   const sma = byId.get('sma');
-  const declared = (id) => sma.inputConfig.find((i) => i.id === id);
-  const inert = movesTheDrawing(sma, declared('offset'), [BARS_A]);
-  const active = movesTheDrawing(sma, declared('len'), [BARS_A]);
-  const gated = movesTheDrawing(sma, declared('maLength'), [BARS_A]);
+  const obv = byId.get('obv');
+  const declared = (entry, id) => entry.inputConfig.find((i) => i.id === id);
+  const smaPlots = MANIFEST.find((r) => r.id === 'sma')?.plotIds ?? drawablePlotIds(sma);
+  const obvPlots = MANIFEST.find((r) => r.id === 'obv')?.plotIds ?? drawablePlotIds(obv);
+  const inert = movesTheDrawing(sma, declared(sma, 'offset'), smaPlots, [BARS_A]);
+  const active = movesTheDrawing(sma, declared(sma, 'len'), smaPlots, [BARS_A]);
+  const gated = movesTheDrawing(sma, declared(sma, 'maLength'), smaPlots, [BARS_A]);
+  // THE FOURTH STIMULUS is the one that separates "moves a plot" from "moves the DRAWING", and it
+  // was found by this check disagreeing with an earlier, coarser one: `obv.maLength` moves
+  // `obv.plot1` exactly as `sma.maLength` moves `sma.plot1` — and the vendor declares obv's hidden.
+  const hidden = movesTheDrawing(obv, declared(obv, 'maLength'), obvPlots, [BARS_A]);
   check(
     'sensor.discriminates-in-both-directions',
-    inert === null && active !== null && gated !== null && gated.gate === 'maType',
-    `sma.offset -> ${inert === null ? 'inert' : `MOVED ${inert.how}`} · sma.len -> ${active === null ? 'INERT' : `moves ${active.how}`} · sma.maLength -> ${gated === null ? 'INERT' : `moves ${gated.how} behind ${gated.gate}`}`,
+    inert === null && active !== null && gated !== null && gated.gate === 'maType' && hidden === null,
+    `sma.offset -> ${inert === null ? 'inert' : `MOVED ${inert.how}`} · sma.len -> ${active === null ? 'INERT' : `moves ${active.how.split(' (')[0]}`} · sma.maLength -> ${gated === null ? 'INERT' : `moves ${gated.how.split(' (')[0]} behind ${gated.gate}`} · obv.maLength -> ${hidden === null ? 'moves no DRAWN series, only the plot the vendor hides' : `MOVED ${hidden.how}`}`,
   );
 }
 
@@ -296,7 +280,10 @@ function cross(label, vendorPoints, hostPoints) {
     const declared = entry?.inputConfig?.find((i) => i.id === row.input);
     if (entry === undefined || declared === undefined) { unresolvable.push(`${row.indicator}.${row.input}`); continue; }
     if (typeof row.reason !== 'string' || row.reason.trim().length < 20) reasonless.push(`${row.indicator}.${row.input}`);
-    const moved = movesTheDrawing(entry, declared, [BARS_A, BARS_B]);
+    // COARSE ON PURPOSE, and it is the stronger direction: this counts EVERY plot the vendor
+    // returns, hidden ones included, which is the definition the ledger was built with. An entry
+    // that moves anything at all is a ledger entry that no longer describes the vendor.
+    const moved = movesTheDrawing(entry, declared, Object.keys(entry.plotConfig ?? []).length === 0 ? [] : (entry.plotConfig ?? []).map((c) => c.id), [BARS_A, BARS_B]);
     if (moved !== null) revived.push(`${row.indicator}.${row.input} now moves ${moved.how}${moved.gate ? ` behind ${moved.gate}` : ''} at ${JSON.stringify(moved.candidate)}`);
   }
   check(
@@ -465,23 +452,10 @@ for (const row of MANIFEST) {
       fail(row.id, 'offers-a-known-inert-input', `${input.id} is offered and is in the inert ledger: ${inertKeys.get(key)}`);
       continue;
     }
-    const gate = input.gatedBy ? entry.inputConfig?.find((i) => i.id === input.gatedBy) : null;
-    const settings = gate === null || gate === undefined ? [undefined] : [entry.defaultInputs[gate.id], ...candidatesFor(gate).slice(0, 4)];
-    let moved = false;
-    for (const value of settings) {
-      const base = gate === null || gate === undefined ? { ...entry.defaultInputs } : { ...entry.defaultInputs, [gate.id]: value };
-      let baseline;
-      try { baseline = entry.calculate(BARS_A, base); } catch { continue; }
-      const level = guideFor(entry, baseline);
-      for (const candidate of candidatesFor(declared)) {
-        let probe;
-        try { probe = entry.calculate(BARS_A, { ...base, [input.id]: candidate }); } catch { continue; }
-        if (diffResults(baseline, probe).value || guideFor(entry, probe) !== level) { moved = true; break; }
-      }
-      if (moved) break;
-    }
-    if (!moved) {
-      fail(row.id, 'offered-input-does-not-move-the-drawing', `${input.id} (${input.type}, default ${JSON.stringify(input.defval)})${input.gatedBy ? ` gatedBy ${input.gatedBy}` : ''}: no legal value changed any plotted reading or the guide`);
+    const moved = movesTheDrawing(entry, declared, row.plotIds ?? drawablePlotIds(entry), [BARS_A]);
+    if (moved === null) {
+      const elsewhere = movesSomethingUndrawn(entry, declared, row.plotIds ?? drawablePlotIds(entry), BARS_A);
+      fail(row.id, 'offered-input-does-not-move-the-drawing', `${input.id} (${input.type}, default ${JSON.stringify(input.defval)})${input.gatedBy ? ` gatedBy ${input.gatedBy}` : ''}: no legal value changed a promised plot or the guide${elsewhere === null ? '' : `; it moves ${elsewhere}, which this host does not draw`}`);
     }
   }
 }
@@ -516,21 +490,11 @@ for (const row of MANIFEST) {
       if (offered.has(declared.id)) continue;
       if (inertKeys.has(`${row.id}.${declared.id}`)) { tally.inLedger += 1; continue; }
       if (declared.type === 'color') { tally.colour += 1; continue; }
-      let baseline;
-      try { baseline = entry.calculate(BARS_A, entry.defaultInputs); } catch { continue; }
-      const level = guideFor(entry, baseline);
-      let movesTheDrawn = false;
-      let movesSomething = null;
-      for (const candidate of candidatesFor(declared)) {
-        let probe;
-        try { probe = entry.calculate(BARS_A, { ...entry.defaultInputs, [declared.id]: candidate }); } catch { continue; }
-        const diff = diffResults(baseline, probe);
-        if (diff.value || guideFor(entry, probe) !== level) { movesTheDrawn = true; break; }
-        if (diff.colour && movesSomething === null) movesSomething = 'a per-point colour';
-        if (diff.other && movesSomething === null) movesSomething = diff.other;
-      }
-      if (movesTheDrawn) unexplained.push(`${row.id}.${declared.id} (${declared.type}) MOVES THE DRAWING and is not offered`);
-      else if (movesSomething !== null) tally.undrawnChannel += 1;
+      const promised = row.plotIds ?? drawablePlotIds(entry);
+      const moved = movesTheDrawing(entry, declared, promised, [BARS_A]);
+      if (moved !== null) { unexplained.push(`${row.id}.${declared.id} (${declared.type}) MOVES THE DRAWING — ${moved.how} — and is not offered`); continue; }
+      const elsewhere = movesSomethingUndrawn(entry, declared, promised, BARS_A);
+      if (elsewhere !== null) tally.undrawnChannel += 1;
       else unexplained.push(`${row.id}.${declared.id} (${declared.type}) is inert and absent from the ledger`);
     }
   }
@@ -596,6 +560,93 @@ check(
   Object.keys(seal).length === MANIFEST.length && PINNED.every((id) => seal[id] === 'pinned'),
   `pinned ${tally.pinned} · constrained ${tally.constrained} · structural ${tally.structural} — and the seal is honest about tiers rather than implying that ${MANIFEST.length} indicators are equally verified`,
 );
+
+{
+  const transcribed = CATALOGUE.seal ?? {};
+  const wrongTier = MANIFEST.filter((row) => row.verification !== seal[row.id]).map((row) => `${row.id} says ${row.verification} and measures ${seal[row.id]}`);
+  check(
+    'seal.the-manifest-transcribes-it-rather-than-computing-it',
+    wrongTier.length === 0 && transcribed.pinned === tally.pinned && transcribed.constrained === tally.constrained && transcribed.structural === tally.structural,
+    wrongTier.length === 0 && transcribed.pinned === tally.pinned
+      ? `every offered row carries the tier this run measures, and the manifest's own totals match: ${JSON.stringify(transcribed)}`
+      : `one producer, one consumer — and they disagree: totals ${JSON.stringify(transcribed)} against ${JSON.stringify(tally)}${wrongTier.length === 0 ? '' : `; ${wrongTier.slice(0, 6).join('; ')}`}`,
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// STAGE 10 — THE CATALOGUE CANNOT CHANGE BEHIND THE CHECK.
+//
+// A check that compares ids, plot keys and input shapes is GREEN when a vendor release changes
+// what a number IS — which is the upgrade that matters and the one nobody would notice. So the
+// committed fingerprints are digests of computed VALUES, and they are re-derived here.
+// ---------------------------------------------------------------------------------------------
+
+{
+  // `vendorPin` REFUSES anything that is not `x.y.z`, so a range is caught here rather than three
+  // stages later as a digest that moved for a reason nobody would guess.
+  let declared = null;
+  let refusal = null;
+  try { declared = vendorPin(PACKAGE); } catch (error) { refusal = error.message; }
+  const installed = read('../node_modules/lightweight-charts-indicators/package.json').version;
+  const peerInstalled = read('../node_modules/oakscriptjs/package.json').version;
+  const pinned = CATALOGUE.vendor;
+  check(
+    'catalogue.the-vendor-version-is-pinned-exactly',
+    refusal === null && pinned?.version === declared.version && pinned.version === installed
+      && pinned.peer?.version === declared.peer.version && pinned.peer.version === peerInstalled,
+    refusal !== null
+      ? refusal
+      : pinned?.version === installed && pinned.version === declared.version
+        ? `${declared.name}@${declared.version} and ${declared.peer.name}@${declared.peer.version}, exact in package.json, exact in the manifest, and exactly what is installed — a range would let every digest below move while the check stayed green`
+        : `manifest says ${pinned?.version}/${pinned?.peer?.version}, package.json says ${declared.version}/${declared.peer.version}, installed is ${installed}/${peerInstalled}`,
+  );
+  if (declared === null) declared = { name: 'lightweight-charts-indicators', version: installed, peer: { name: 'oakscriptjs', version: peerInstalled } };
+
+  const drifted = [];
+  const uncovered = [];
+  for (const row of MANIFEST) {
+    const entry = byId.get(row.id);
+    const committed = FINGERPRINTS.entries?.[row.id];
+    if (committed === undefined) { uncovered.push(row.id); continue; }
+    const values = digestOf(entry, row.plotIds, BARS_A);
+    if (values !== committed.values) drifted.push(`${row.id}: committed ${committed.values.slice(0, 12)}… re-derived ${values.slice(0, 12)}…`);
+    const settle = settleWithinBars(entry, row.plotIds, BARS_A);
+    if (settle !== committed.confirmsWithinBars || settle !== row.confirmsWithinBars) {
+      drifted.push(`${row.id}: settles within ${settle} bars, manifest says ${row.confirmsWithinBars}, fingerprints say ${committed.confirmsWithinBars}`);
+    }
+  }
+  const extra = Object.keys(FINGERPRINTS.entries ?? {}).filter((id) => !MANIFEST.some((r) => r.id === id));
+  check(
+    'catalogue.every-fingerprint-re-derives-from-the-VALUES',
+    drifted.length === 0 && uncovered.length === 0 && extra.length === 0,
+    drifted.length === 0 && uncovered.length === 0 && extra.length === 0
+      ? `${MANIFEST.length} digests of computed values re-derived and identical, settle windows included — ${MANIFEST.filter((r) => r.confirmsWithinBars > 0).length} entries restate a closed bar, none by more than ${Math.max(...MANIFEST.map((r) => r.confirmsWithinBars))} bars`
+      : [...drifted, ...uncovered.map((id) => `${id} is offered with no fingerprint`), ...extra.map((id) => `${id} has a fingerprint and is not offered`)].join('; '),
+  );
+
+  const measured = EXCLUSION_MEASUREMENTS(DEFECTS);
+  const named = CATALOGUE.exclusions ?? [];
+  const offeredAnyway = named.filter((x) => MANIFEST.some((r) => r.id === x.id)).map((x) => x.id);
+  const thin = named.filter((x) => typeof x.measurement !== 'string' || x.measurement.length < 60).map((x) => x.id);
+  check(
+    'catalogue.the-definitional-exclusions-are-named-with-their-measurement',
+    named.length === measured.length && offeredAnyway.length === 0 && thin.length === 0
+      && measured.every((x) => named.some((y) => y.id === x.id && y.measurement === x.measurement)),
+    offeredAnyway.length === 0 && thin.length === 0 && named.length === measured.length
+      ? `${named.length} excluded by measurement, each named with it: ${named.map((x) => `${x.id} (${x.class})`).join(', ')}`
+      : `${offeredAnyway.length} excluded-and-offered: ${offeredAnyway.join(', ')}; ${thin.length} without a measurement: ${thin.join(', ')}; manifest names ${named.length} against the ledger's ${measured.length}`,
+  );
+
+  const renames = RENAMES.renames ?? [];
+  const dangling = renames.filter((r) => !MANIFEST.some((row) => row.id === r.to)).map((r) => `${r.from} -> ${r.to}`);
+  check(
+    'catalogue.every-recorded-rename-lands-somewhere-offered',
+    Array.isArray(renames) && dangling.length === 0 && typeof RENAMES.why === 'string',
+    dangling.length === 0
+      ? `${renames.length} recorded rename(s); the generator REFUSES to write while an id has vanished from the library and neither this file nor the defect ledger says why, because it cannot tell a rename from a removal and a host's saved workspace can`
+      : `renamed to an id nothing offers: ${dangling.join(', ')}`,
+  );
+}
 
 const failed = checks.filter((c) => !c.ok);
 console.log(`\nindicator-proof: ${checks.length - failed.length}/${checks.length} passed in ${((Date.now() - started) / 1000).toFixed(1)} s`);

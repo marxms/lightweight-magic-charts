@@ -74,7 +74,7 @@ jobs:
   # to claim.
   #
   # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
-  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 8.5 s on
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 11.2 s on
   # 2026-08-21 against `npm test`'s ~15 s over three Node versions — and none of what it measures
   # varies by Node runtime, only by the vendor version, which `package.json` pins EXACTLY. Paying
   # for it three times would prove the same number three times.
@@ -101,6 +101,12 @@ jobs:
 
       - name: Indicator proof (parameterisation sensor + correctness oracles + manifest)
         run: npm run proof
+
+      # THE COMMITTED CATALOGUE IS THE GENERATOR'S OUTPUT, or it is stale. `--check` derives it
+      # again and writes nothing: an edit by hand, or a vendor release the manifest has not been
+      # regenerated against, fails here rather than being discovered by a visitor.
+      - name: The catalogue is what the generator produces
+        run: node scripts/build-indicator-manifest.mjs --check
 
   # THE ONLY JOB THAT RENDERS A PIXEL. `gate` runs 1198+ cases and none of them mount `example/` —
   # `jest.config.js`'s own docblock explains why `testEnvironment` stays browser-free by default. On
