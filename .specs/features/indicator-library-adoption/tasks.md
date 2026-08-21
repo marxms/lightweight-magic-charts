@@ -710,7 +710,7 @@ T23 → T24 → T25 → T26
 
 ---
 
-### T26: The file a forger edits carries the doctrine that governs it
+### T26: The file a forger edits carries the doctrine that governs it ✅
 
 **What**: Name `value-changes.json` and the refusal in `fingerprints.json`'s own preamble, and correct the sentence that claimed the doctrine was already written there.
 **Where**: `scripts/build-indicator-manifest.mjs`, `example/indicators/fingerprints.json`, `scripts/indicator-proof/value-ledger.mjs`
@@ -723,10 +723,10 @@ T23 → T24 → T25 → T26
 - Skill: NONE
 
 **Done when**:
-- [ ] `grep -c value-changes example/indicators/fingerprints.json` is no longer 0
-- [ ] The preamble is generated, not typed, so it cannot drift from the generator that writes the file
-- [ ] The admission in `value-ledger.mjs` describes the forgery's real cost, one file and the doctrine at its top
-- [ ] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
+- [x] `grep -c value-changes example/indicators/fingerprints.json` is no longer 0
+- [x] The preamble is generated, not typed, so it cannot drift from the generator that writes the file
+- [x] The admission in `value-ledger.mjs` describes the forgery's real cost, one file and the doctrine at its top
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
 
 **Tests**: integration
 **Gate**: proof

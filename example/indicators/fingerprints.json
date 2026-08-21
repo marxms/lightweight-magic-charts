@@ -1,5 +1,6 @@
 {
  "why": "NAMES AND SHAPES ARE NOT ENOUGH. A check that compares ids, plot keys and input shapes stays green when a vendor release changes what a number IS — the upgrade that matters and the one nobody would notice. These are digests of computed VALUES.",
+ "declaredIn": "NOT EDITED BY HAND, AND NOT REGENERATED IN SILENCE EITHER. A digest that moved has to be DECLARED in example/indicators/value-changes.json — the id, the digest it moved from, the digest it moved to and the reason — and until it is, `scripts/build-indicator-manifest.mjs` REFUSES to write and `--check` REFUSES to pass. Deleting an entry is not a way round it: while the committed manifest still offers the id, an absent digest is a proof that vanished, not an indicator that appeared. Typing a number in here to agree with a vendor you patched yourself is the one move this file cannot catch, which is why the sentence you are reading is at the top of the file you would be editing.",
  "algorithm": "sha256 over `plotId:index:value` for every finite reading of every promised plot, at the entry's own defaults, over the fixture named in the manifest",
  "vendor": {
   "name": "lightweight-charts-indicators",

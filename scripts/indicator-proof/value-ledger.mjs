@@ -31,12 +31,13 @@
  * and needs no declaration.
  *
  * It does NOT make a hand-forged `fingerprints.json` impossible — a digest typed in by hand to match
- * a hand-patched vendor agrees with itself — and it does not stop an editor who deletes the
- * indicator from the manifest AND the fingerprints in the same edit, which offers it back as new at
- * the cost of moving a whole catalogue entry in the diff. Both are hand-edited artefacts against the
- * doctrine written at the top of the file being edited, visible as such in a diff, and they are the
- * same trust boundary `renames.json` and `size-budget.json` already sit on. Overclaiming here would
- * be the defect this file exists to catch.
+ * a hand-patched vendor agrees with itself, and in a repository diff exactly ONE committed file
+ * moves. What that costs is the doctrine at the top of the file being edited, which names this rule
+ * and the declaration it wants, and a reviewer reading a digest change with nothing beside it. The
+ * same holds for deleting the indicator from the manifest AND the fingerprints in one edit, which
+ * offers it back as new at the price of moving a whole catalogue entry. Both are the trust boundary
+ * `renames.json` and `size-budget.json` already sit on. Overclaiming here would be the defect this
+ * file exists to catch.
  */
 
 /** A digest is a sha256 in lower-case hex, and anything else is a typo before it is a declaration. */
