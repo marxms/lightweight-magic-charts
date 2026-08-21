@@ -1,0 +1,206 @@
+# Indicator render fidelity: what the vendor emits is what the chart draws
+
+## Problem Statement
+
+The adopted catalogue offers 320 indicators and draws **121 of them canonically**. The other 199 are
+amputated in silence: 108 lose their fills, 77 lose their markers, 52 lose their per-bar colouring, and
+89 have plots truncated by a lane ceiling of three. The Ichimoku Cloud is the visible case — five plots
+become three, and the two that fall are exactly the Kumo boundaries, so the cloud that IS the indicator
+never appears.
+
+The previous feature's proof passed all 320 because it verifies the vendor→domain conversion and never
+the domain→screen rendering. The manifest records every drop honestly; nothing fails on them.
+
+The owner's requirement is one sentence: **be canonical to the reference implementation in every case.**
+What the vendor's own demo draws, this demo draws.
+
+## Goals
+
+- [ ] Every indicator the catalogue offers draws every channel the vendor emits for it — measured against the manifest, not asserted
+- [ ] No plot is truncated: a study's line count comes from the study, not from one number the host wrote for all of them
+- [ ] The proof fails when any emitted channel is dropped, so a silent amputation cannot pass again
+- [ ] `src/` gains no third-party byte and no business word; the arithmetic and the vocabulary stay in the host
+
+## Out of Scope
+
+| Feature | Reason |
+| --- | --- |
+| Widening `SeriesShape` for bands | `lightweight-charts` has no band-between-two-lines series, so a shape would have to be faked anyway. The published overlay seam already draws on the canvas with a price→pixel projection, and `DensityFieldOverlay` and `TroughProfileOverlay` are its living precedents |
+| Re-deriving any vendor arithmetic | Measured at ~1e-13 against this repo's own hand-written implementations. The numbers are not the defect; the rendering is |
+| Raising `PROVISIONAL_ENTRY_LIMIT` | Never raised, not raised here. Growth is paid for with measured shrinkage, one candidate per re-pin |
+| Rendering channels the vendor does not emit | Fidelity means matching the reference, not exceeding it |
+
+---
+
+## Assumptions & Open Questions
+
+| Assumption / decision | Chosen default | Rationale | Confirmed? |
+| --- | --- | --- | --- |
+| What "canonical" means | What the vendor's own demo draws, this demo draws | Owner's words, emphatic: in every case | y |
+| Where a fill is drawn | An overlay the host attaches, not a new series shape | The base library has no band series; the overlay seam is published, tested, and keeps the vocabulary in the host | n |
+| Where markers are drawn | Through `SeriesHandle.setMarkers?`, already on the port | The port already carries the door and its docblock already says an adapter has to add the plugin. 77 indicators sit behind a door nobody opened | n |
+| How a study declares its line count | From the manifest, per study | Measured distribution runs 1 to 56 plots; one number for all of them truncates 89 | n |
+| Per-bar colour | The domain carries it per point | `Point` has no colour and `SeriesSpec.color` is one colour for the whole series, so 45,209 emitted colours have nowhere to land | n |
+| Order of work | fills, then line count, then markers, then bar colours, then the rest | By indicator count affected: 108, 89, 77, 52, 34 | y |
+| Input validation & bounds | N/A because this feature renders what the previous one already validated and stored | The channels arrive from the vendor through an adapter whose narrowing is already asserted | n |
+| Failure / partial-failure states | An indicator whose channel cannot be drawn is not offered | The whole point: a partial draw is the defect being removed | n |
+| Idempotency / retry | N/A because rendering is a pure function of bars, settings and the vendor result | Nothing here crosses a network or retains state between draws | n |
+| Auth boundaries & rate limits | N/A because this feature adds no callable surface and no network call | Rendering only | n |
+| Concurrency / ordering | Overlays draw after the series they annotate, and z-order is declared | The overlay seam already carries `zOrder` and `BaseZOrder` | n |
+| Data lifecycle / expiry | N/A because nothing new is persisted | Values persist through the previous feature's channel, unchanged | n |
+| Observability | N/A because the package emits no telemetry by contract | An undrawable indicator is refused at manifest time, which is louder than a log | n |
+| External-dependency failure | Unchanged from the previous feature: the library loads on demand and a failure mounts an empty catalogue | Already asserted | n |
+| State-transition integrity | Changing a parameter redraws every channel, not only the plots | A fill that keeps the old bounds after an edit is a new way to lie | n |
+
+**Open questions:** none — all resolved or logged above.
+
+---
+
+## User Stories
+
+### P1: The cloud that is the indicator gets drawn ⭐ MVP
+
+**User Story**: As a user, I want the Ichimoku Kumo and the Bollinger band to be filled, so that the
+indicator on my screen is the indicator its name promises.
+
+**Why P1**: 108 of 320 offered indicators drop a fill, and the fill is the reading for the most-used
+of them.
+
+**Acceptance Criteria**:
+
+1. WHEN an offered indicator emits a fill between two of its plots THEN the chart SHALL draw that fill between those two drawn lines  <!-- event-driven -->
+2. WHEN a fill's bound is a constant level rather than a plot THEN the chart SHALL draw the fill against that level  <!-- event-driven -->
+3. The fill SHALL be drawn beneath the lines it spans, so a boundary is never hidden by its own shading  <!-- ubiquitous -->
+4. WHEN a parameter that moves a fill's bounds is edited THEN the fill SHALL be redrawn against the new bounds in the same frame as the lines  <!-- event-driven -->
+5. IF a fill's bounds cannot both be resolved THEN that indicator SHALL NOT be offered, rather than being drawn without it  <!-- unwanted-behavior -->
+
+**Independent Test**: Offer Ichimoku, read the canvas where the Kumo sits between Leading Span A and B, and assert the shading is present and bounded by the two lines; edit the Leading Span B length and assert the shaded region moves.
+
+---
+
+### P1: A study's line count is the study's, not the host's ⭐ MVP
+
+**User Story**: As a user, I want every line an indicator computes to be drawn, so that a five-line
+indicator is not silently a three-line one.
+
+**Why P1**: 89 of 320 have more than three plots and are cut by one number the host wrote for all of
+them. The measured distribution runs from 1 to 56.
+
+**Acceptance Criteria**:
+
+1. WHEN a study declares more lines than the host's default lane width THEN the workspace SHALL draw every one of them  <!-- event-driven -->
+2. The package SHALL take a study's line count from that study rather than from a single value applied to all studies  <!-- ubiquitous -->
+3. WHEN a study is drawn THEN the number of lines on screen SHALL equal the number its manifest row declares  <!-- event-driven -->
+4. IF a study's lines cannot all be drawn THEN it SHALL NOT be offered  <!-- unwanted-behavior -->
+
+**Independent Test**: Offer Ichimoku and assert five drawn lines, not three; offer the 56-plot entry and assert 56.
+
+---
+
+### P2: The marks the vendor emits reach the bars
+
+**User Story**: As a user, I want the arrows and dots an indicator places on bars, so that a signal
+indicator signals.
+
+**Why P2**: 77 indicators emit 11,531 markers and the port already carries `setMarkers?` with a
+docblock saying an adapter has to add the plugin. The door exists and nobody opened it.
+
+**Acceptance Criteria**:
+
+1. WHEN an offered indicator emits markers THEN the chart SHALL place them on the bars they name  <!-- event-driven -->
+2. WHERE the host's engine does not implement the optional marker door the workspace SHALL draw the study's lines and offer no markers, rather than failing to draw  <!-- optional-feature -->
+
+**Independent Test**: Offer a marker-emitting indicator and assert the marker count on screen matches the count the manifest declares.
+
+---
+
+### P2: A bar the indicator colours is coloured
+
+**User Story**: As a user, I want per-bar colouring to survive, so that an indicator whose whole output
+is the colour of the candle is not invisible.
+
+**Why P2**: 52 indicators emit 45,209 bar colours. `Point` carries no colour and `SeriesSpec.color` is
+one colour for a whole series, so they have nowhere to land.
+
+**Acceptance Criteria**:
+
+1. WHEN an offered indicator emits a colour for a bar THEN the chart SHALL draw that bar in that colour  <!-- event-driven -->
+2. The colour a point carries SHALL NOT change what the point means: a point with no value stays a declared gap  <!-- ubiquitous -->
+
+**Independent Test**: Offer a bar-colouring indicator, read the canvas at a bar the manifest says is coloured, and assert the colour matches.
+
+---
+
+### P3: The remaining channels
+
+**User Story**: As a user, I want background shading, labels, drawn lines and boxes to appear, so that
+the last 34 indicators are whole too.
+
+**Acceptance Criteria**:
+
+1. WHEN an offered indicator emits background shading, a label, a line or a box THEN the chart SHALL draw it  <!-- event-driven -->
+
+---
+
+### P1: A silent drop cannot pass the proof again ⭐ MVP
+
+**User Story**: As the maintainer, I want the proof to fail when a channel is dropped, so that the
+gap that let 199 amputated indicators pass 320/320 cannot reopen.
+
+**Why P1**: The proof verified vendor→domain and never domain→screen. Every drop was recorded honestly
+in the manifest and nothing failed on it.
+
+**Acceptance Criteria**:
+
+1. WHEN the manifest records a dropped channel for an offered indicator THEN the proof SHALL fail, naming the indicator and the channel  <!-- event-driven -->
+2. WHEN an offered indicator is drawn THEN the proof SHALL assert that each channel the vendor emitted for it is present in the drawn result  <!-- event-driven -->
+3. The proof SHALL assert the above against a synthetic dropped channel, so the clause discriminates rather than passing over an empty set  <!-- ubiquitous -->
+
+**Independent Test**: Plant a dropped fill on an offered row and assert the proof turns red naming it.
+
+---
+
+## Edge Cases
+
+- IF a fill bound resolves to a non-finite value on some bars THEN the fill SHALL be interrupted there rather than spanning the gap
+- WHEN a study with more lines than the lane can show is drawn THEN the lane SHALL grow rather than the study being cut
+- IF two overlays claim the same z-order THEN the order SHALL be stable across redraws
+- WHEN an indicator emits a marker on a bar outside the loaded window THEN that marker SHALL be dropped without affecting the rest
+- WHEN the entry bundle is measured after this feature THEN it SHALL remain below `PROVISIONAL_ENTRY_LIMIT`
+
+---
+
+## Requirement Traceability
+
+| Requirement ID | Story | Tasks | Status |
+| --- | --- | --- | --- |
+| FILL-01 | P1: The cloud that is the indicator | - | Pending |
+| FILL-02 | P1: The cloud that is the indicator | - | Pending |
+| FILL-03 | P1: The cloud that is the indicator | - | Pending |
+| FILL-04 | P1: The cloud that is the indicator | - | Pending |
+| FILL-05 | P1: The cloud that is the indicator | - | Pending |
+| LINES-01 | P1: A study's line count is the study's | - | Pending |
+| LINES-02 | P1: A study's line count is the study's | - | Pending |
+| LINES-03 | P1: A study's line count is the study's | - | Pending |
+| LINES-04 | P1: A study's line count is the study's | - | Pending |
+| PROOF-01 | P1: A silent drop cannot pass again | - | Pending |
+| PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
+| PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
+| MARK-01 | P2: The marks reach the bars | - | Pending |
+| MARK-02 | P2: The marks reach the bars | - | Pending |
+| BAR-01 | P2: A bar the indicator colours | - | Pending |
+| BAR-02 | P2: A bar the indicator colours | - | Pending |
+| REST-01 | P3: The remaining channels | - | Pending |
+
+**Coverage:** 17 total, 0 mapped to tasks, 17 unmapped ⚠️ (Tasks phase not yet run)
+
+---
+
+## Success Criteria
+
+- [ ] The manifest records zero dropped channels for every offered indicator
+- [ ] Ichimoku draws five lines and a filled Kumo, and editing Leading Span B moves both
+- [ ] The proof turns red when a channel is planted as dropped
+- [ ] `node scripts/size-gate.mjs` exits 0 with the entry below the untouched provisional ceiling
+- [ ] `package.json` still declares zero runtime dependencies and exactly two peers
+- [ ] `npm test`, `npm run e2e` and `npm run proof` all green
