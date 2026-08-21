@@ -114,13 +114,19 @@ const SYMBOLS_AT_CUTOVER = 13;
  * the crosshair follows the magnet, so the pointer and the anchor stop disagreeing. Net of 90 B
  * this feature's own modules gave back, measured one candidate at a time — the deltas are in the
  * budget's entry note. `PROVISIONAL_ENTRY_LIMIT` is untouched and the entry sits 21 B under it.
+ * RE-PINNED DOWN 2026-08-20, entry 104973 -> 104654 (-319 B) and ChartWorkspace 95702 -> 95383
+ * (-319 B): the four "was called outside" diagnostics became one factory. Each of the four contexts
+ * carried the whole sentence plus its own tail arguing why a filled default is refused; the tails
+ * are one document section now and the sentence is a template read four times. Both rows move by
+ * the same number because all four doors are reachable from the composed root. Measured as ONE
+ * candidate on a zero-slack row, so the limit descends with the measurement.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104973,
+  '*': 104654,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -133,7 +139,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95702,
+  ChartWorkspace: 95383,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

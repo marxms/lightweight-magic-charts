@@ -164,6 +164,15 @@ const decimal = (locale: string | undefined, value: number, digits: number): str
  */
 export const DEFAULT_MAGNET_LABEL = 'Magnet';
 
+/**
+ * THE ONE SENTENCE FOR A HOOK MOUNTED OUTSIDE ITS PROVIDER — a diagnostic, not a label.
+ *
+ * Four contexts each spelled it their own way, and one rule in four places is four to keep in step.
+ * See docs/explanation/react-workspace.md#the-rail-throws-outside-its-provider
+ */
+export const outsideProvider = (hook: string, provider: string): string =>
+  `${hook} was called outside ${provider}. Mount the provider above the regions that read it.`;
+
 export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
   return {
     dismiss: 'Dismiss',

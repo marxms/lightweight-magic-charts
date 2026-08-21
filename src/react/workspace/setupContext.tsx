@@ -6,6 +6,7 @@ import { createContext, memo, useContext, useEffect, useMemo, useRef, useSyncExt
 import type { ReactElement, ReactNode } from 'react';
 
 import type { WorkspaceSetup } from '../../tabs/setup';
+import { outsideProvider } from '../chrome/labels';
 
 interface WorkspaceSetupStore {
   subscribe(listener: () => void): () => void;
@@ -72,10 +73,7 @@ export const WorkspaceSetupProvider = memo(function WorkspaceSetupProvider({
 export function useWorkspaceSetup<T>(select: (setup: WorkspaceSetup) => T): T {
   const store = useContext(WorkspaceSetupContext);
   if (store === null) {
-    throw new Error(
-      'useWorkspaceSetup was called outside WorkspaceSetupProvider. Mount the provider above the ' +
-        'regions: a filled default would hide the wrong mounting until the screen looked strange.',
-    );
+    throw new Error(outsideProvider('useWorkspaceSetup', 'WorkspaceSetupProvider'));
   }
   const read = (): T => select(store.read());
   return useSyncExternalStore(store.subscribe, read, read);
@@ -85,10 +83,7 @@ export function useWorkspaceSetup<T>(select: (setup: WorkspaceSetup) => T): T {
 export function useWorkspaceSetupWriter(): (patch: Partial<WorkspaceSetup>) => void {
   const store = useContext(WorkspaceSetupContext);
   if (store === null) {
-    throw new Error(
-      'useWorkspaceSetupWriter was called outside WorkspaceSetupProvider. Mount the provider above ' +
-        'the regions: a no-op default would make a live control look broken.',
-    );
+    throw new Error(outsideProvider('useWorkspaceSetupWriter', 'WorkspaceSetupProvider'));
   }
   return store.write;
 }

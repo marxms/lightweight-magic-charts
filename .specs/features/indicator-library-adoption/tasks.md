@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1, T2 done
+**Status**: In progress — T1, T2, T3 done
 
 ---
 
@@ -149,7 +149,7 @@ T15 → T16 → T17
 
 ---
 
-### T3: One sentence for every hook mounted outside its provider
+### T3: One sentence for every hook mounted outside its provider ✅
 
 **What**: Collapse the four near-identical "was called outside" diagnostics into one exported factory, and give that throw path the discriminating test it never had.
 **Where**: `src/react/chrome/labels.ts`
@@ -162,10 +162,10 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] All four call sites read from the factory; no sentence is written twice
-- [ ] A test mounts each hook outside its provider and asserts it throws with the provider named — none existed before
-- [ ] `size-budget.json` re-pinned DOWN with the measured number and a written reason
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] All four call sites read from the factory; no sentence is written twice
+- [x] A test mounts each hook outside its provider and asserts it throws with the provider named — none existed before
+- [x] `size-budget.json` re-pinned DOWN with the measured number and a written reason
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
