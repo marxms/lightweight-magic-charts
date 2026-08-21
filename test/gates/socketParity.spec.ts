@@ -83,6 +83,8 @@ const BASELINE: readonly string[] = [];
  * this site, which is a finding and not a pass.
  */
 const UNDECIDABLE: Readonly<Record<string, string>> = {
+  'WorkspaceSetupProvider.setup.*':
+    'the setup is ONE value held whole — `tabs.tabs[active].setup`, produced by `coerceWorkspaceSetup` and never written field by field at this call site — and from the per-study settings map onward it carries an OPTIONAL member, which is exactly what makes a non-literal group unreadable here. The blindness is the honest reading: there is no socket at this seam, because the only writer is the coercion, and every field of it is asserted in `test/workspaceSetup.spec.ts` and `test/studySettings.spec.ts`',
   'DrawingRailProvider.vocabulary.*':
     'the vocabulary is the HOST own value, taken whole or defaulted whole (`drawing.vocabulary ?? NO_TOOLS`); this composition never writes it field by field, so there is no call site here to read',
   'WorkspaceBody.of.*':

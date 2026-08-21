@@ -12,6 +12,9 @@ import type { TabsState, WorkspaceTab } from './workspaceTabs';
 
 export type WorkspaceLayoutMode = 'foco' | 'grade';
 
+/** A parameter value the host wrote, stored and NEVER read here. See docs/explanation/tabs.md#the-coercion-gate */
+export type StudySettings = unknown;
+
 /** The one mode that is not the default. See docs/explanation/tabs.md#mode-values-are-a-wire-format */
 const GRID_MODE: WorkspaceLayoutMode = 'grade';
 
@@ -31,6 +34,7 @@ export interface WorkspaceSetup {
   readonly indicators: readonly string[];
   /** series -> shape. */
   readonly seriesStyles: Readonly<Record<string, string>>;
+  readonly studySettings?: Readonly<Record<string, StudySettings>>;
 }
 
 /** Everything the coercion needs that this package cannot know. No field has a default here. */
@@ -47,6 +51,11 @@ export interface WorkspaceSetupPolicy {
   /** INJECTED: reading an indicator list is a MIGRATION question, and migration is the host's.
    * See docs/explanation/tabs.md#why-this-is-not-generic */
   readonly coerceIndicators: (raw: unknown, legacy: unknown) => readonly string[];
+  /** SIBLING of the above: reading a parameter VALUE names the host's business, so the host reads it. */
+  readonly coerceStudySettings?: (
+    raw: unknown,
+    indicators: readonly string[],
+  ) => Readonly<Record<string, StudySettings>>;
 }
 
 /** One study moved by one position, or the SAME list when the move has nowhere to land.
@@ -66,6 +75,19 @@ export function movedIndicator(
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+/** Values for the studies that ARE in the list, read as OWN properties only — `in` fabricates one. */
+const onlyActive = (
+  raw: unknown,
+  indicators: readonly string[],
+): Readonly<Record<string, StudySettings>> | undefined => {
+  const source = asRecord(raw);
+  const kept: Record<string, StudySettings> = {};
+  for (const id of indicators) {
+    if (Object.prototype.hasOwnProperty.call(source, id)) kept[id] = source[id];
+  }
+  return Object.keys(kept).length === 0 ? undefined : kept;
+};
 
 const asFiniteNumber = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -128,6 +150,8 @@ export function coerceWorkspaceSetup(raw: unknown, policy: WorkspaceSetupPolicy)
     if (typeof value === 'string') seriesStyles[key] = value;
   }
 
+  const indicators = policy.coerceIndicators(item.indicators, item.slots);
+
   return {
     timeframe:
       savedTimeframe !== null && policy.servedTimeframes.includes(savedTimeframe)
@@ -149,8 +173,12 @@ export function coerceWorkspaceSetup(raw: unknown, policy: WorkspaceSetupPolicy)
     showProfile: item.showProfile === true,
     autoFit: item.autoFit === true,
     // NOTE WHAT IS ABSENT: no field naming a market. See docs/explanation/tabs.md#the-coercion-gate
-    indicators: policy.coerceIndicators(item.indicators, item.slots),
+    indicators,
     seriesStyles,
+    studySettings: onlyActive(
+      policy.coerceStudySettings?.(item.studySettings, indicators) ?? item.studySettings,
+      indicators,
+    ),
   };
 }
 

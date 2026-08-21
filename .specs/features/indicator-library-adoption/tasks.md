@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T6 done (phases 1-3)
+**Status**: In progress — T1..T7 done (phases 1-3, phase 4 started)
 
 ---
 
@@ -241,7 +241,7 @@ T15 → T16 → T17
 
 ---
 
-### T7: The tab holds values it never reads
+### T7: The tab holds values it never reads ✅
 
 **What**: Add `StudySettings = unknown`, the optional `studySettings` map on the setup, the optional `coerceStudySettings` sibling, and own-property-only pruning that passes values through when the policy declares nothing.
 **Where**: `src/tabs/setup.ts`
@@ -254,12 +254,12 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] Key pruning uses `Object.hasOwn`; a test asserts a study whose key exists only on the prototype chain yields NO value
-- [ ] With `coerceStudySettings` absent, values pass through key-pruned rather than being emptied
-- [ ] A pre-feature payload loads with no error, no version bump, and empty values
-- [ ] Values for a study no longer in the list are dropped
-- [ ] The `socketParity` blindness ledger is updated in the same commit
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] Key pruning reads OWN properties only; a test asserts a study whose key exists only on the prototype chain yields NO value — `Object.prototype.hasOwnProperty.call`, because `Object.hasOwn` is ES2022 and this package declares `lib: ES2021`
+- [x] With `coerceStudySettings` absent, values pass through key-pruned rather than being emptied
+- [x] A pre-feature payload loads with no error, no version bump, and empty values
+- [x] Values for a study no longer in the list are dropped
+- [x] The `socketParity` blindness ledger is updated in the same commit
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
