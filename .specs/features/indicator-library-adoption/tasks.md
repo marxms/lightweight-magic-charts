@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: Draft
+**Status**: In progress — T1 done
 
 ---
 
@@ -99,7 +99,7 @@ T15 → T16 → T17
 
 ## Task Breakdown
 
-### T1: The import guard fails closed
+### T1: The import guard fails closed ✅
 
 **What**: Teach `importsOf` to capture `import()` and to report any module reference it cannot read as a literal.
 **Where**: `test/boundary.spec.ts`
@@ -112,12 +112,12 @@ T15 → T16 → T17
 - Skill: NONE
 
 **Done when**:
-- [ ] A dynamic import of a bare specifier is captured with kind `runtime` and judged by the same allow-lists as a static one
-- [ ] A non-literal reference — template literal, identifier, concatenation — is itself reported, for `import()` and `require()` alike
-- [ ] Synthetic positive controls assert BOTH directions: the banned name is reported, a relative dynamic import is not
-- [ ] `grep -rn "import(" src/` still returns nothing, so no existing source changes meaning
-- [ ] Gate check passes: `npm test`
-- [ ] Test count recorded, no suite deleted
+- [x] A dynamic import of a bare specifier is captured with kind `runtime` and judged by the same allow-lists as a static one
+- [x] A non-literal reference — template literal, identifier, concatenation — is itself reported, for `import()` and `require()` alike
+- [x] Synthetic positive controls assert BOTH directions: the banned name is reported, a relative dynamic import is not
+- [x] `grep -rn "import(" src/` still returns nothing, so no existing source changes meaning
+- [x] Gate check passes: `npm test`
+- [x] Test count recorded, no suite deleted
 
 **Tests**: unit
 **Gate**: quick

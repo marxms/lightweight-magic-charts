@@ -264,49 +264,53 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 
 ## Requirement Traceability
 
-| Requirement ID | Story | Phase | Status |
+| Requirement ID | Story | Tasks | Status |
 | --- | --- | --- | --- |
-| GATE-01 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| GATE-02 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| GATE-03 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| GATE-04 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| GATE-05 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| GATE-06 | P1: Boundary gate sees a dynamic import | Design | Pending |
-| IDENT-01 | P1: A study is identified by something not on screen | Design | Pending |
-| IDENT-02 | P1: A study is identified by something not on screen | Design | Pending |
-| IDENT-03 | P1: A study is identified by something not on screen | Design | Pending |
-| IDENT-04 | P1: A study is identified by something not on screen | Design | Pending |
-| PARAM-01 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-02 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-03 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-04 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-05 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-06 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-07 | P1: Parameters survive the tab | Design | Pending |
-| PARAM-08 | P1: Parameters survive the tab | Design | Pending |
-| ADAPT-01 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-02 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-03 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-04 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-05 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-06 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-07 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-08 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-09 | P1: Host draws the form, library draws the study | Design | Pending |
-| ADAPT-10 | P1: Host draws the form, library draws the study | Design | Pending |
-| LANE-01 | P2: A study that did not fit says so | - | Pending |
-| LANE-02 | P2: A study that did not fit says so | - | Pending |
-| LANE-03 | P2: A study that did not fit says so | - | Pending |
-| DEMO-01 | P2: Example demonstrates the library | - | Pending |
-| DEMO-02 | P2: Example demonstrates the library | - | Pending |
-| DEMO-03 | P2: Example demonstrates the library | - | Pending |
-| DEMO-04 | P2: Example demonstrates the library | - | Pending |
-| DOC-01 | P2: The wiring is documented | - | Pending |
-| DOC-02 | P2: The wiring is documented | - | Pending |
-| APP-01 | P3: Consuming application | - | Pending |
-| APP-02 | P3: Consuming application | - | Pending |
+| GATE-01 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| GATE-02 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| GATE-03 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| GATE-04 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| GATE-05 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| GATE-06 | P1: Boundary gate sees a dynamic import | T1 | Done |
+| IDENT-01 | P1: A study is identified by something not on screen | T5 | Pending |
+| IDENT-02 | P1: A study is identified by something not on screen | T5 | Pending |
+| IDENT-03 | P1: A study is identified by something not on screen | T5 | Pending |
+| IDENT-04 | P1: A study is identified by something not on screen | T6 | Pending |
+| PARAM-01 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-02 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-03 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-04 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-05 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-06 | P1: Parameters survive the tab | T7 | Pending |
+| PARAM-07 | P1: Parameters survive the tab | T8, T9 | Pending |
+| PARAM-08 | P1: Parameters survive the tab | — | Pending |
+| ADAPT-01 | P1: Host draws the form, library draws the study | T13 | Pending |
+| ADAPT-02 | P1: Host draws the form, library draws the study | T13 | Pending |
+| ADAPT-03 | P1: Host draws the form, library draws the study | T13 | Pending |
+| ADAPT-04 | P1: Host draws the form, library draws the study | T11, T14 | Pending |
+| ADAPT-05 | P1: Host draws the form, library draws the study | T13 | Pending |
+| ADAPT-06 | P1: Host draws the form, library draws the study | T8 | Pending |
+| ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Pending |
+| ADAPT-08 | P1: Host draws the form, library draws the study | T11 | Pending |
+| ADAPT-09 | P1: Host draws the form, library draws the study | T12 | Pending |
+| ADAPT-10 | P1: Host draws the form, library draws the study | T12 | Pending |
+| LANE-01 | P2: A study that did not fit says so | T17 | Pending |
+| LANE-02 | P2: A study that did not fit says so | T16 | Pending |
+| LANE-03 | P2: A study that did not fit says so | T17 | Pending |
+| DEMO-01 | P2: Example demonstrates the library | T10, T15 | Pending |
+| DEMO-02 | P2: Example demonstrates the library | T14, T16 | Pending |
+| DEMO-03 | P2: Example demonstrates the library | T15, T17 | Pending |
+| DEMO-04 | P2: Example demonstrates the library | T15 | Pending |
+| DOC-01 | P2: The wiring is documented | T17 | Pending |
+| DOC-02 | P2: The wiring is documented | T17 | Pending |
+| APP-01 | P3: Consuming application | — | Pending |
+| APP-02 | P3: Consuming application | T10 | Pending |
 
-**Coverage:** 39 total, 0 mapped to tasks, 39 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 6 Done (GATE-01..06). The two unmapped rows
+are recorded rather than assigned: `APP-01` is the consuming application's own manifest and lives
+outside this repository, so no task here can carry it; `PARAM-08` is not named by any task, because
+`tasks.md` spells the eighth criterion of that story `PARAM-3a` — the table numbers the story's ACs
+01..08 and the story itself numbers them 1..3, 3a, 4..7. The two spellings are the same requirement.
 
 ---
 

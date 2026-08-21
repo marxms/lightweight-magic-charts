@@ -33,6 +33,18 @@ interface ImportRef {
 }
 
 /**
+ * WHAT THE GUARD REPORTS WHEN IT CANNOT READ THE REFERENCE (GATE-05, GATE-06).
+ *
+ * Every clause below asks a question of a specifier: is it a peer, is it relative, does the layer
+ * rule admit it. A reference written as `import(name)` or `require(`${base}/x`)` answers none of
+ * them, and the old predicate resolved that by staying silent — which clears the import. This
+ * placeholder is the opposite default: it starts with no dot, so it is never relative; it is not a
+ * declared peer, so the allowlist refuses it; and it matches no layer's `allow`, so every layer
+ * refuses it too. One value, and the guard fails closed everywhere at once.
+ */
+const UNREADABLE_SPECIFIER = '<unreadable module reference>';
+
+/**
  * THE PARSER, NOT A REGEX (LMC-50).
  *
  * The regex this replaces read `from '…'` out of comment-stripped text. It got the specifier right
@@ -70,19 +82,32 @@ function importsOf(source: Source): ImportRef[] {
         specifier: node.moduleSpecifier.text,
         kind: node.isTypeOnly ? 'type' : 'runtime',
       });
-    } else if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === 'require' &&
-      node.arguments.length > 0 &&
-      ts.isStringLiteral(node.arguments[0])
-    ) {
-      found.push({ specifier: (node.arguments[0] as ts.StringLiteral).text, kind: 'runtime' });
+    } else if (isModuleReferenceCall(node)) {
+      found.push({ specifier: moduleReferenceOf(node), kind: 'runtime' });
     }
     ts.forEachChild(node, visit);
   };
   visit(parsed);
   return found;
+}
+
+/**
+ * THE TWO FORMS THAT NAME A MODULE THROUGH A CALL, ASKED AS ONE QUESTION.
+ *
+ * `require(x)` was already read; `import(x)` was not, because its callee is an `ImportKeyword` and
+ * the branch demanded an identifier. Both survive the compiler, both hand the consumer real bytes,
+ * and both are therefore `runtime` — so they answer to one predicate rather than to two that drift.
+ */
+function isModuleReferenceCall(node: ts.Node): node is ts.CallExpression {
+  if (!ts.isCallExpression(node)) return false;
+  if (node.expression.kind === ts.SyntaxKind.ImportKeyword) return true;
+  return ts.isIdentifier(node.expression) && node.expression.text === 'require';
+}
+
+/** The literal the call names, or the placeholder that no allow-list clears. */
+function moduleReferenceOf(node: ts.CallExpression): string {
+  const first = node.arguments[0];
+  return first !== undefined && ts.isStringLiteral(first) ? first.text : UNREADABLE_SPECIFIER;
 }
 
 function kindOfImport(clause: ts.ImportClause | undefined): ImportKind {
@@ -527,6 +552,15 @@ describe('task 3.2 — boundary guard: the library cannot reach into the app', (
       ["drawing/x.ts -> lightweight-charts-drawing"],
     );
     expect(hits([synthetic('drawing/x.ts', "import type { Tool } from './neighbour';")])).toEqual([]);
+
+    // AND THE DYNAMIC FORM, WHICH THE GUARD USED TO WALK STRAIGHT PAST. `await import('…')` is a
+    // `CallExpression` whose callee is an `ImportKeyword`, not an identifier, so the sweep that
+    // catches `require` returned nothing for it — and deferring the megabyte off the boot path is
+    // exactly the shape a host reaches for. Both directions, judged by the predicate above.
+    expect(
+      hits([synthetic('drawing/x.ts', "const m = await import('lightweight-charts-indicators');")]),
+    ).toEqual(['drawing/x.ts -> lightweight-charts-indicators']);
+    expect(hits([synthetic('drawing/x.ts', "const m = await import('./neighbour');")])).toEqual([]);
     expect(violations).toEqual([]);
   });
 
@@ -628,6 +662,64 @@ describe('task 3.2 — boundary guard: the library cannot reach into the app', (
     expect(measuredImpurity(synthetic('synthetic/required.ts', "const r = require('react');"))).toBe(
       'runtime',
     );
+  });
+
+  it('judges a dynamic import by the same allow-lists, and fails CLOSED on one it cannot read', () => {
+    // THE HOLE, AND WHY IT MATTERS NOW. `importsOf` read a static import, a re-export and a
+    // `require`, and returned NOTHING for `await import('…')` — the `CallExpression` branch demanded
+    // `ts.isIdentifier(node.expression)` and the callee of a dynamic import is an `ImportKeyword`.
+    // With a third-party catalogue entering the host, this predicate is the only thing standing
+    // between a megabyte and `src/`, and deferring that megabyte is precisely what `import()` is for.
+    //
+    // `grep -rn "import(" src/` returns nothing today, so widening the reader changes the meaning of
+    // no existing source: every assertion below is synthetic on purpose.
+
+    // DIRECTION 1 — a dynamic bare specifier is a runtime import, and is judged by the very
+    // allow-lists that judge a static one: the per-file purity declaration and the layer rule.
+    expect(measuredImpurity(synthetic('synthetic/dynamic.ts', "const m = await import('react');"))).toBe(
+      'runtime',
+    );
+    expect(layerViolations([synthetic('tabs/x.ts', "const m = await import('react');")])).toEqual([
+      'FAIL tabs/x.ts :: import outside the layer rule -> react',
+    ]);
+
+    // DIRECTION 2 — the relative dynamic import next door is NOT a violation. Without this half the
+    // clause above would be satisfied by a predicate that reports everything.
+    expect(
+      measuredImpurity(synthetic('synthetic/dynamicRelative.ts', "const m = await import('./neighbour');")),
+    ).toBeUndefined();
+    expect(
+      layerViolations([synthetic('tabs/x.ts', "const m = await import('../domain/types');")]),
+    ).toEqual([]);
+
+    // FAILING CLOSED. A specifier the guard cannot read as a plain string literal is a specifier the
+    // guard cannot CLEAR, so it is reported in its own right rather than skipped — which is what the
+    // old `require` branch did with `require(name)`, a hole that predates the dynamic form. The
+    // three evasions are the three the ban would otherwise be one keystroke away from.
+    for (const evasion of [
+      'const m = await import(name);',
+      'const m = await import(`${base}/indicators`);',
+      "const m = await import('lightweight-charts' + '-indicators');",
+      'const m = require(name);',
+      'const m = require(`${base}/indicators`);',
+      "const m = require('lightweight-charts' + '-indicators');",
+    ]) {
+      expect(importSpecifiers(synthetic('tabs/x.ts', evasion))).toEqual([UNREADABLE_SPECIFIER]);
+      expect(measuredImpurity(synthetic('synthetic/evasion.ts', evasion))).toBe('runtime');
+      expect(layerViolations([synthetic('tabs/x.ts', evasion)])).toEqual([
+        `FAIL tabs/x.ts :: import outside the layer rule -> ${UNREADABLE_SPECIFIER}`,
+      ]);
+    }
+
+    // AND THE OTHER DIRECTION AGAIN: a reference written as a plain literal still reads as itself,
+    // for both forms. A predicate that answered "unreadable" to everything would pass the loop above
+    // and measure nothing.
+    expect(importSpecifiers(synthetic('tabs/x.ts', "const m = await import('./neighbour');"))).toEqual([
+      './neighbour',
+    ]);
+    expect(importSpecifiers(synthetic('tabs/x.ts', "const m = require('./neighbour');"))).toEqual([
+      './neighbour',
+    ]);
   });
 
   it('no runtime import of the base library, and the type one only in the render layer (LMC-49)', () => {
