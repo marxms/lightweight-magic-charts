@@ -22,7 +22,7 @@ import type { ChartEngine, SeriesMarkerPoint, SeriesShape } from '../../port/cha
 import type { LiveTip } from '../../port/frames';
 import type { MarketDataPort } from '../../port/ports';
 import { coerceWorkspaceSetup, defaultWorkspaceSetup, movedIndicator } from '../../tabs/setup';
-import type { WorkspaceSetup, WorkspaceSetupPolicy } from '../../tabs/setup';
+import type { StudySettings, WorkspaceSetup, WorkspaceSetupPolicy } from '../../tabs/setup';
 import { MAX_WORKSPACE_TABS, reduceTabs } from '../../tabs/workspaceTabs';
 import type { TabsAction, TabsState } from '../../tabs/workspaceTabs';
 import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeContext';
@@ -117,7 +117,7 @@ export interface WorkspaceStudies {
   /** Resolved by the HOST once, for a composition that holds the list somewhere else. */
   readonly views?: readonly ResolvedSourceView[];
   /** Resolved by the HOST on demand. See docs/explanation/react-workspace.md#why-resolve-is-a-function */
-  readonly resolve?: (ids: readonly string[], bars: readonly Bar[]) => SourceResolution;
+  readonly resolve?: (ids: readonly string[], bars: readonly Bar[], settings?: Readonly<Record<string, StudySettings>>) => SourceResolution;
   readonly capacity?: number;
   /** How the pre-created lanes are drawn. Absent, no lane exists and a study has nowhere to go. */
   readonly lanes?: WorkspaceLanes;
@@ -202,8 +202,8 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
   const timeframe = setup.timeframe ?? catalogue.servedTimeframes[0] ?? '';
   const capacity = studies.capacity ?? DEFAULT_STUDY_CAPACITY;
   const resolved = useMemo(
-    () => studies.resolve?.(setup.indicators, bars),
-    [studies, setup.indicators, bars],
+    () => studies.resolve?.(setup.indicators, bars, setup.studySettings),
+    [studies, setup.indicators, bars, setup.studySettings],
   );
   const chosen = resolved?.views ?? studies.views ?? NONE;
   const views: readonly PaneView[] = useMemo(

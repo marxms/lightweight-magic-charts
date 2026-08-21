@@ -21,7 +21,7 @@ import { ChartWorkspace } from '../src/react/workspace/ChartWorkspace';
 import type { ChartWorkspaceProps } from '../src/react/workspace/ChartWorkspace';
 import { useWorkspaceChrome } from '../src/react/chrome/ChromeContext';
 import { newAlertLevel } from '../src/react/workspace/PrimaryActions';
-import { useWorkspaceSetup } from '../src/react/workspace/setupContext';
+import { useWorkspaceSetup, useWorkspaceSetupWriter } from '../src/react/workspace/setupContext';
 import { clearDrawingMemory } from '../src/drawing/drawingMemory';
 import type { DrawingBinding, DrawingLayer, DrawingSnapshot } from '../src/drawing/drawingLayer';
 import type { Bar, PaneSpec, Scope } from '../src/domain/types';
@@ -41,7 +41,7 @@ import type {
 } from '../src/port/chartApi';
 import type { FrameSink, HistoryRequest, HistoryResult, MarketDataPort, Unsubscribe } from '../src/port/ports';
 import type { OverlayPrimitive } from '../src/render/overlayBridge';
-import type { WorkspaceSetupPolicy } from '../src/tabs/setup';
+import type { StudySettings, WorkspaceSetupPolicy } from '../src/tabs/setup';
 import { MAX_WORKSPACE_TABS } from '../src/tabs/workspaceTabs';
 import type { WorkspaceStore } from '../src/tabs/workspaceTabs';
 import { RecordingContext } from './renderFakes';
@@ -1548,5 +1548,168 @@ describe('the wiring between the root and the regions, where the regions alone c
     render(<ChartWorkspace {...minimalProps(fakePort())} layout={{ heightPx: 342 }} />);
     await settle();
     expect(screen.getByTestId('workspace-root').style.height).toBe('342px');
+  });
+});
+
+/**
+ * ADAPT-06 — editing a parameter value redraws the study.
+ *
+ * WITHOUT THIS THE WHOLE FEATURE DOES NOTHING. `studySettings` was neither an argument of `resolve`
+ * nor a dependency of the memo that calls it, so writing a value produced a NEW `setup` object whose
+ * `indicators` was the SAME array reference — `useMemo` saw nothing move, kept the previous
+ * resolution, and the chart went on drawing the old numbers. No error, no warning, no red test: the
+ * exact failure mode this repository has recorded five times.
+ *
+ * WHY IT IS MOUNTED AND NOT PROBED. A probe of the hook would assert that a function was called with
+ * an argument. What has to hold is that a host writing through the PUBLISHED writer, from inside a
+ * `WorkspaceSection.Body`, reaches `resolve` — which crosses the setup store, the tab reducer, the
+ * persisted store and the memo. Every one of those is a place the value can be dropped, and only a
+ * mount crosses all of them.
+ *
+ * EACH CLAUSE KILLS A DIFFERENT DELETION, and all three were measured by making the deletion:
+ *   - drop `setup.studySettings` from the memo DEPENDENCY list -> the first clause to die is
+ *     `expect(calls.length).toBeGreaterThan(afterPick)`, because the write produces a new `setup`
+ *     whose `indicators` is the same reference and the memo therefore recomputes nothing.
+ *   - drop the third ARGUMENT and keep the dependency -> `calls.length` rises, so the clause above
+ *     stays green, and the one that dies is `expect(...settings).toEqual({period: 50})`.
+ *   - drop the memo ENTIRELY -> both clauses above stay green and the IDLE clause dies, which is
+ *     why it is asserted in the same test: without it, resolving on every render would pass.
+ */
+
+interface ResolveCall {
+  readonly ids: readonly string[];
+  readonly barCount: number;
+  readonly settings: Readonly<Record<string, StudySettings>> | undefined;
+}
+
+const STUDY_ID = 'study.moving-average';
+
+/**
+ * A host whose `resolve` still takes TWO parameters, which is every host that exists today.
+ *
+ * The assertion is the compiler's: `tsconfig.test.json` extends the package's own `strict` config,
+ * so if the widening were breaking this file would not compile and the suite would not run. It is
+ * mounted below as well, because "compiles" and "still draws" are two claims.
+ */
+const twoParameterResolve: NonNullable<ChartWorkspaceProps['studies']>['resolve'] = (ids, bars) =>
+  resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+
+const recordingStudies = (calls: ResolveCall[]): NonNullable<ChartWorkspaceProps['studies']> => ({
+  ...identifiedStudies('Moving average'),
+  resolve: (ids, bars, settings) => {
+    calls.push({ ids, barCount: bars.length, settings });
+    return resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+  },
+});
+
+/**
+ * The host's form, at MODULE scope — the shape `example/studyForm.tsx` will take.
+ *
+ * It reads through `useWorkspaceSetup` one field at a time and writes through
+ * `useWorkspaceSetupWriter`, which is the only door a section body has. Nothing here names an
+ * indicator to the package: the key and the value are both the host's.
+ */
+function HostStudyForm(): ReactElement {
+  const write = useWorkspaceSetupWriter();
+  const held = useWorkspaceSetup((setup) => setup.studySettings?.[STUDY_ID]) as
+    | { readonly period?: number }
+    | undefined;
+  return (
+    <>
+      <button type="button" onClick={() => write({ studySettings: { [STUDY_ID]: { period: 50 } } })}>
+        Set the period to 50
+      </button>
+      <span data-testid="host-period">{held?.period ?? 'unset'}</span>
+    </>
+  );
+}
+
+/** Write-once, so the chrome layer's churn warning stays silent. */
+const HOST_CHROME: ChartWorkspaceProps['chrome'] = {
+  sections: [{ id: 'host-form', label: 'Inputs', count: 1, Body: HostStudyForm }],
+};
+
+const openHostForm = (): void => {
+  fireEvent.click(screen.getByTestId('workspace-catalogue-section-host-form'));
+};
+
+describe('editing a parameter value redraws the study', () => {
+  it('reaches resolve with the value, and leaves an idle re-render alone', async () => {
+    const calls: ResolveCall[] = [];
+    const studies = recordingStudies(calls);
+    const held = memoryStore();
+    const props = minimalProps(fakePort());
+    const tabs = { store: held.store };
+
+    const { rerender } = render(
+      <ChartWorkspace {...props} studies={studies} chrome={HOST_CHROME} tabs={tabs}>
+        <span data-testid="tick">1</span>
+      </ChartWorkspace>,
+    );
+    await settle();
+
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+    await settle();
+
+    // The study is on the chart and NO value has been written yet, so the clauses below are not
+    // reading a map that was there from the start.
+    const afterPick = calls.length;
+    expect(afterPick).toBeGreaterThan(0);
+    expect(calls[afterPick - 1].ids).toEqual([STUDY_ID]);
+    expect(calls[afterPick - 1].settings).toBeUndefined();
+    expect(calls[afterPick - 1].barCount).toBe(BARS.length);
+
+    // AN IDLE RE-RENDER: the composition re-renders — `tick` proves it — and nothing the memo
+    // depends on moved, so the host is not asked to resolve again.
+    rerender(
+      <ChartWorkspace {...props} studies={studies} chrome={HOST_CHROME} tabs={tabs}>
+        <span data-testid="tick">2</span>
+      </ChartWorkspace>,
+    );
+    await settle();
+    expect(screen.getByTestId('tick')).toHaveTextContent('2');
+    expect(calls).toHaveLength(afterPick);
+
+    // THE WRITE, through the host's own form and the published writer.
+    openHostForm();
+    expect(screen.getByTestId('host-period')).toHaveTextContent('unset');
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+
+    // It rose, and what it carries is the value the host wrote.
+    expect(calls.length).toBeGreaterThan(afterPick);
+    expect(calls[calls.length - 1].settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    expect(calls[calls.length - 1].ids).toEqual([STUDY_ID]);
+    expect(screen.getByTestId('host-period')).toHaveTextContent('50');
+
+    // The study did not leave the list and did not change identity: a redraw, never a remount. The
+    // chip itself is one rail tab away now, so the ACTIVE list is what is read — it is the same
+    // identity, rendered above the section body that just wrote to it.
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
+    expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent('Moving average');
+
+    // And it reached the REAL store, which is what surviving the tab means.
+    const written = JSON.parse(held.written[held.written.length - 1]) as {
+      tabs: readonly { setup: { studySettings?: unknown } }[];
+    };
+    expect(written.tabs[0].setup.studySettings).toEqual({ [STUDY_ID]: { period: 50 } });
+  });
+
+  it('still draws for a host whose resolve takes the TWO parameters it always took', async () => {
+    const studies: NonNullable<ChartWorkspaceProps['studies']> = {
+      ...identifiedStudies('Moving average'),
+      resolve: twoParameterResolve,
+    };
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={studies} />);
+    await settle();
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent('Moving average'),
+    );
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
   });
 });

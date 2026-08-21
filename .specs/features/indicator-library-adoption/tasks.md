@@ -9,7 +9,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 ---
 
 **Design**: `.specs/features/indicator-library-adoption/design.md`
-**Status**: In progress — T1..T7 done (phases 1-3, phase 4 started)
+**Status**: In progress — T1..T8 done (phases 1-3, phase 4 started)
 
 ---
 
@@ -266,7 +266,7 @@ T15 → T16 → T17
 
 ---
 
-### T8: Editing a value redraws the chart
+### T8: Editing a value redraws the chart ✅
 
 **What**: Widen `resolve` with an optional third parameter, pass the settings, add them to the memo dependencies, and prove the whole path through a mounted workspace.
 **Where**: `src/react/workspace/ChartWorkspace.tsx`
@@ -279,11 +279,11 @@ T15 → T16 → T17
 - Skill: ecc:react-patterns, ecc:react-testing
 
 **Done when**:
-- [ ] A host's existing two-parameter `resolve` still compiles — asserted, not assumed
-- [ ] A test mounts `<ChartWorkspace>` with a real `WorkspaceStore` and a host section that writes a value, then asserts the resolve call count rises and carries the value
-- [ ] The same test asserts an idle re-render does NOT re-resolve
-- [ ] A clause of that test dies if the memo dependency is removed, and a different clause dies if the pass-through is removed — each verified by deletion
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] A host's existing two-parameter `resolve` still compiles — asserted, not assumed
+- [x] A test mounts `<ChartWorkspace>` with a real `WorkspaceStore` and a host section that writes a value, then asserts the resolve call count rises and carries the value
+- [x] The same test asserts an idle re-render does NOT re-resolve
+- [x] A clause of that test dies if the memo dependency is removed, and a different clause dies if the pass-through is removed — each verified by deletion
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build

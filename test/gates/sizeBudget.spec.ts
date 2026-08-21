@@ -130,6 +130,12 @@ const SYMBOLS_AT_CUTOVER = 13;
  * stored the label. Spent from the 484 B the two factories above gave back, so nothing was raised
  * that had not first been paid for. Estimated +42 B; measured +22, because the optional `id` member
  * the estimate charged for is erased by the compiler.
+ * RE-PINNED 2026-08-21, entry 104887 -> 104919 (+32 B) and ChartWorkspace 95616 -> 95648 (+32 B):
+ * `resolve` gained an optional third parameter and the memo the matching dependency. Measured in a
+ * mounted workspace before it shipped: `MEMO afterPick=4 afterIdleRerender=4`, and after a write
+ * `REDRAW calls=5 lastSettings={"ma":{"period":50}}` — so the dependency does not cost a
+ * recomputation per render, because the map is a new object per COERCION and not per render.
+ * Estimated +32 B, measured +32. The provisional ceiling is untouched, 75 B above.
  * RE-PINNED 2026-08-21, entry 104658 -> 104887 (+229 B) and ChartWorkspace 95387 -> 95616
  * (+229 B): the tab holds per-study parameter values it never reads. The value is typed `unknown`,
  * which is the seam written where the compiler enforces it rather than where a comment asks for it,
@@ -149,7 +155,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104887,
+  '*': 104919,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -162,7 +168,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95616,
+  ChartWorkspace: 95648,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

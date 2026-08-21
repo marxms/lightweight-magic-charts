@@ -289,7 +289,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | ADAPT-03 | P1: Host draws the form, library draws the study | T13 | Pending |
 | ADAPT-04 | P1: Host draws the form, library draws the study | T11, T14 | Pending |
 | ADAPT-05 | P1: Host draws the form, library draws the study | T13 | Pending |
-| ADAPT-06 | P1: Host draws the form, library draws the study | T8 | Pending |
+| ADAPT-06 | P1: Host draws the form, library draws the study | T8 | Done |
 | ADAPT-07 | P1: Host draws the form, library draws the study | T11 | Pending |
 | ADAPT-08 | P1: Host draws the form, library draws the study | T11 | Pending |
 | ADAPT-09 | P1: Host draws the form, library draws the study | T12 | Pending |
@@ -306,7 +306,7 @@ shape the example demonstrates, so that one of them teaching the other is not a 
 | APP-01 | P3: Consuming application | — | Pending |
 | APP-02 | P3: Consuming application | T10 | Pending |
 
-**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 17 Done (GATE-01..06, IDENT-01..04, PARAM-01..06, PARAM-08). The two unmapped rows
+**Coverage:** 39 total, 37 mapped to tasks, 2 unmapped, 18 Done (GATE-01..06, IDENT-01..04, PARAM-01..06, PARAM-08, ADAPT-06). The two unmapped rows
 are recorded rather than assigned: `APP-01` is the consuming application's own manifest and
 lives outside this repository, so no task here can carry it. It is verified by the application's own
 suite, not by this one.
