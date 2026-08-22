@@ -203,7 +203,7 @@ in the manifest and nothing failed on it.
 | --- | --- | --- | --- |
 | FILL-01 | P1: The cloud that is the indicator | T8, T9, T10 | Done |
 | FILL-02 | P1: The cloud that is the indicator | T9, T10 | Done |
-| FILL-03 | P1: The cloud that is the indicator | T8, T10 | Done |
+| FILL-03 | P1: The cloud that is the indicator | T8, T10, T20 | Done |
 | FILL-04 | P1: The cloud that is the indicator | T17 | Done |
 | FILL-05 | P1: The cloud that is the indicator | T10, T15 | Partial |
 | FILL-06 | P1: The cloud that is the indicator | T17 | Done |

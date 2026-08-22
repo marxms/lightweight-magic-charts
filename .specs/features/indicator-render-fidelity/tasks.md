@@ -880,3 +880,37 @@ marks against a window that DOES hold those bars are all kept.
 nor `Infinity`, so once membership decides the question the finiteness test is a second asking of it
 — and the suite could not tell the two clauses apart. The behaviour is unchanged and still asserted:
 a `NaN` time is dropped, and removing the membership test is what turns that case red.
+
+---
+
+### T20: The fill's own z-order is pinned at the fill
+
+**What**: Assert `BandFillOverlay.zOrder` on the object, the way every sibling overlay in this repository already does.
+**Where**: `test/bandOverlay.spec.ts`
+**Depends on**: T19
+**Reuses**: the assertion at `test/densityField.spec.ts:60`, verbatim in shape
+**Requirement**: FILL-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `BandFillOverlay('anchor').zOrder` is read at the object
+- [x] Flipping it to `'ahead'` turns `npm test` red — measured
+- [x] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+**Status**: DONE — 0 B; entry **104853 / 104853**. `npm test` **1470 -> 1471**.
+
+**FILL-03 was asserted at the seam, not at the fill.** `test/overlayAnchor.spec.tsx:267` pins
+`Overlay.zOrder -> BaseZOrder` in both directions on a synthetic `ProbeOverlay` — a correct test of
+a different thing. `DensityFieldOverlay`, `TroughProfileOverlay` and all four of T14's channels read
+their z-order at the object; the fill, which is what FILL-03 is literally about, was the only one
+that did not. The Verifier flipped it to `'ahead'` and measured 1449/1449 and 96/96 while the Kumo
+went OVER the boundaries it spans — 13,459/8,425 -> 17,777/11,474 px of shading, 2,910 -> 3,042 px of
+line. The signal was on the canvas; no assertion read it.
+
+**Measured after**: `readonly zOrder = 'ahead' as const` turns `test/bandOverlay.spec.ts` red, naming
+the clause.

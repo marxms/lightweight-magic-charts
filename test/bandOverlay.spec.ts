@@ -112,6 +112,20 @@ describe('FILL-02 — a bound that names a level draws against that level', () =
   });
 });
 
+/* ---- the layer ----------------------------------------------------------------------------- */
+
+describe('FILL-03 — the fill is drawn BENEATH the lines it spans', () => {
+  it('declares the bottom layer on the fill itself, not on a probe of the seam', () => {
+    // Read at the object, exactly as `test/densityField.spec.ts:60` and
+    // `test/troughProfile.spec.ts:211` read their overlays and `test/channelOverlays.spec.ts:262`
+    // reads the four channels. `test/overlayAnchor.spec.tsx:267` asserts the SEAM — that
+    // `Overlay.zOrder` reaches the base library's `BaseZOrder` — on a synthetic probe, which is a
+    // correct test of a different thing: the Verifier flipped this fill to `'ahead'` and every
+    // gate stayed green while the Kumo went over its own boundaries (13459/8425 -> 17777/11474 px).
+    expect(new BandFillOverlay('anchor').zOrder).toBe('behind');
+  });
+});
+
 /* ---- the interruption ---------------------------------------------------------------------- */
 
 describe('FILL-01 — a bar without both bounds is not painted, and its neighbour still is', () => {
