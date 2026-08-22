@@ -914,3 +914,59 @@ line. The signal was on the canvas; no assertion read it.
 
 **Measured after**: `readonly zOrder = 'ahead' as const` turns `test/bandOverlay.spec.ts` red, naming
 the clause.
+
+---
+
+### T21: A catalogue only shrinks through a declaration
+
+**What**: Give a row the generator withdraws the same rule an id that vanished already has — signed in a committed ledger, or the build refuses to write.
+**Where**: `scripts/indicator-proof/manifest-shape.mjs`
+**Depends on**: T20
+**Reuses**: the doctrine and the shape of `renames.json` and `value-changes.json`
+**Requirement**: PROOF-01
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Withdrawing an offered row with nothing in the ledger turns `node scripts/build-indicator-manifest.mjs --check` red, naming every id and the rule that took it
+- [x] The same withdrawal, signed, passes the block — proved by running it
+- [x] The rule is a function both the generator and `npm test` call, so neither tests a copy
+- [x] Gate check passes: `npm test && npm run proof && node scripts/build-indicator-manifest.mjs --check`
+
+**Tests**: unit
+**Gate**: proof
+**Status**: DONE — 0 B in `src/`; entry **104853 / 104853**. `npm test` **1471 -> 1477**. Proof
+**33/33**. `--check` OK at 310 offered.
+
+**T15 removed the only ratchet on catalogue size and nothing replaced it.**
+`scripts/build-indicator-manifest.mjs:329` exempted any row the generator itself refused from the
+vanished-id refusal. The reasoning was sound as far as it went — a rule the generator applied is not
+the rename-versus-removal ambiguity, because the reason is written, printed and in the diff. But
+nothing anywhere pinned the offered-row count, so the Verifier withdrew three ordinary indicators
+behind a new rule and measured **307 rows written with 1449/1449, 96/96 and 33/33**, the only trace a
+`WITHDRAWING` line on stderr that nothing asserts. The 26-row version died by luck: it happened to
+take `auto-support`, the widest row, and one pinned row.
+
+**The previous phase's own sentence decides it.** The generator refuses a vanished id *"because it
+cannot tell a rename from a removal AND A HOST'S SAVED WORKSPACE CAN"*. A saved workspace loses
+`bop` exactly as hard whether the id vanished or was withdrawn. So the reason is still not invented
+— the generator already printed it — it is SIGNED, in `example/indicators/withdrawals.json`.
+
+**Both directions were run against the real generator**, with the M19b rule planted verbatim:
+
+| Ledger | `--check` |
+| --- | --- |
+| empty | **exit 1**, naming `bop`, `mass-index`, `momentum` and the rule |
+| the three declared with a reason | the block passes; the run reaches STALE, which is the artefact comparison doing its own job |
+| the three declared with a blank reason | **exit 1** again |
+
+**And the rule discriminates in `npm test`**, six cases over `withdrawalFaults`: returning `[]` (the
+old exemption) → 4 red; ignoring the ledger → 2 red; accepting a blank reason → 1 red; counting a
+vanished id as a withdrawal → 1 red.
+
+**The ten `plotCandles`/`tables` rows are deliberately NOT in the ledger.** They left before it
+existed, so nothing refuses them; writing them in would settle 320 vs 310 by default, which is the
+one thing the file exists to prevent. The question is recorded in the ledger's own `openQuestion` and
+goes to the owner in the PR body.

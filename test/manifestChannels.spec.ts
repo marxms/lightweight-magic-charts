@@ -43,7 +43,13 @@ const row = (id: string, placement: string, plots: number, channels?: Record<str
 /** ONE spawn, every answer: the program is what costs the time, not the questions. */
 const ANSWERS = (() => {
   const script = `
-    import { channelsOf, refusalsOf, widthsOf, HOST_CHANNELS, NOT_A_CHANNEL } from ${JSON.stringify(SHAPE)};
+    import { channelsOf, refusalsOf, widthsOf, withdrawalFaults, withdrawalRefusal, HOST_CHANNELS, NOT_A_CHANNEL } from ${JSON.stringify(SHAPE)};
+    const withdrawn = (ledger) => withdrawalFaults({
+      offered: ['kept', 'bop', 'mass-index'],
+      derived: new Set(['kept']),
+      refused: new Map([['bop', 'planted rule'], ['mass-index', 'planted rule']]),
+      ledger,
+    });
     const rows = [
       ${row('wide', 'over-price', 5)},
       ${row('narrow', 'over-price', 2)},
@@ -64,6 +70,23 @@ const ANSWERS = (() => {
       knownChannel: refusalsOf([JSON.parse(${JSON.stringify(row('fine', 'own-pane', 1, { fills: 4 }))})], { overPrice: 5, ownPane: 5 }),
       hostChannels: [...HOST_CHANNELS].sort(),
       notAChannel: [...NOT_A_CHANNEL].sort(),
+      undeclaredWithdrawal: withdrawn({ withdrawals: [] }),
+      declaredWithdrawal: withdrawn({ withdrawals: [
+        { id: 'bop', reason: 'the host stopped drawing it', measuredAt: '0.5.0' },
+        { id: 'mass-index', reason: 'the host stopped drawing it', measuredAt: '0.5.0' },
+      ] }),
+      halfDeclaredWithdrawal: withdrawn({ withdrawals: [{ id: 'bop', reason: 'signed' }] }),
+      blankReasonWithdrawal: withdrawn({ withdrawals: [
+        { id: 'bop', reason: '   ' },
+        { id: 'mass-index' },
+      ] }),
+      vanishedIsNotWithdrawn: withdrawalFaults({
+        offered: ['gone'],
+        derived: new Set([]),
+        refused: new Map(),
+        ledger: { withdrawals: [] },
+      }),
+      withdrawalMessage: withdrawalRefusal(withdrawn({ withdrawals: [] }), 'example/indicators/withdrawals.json'),
     };
     process.stdout.write(JSON.stringify(out));
   `;
@@ -86,6 +109,11 @@ interface Refusal {
   readonly id: string;
   readonly reason: string;
   readonly detail: string;
+}
+
+interface Withdrawal {
+  readonly id: string;
+  readonly measured: string;
 }
 
 describe('PROOF-02a — a channel that arrives as an object is counted like any other', () => {
@@ -218,5 +246,55 @@ describe('the committed artefact is what the mechanism says it should be', () =>
     expect(rowsWith('fills')).toBe(104);
     expect(rowsWith('bgColors')).toBe(20);
     expect(rowsWith('markers')).toBe(72);
+  });
+});
+
+describe('PROOF-01 — a row the generator withdraws is declared, or the build is red', () => {
+  it('refuses a withdrawal nothing signed, naming every id and the rule that took it', () => {
+    // MEASURED BEFORE THIS RULE: the generator exempted any row it had refused itself from the
+    // vanished-id refusal, and nothing else pinned the offered-row count. Three ordinary
+    // indicators were withdrawn behind a planted rule and 307 rows were written with `npm test`
+    // 1449/1449, `npm run e2e` 96/96 and `npm run proof` 33/33 — the only trace a stderr line
+    // nothing asserts. A host's saved workspace loses `bop` exactly as hard either way.
+    expect(answer<readonly Withdrawal[]>('undeclaredWithdrawal')).toEqual([
+      { id: 'bop', measured: 'planted rule' },
+      { id: 'mass-index', measured: 'planted rule' },
+    ]);
+  });
+
+  it('CONTROL — the same two withdrawals, signed, are not a fault', () => {
+    // Without this the rule could be "refuse every withdrawal", which is a build nobody can
+    // tighten a rule in and would be satisfied by the assertion above on its own.
+    expect(answer<readonly Withdrawal[]>('declaredWithdrawal')).toEqual([]);
+  });
+
+  it('signs them ONE AT A TIME — a ledger entry covers its own id and no other', () => {
+    expect(answer<readonly Withdrawal[]>('halfDeclaredWithdrawal')).toEqual([
+      { id: 'mass-index', measured: 'planted rule' },
+    ]);
+  });
+
+  it('does not accept a blank reason, or a missing one, as a declaration', () => {
+    // The ledger exists to carry a REASON. An entry that is only an id restates what the generator
+    // already printed and signs nothing, which is the shape a silencing edit would take.
+    expect(answer<readonly Withdrawal[]>('blankReasonWithdrawal').map((fault) => fault.id)).toEqual([
+      'bop',
+      'mass-index',
+    ]);
+  });
+
+  it('leaves an id that VANISHED to the ledger that already owns it', () => {
+    // An id gone from the library with no rule against it is a rename-or-removal question, and
+    // `renames.json` and the defect ledger answer it. Two ledgers, two questions, no overlap.
+    expect(answer<readonly Withdrawal[]>('vanishedIsNotWithdrawn')).toEqual([]);
+  });
+
+  it('prints the id, the rule and where to sign, so the message is the instruction', () => {
+    const message = answer<string>('withdrawalMessage');
+
+    expect(message).toContain('2 row(s)');
+    expect(message).toContain('bop — planted rule');
+    expect(message).toContain('mass-index — planted rule');
+    expect(message).toContain('example/indicators/withdrawals.json');
   });
 });

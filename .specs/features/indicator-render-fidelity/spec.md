@@ -214,7 +214,7 @@ in the manifest and nothing failed on it.
 | POINT-01 | P1: The colour a point carries | T13 | Done |
 | POINT-02 | P1: The colour a point carries | T13 | Done |
 | POINT-03 | P1: The colour a point carries | T13 | Done |
-| PROOF-01 | P1: A silent drop cannot pass again | T15, T16 | Done |
+| PROOF-01 | P1: A silent drop cannot pass again | T15, T16, T21 | Done |
 | PROOF-02 | P1: A silent drop cannot pass again | T15, T16 | Done |
 | PROOF-03 | P1: A silent drop cannot pass again | T15, T16 | Done |
 | PROOF-04 | P1: A silent drop cannot pass again | T15, T16 | Done |

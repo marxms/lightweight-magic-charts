@@ -13,6 +13,7 @@ export const MANIFEST_PATHS = {
   fingerprints: 'example/indicators/fingerprints.json',
   renames: 'example/indicators/renames.json',
   valueChanges: 'example/indicators/value-changes.json',
+  withdrawals: 'example/indicators/withdrawals.json',
 };
 
 /** `onPriceScale`, `src/indicator/availability.ts:57-68`, with `CALIBRATED_PRICE_NEIGHBOURHOOD`. */
@@ -127,6 +128,53 @@ export function refusalsOf(indicators, widths) {
     }
   }
   return refusals;
+}
+
+/**
+ * A ROW THE GENERATOR TURNED DOWN THAT THE COMMITTED MANIFEST STILL OFFERS — DECLARED, OR RED.
+ *
+ * Same doctrine as `renames.json` and `value-changes.json`, one question further along. Those two
+ * refuse while an ID has vanished from the LIBRARY and while a VALUE has moved. This one refuses
+ * while a rule inside the generator withdraws an indicator the catalogue is already offering.
+ *
+ * The exemption this replaces was reasoned and wrong in one specific way. A rule the generator
+ * applied is not the rename-versus-removal ambiguity the vanished-id block exists for — the reason
+ * is written, printed and in the diff — so self-refused rows were let through unremarked. But that
+ * removed the ONLY ratchet on catalogue size and nothing took its place: the Verifier withdrew three
+ * ordinary indicators behind a new rule and measured 307 rows written with `npm test` 1449/1449,
+ * `npm run e2e` 96/96 and `npm run proof` 33/33 green. The only trace was a line on stderr that
+ * nothing asserts. And the previous phase's own sentence applies verbatim — the generator refuses a
+ * vanished id "because it cannot tell a rename from a removal AND A HOST'S SAVED WORKSPACE CAN". A
+ * saved workspace loses `bop` exactly as hard whether the id vanished or was withdrawn.
+ *
+ * So the reason still does not have to be INVENTED — the generator already printed it. It has to be
+ * SIGNED: somebody writes the id and why the loss is acceptable, and until they do, the build is
+ * red. `offered` is the committed manifest's ids, `derived` the ids this run would write, `refused`
+ * the id -> reason map of what a rule here turned down, and `ledger` the committed declarations.
+ */
+export function withdrawalFaults({ offered, derived, refused, ledger }) {
+  const declared = new Map(
+    (ledger?.withdrawals ?? [])
+      .filter((entry) => typeof entry?.id === 'string' && typeof entry?.reason === 'string' && entry.reason.trim() !== '')
+      .map((entry) => [entry.id, entry]),
+  );
+  const seen = new Set(derived);
+  return offered
+    .filter((id) => !seen.has(id) && refused.has(id) && !declared.has(id))
+    .map((id) => ({ id, measured: refused.get(id) }));
+}
+
+/** The refusal the generator prints, written here so the message is tested with the rule. */
+export function withdrawalRefusal(faults, ledgerPath) {
+  return (
+    `build-indicator-manifest: REFUSING to write. ${faults.length} row(s) the committed manifest ` +
+    `offers would be WITHDRAWN by a rule in this generator, and nothing declares the loss:\n` +
+    faults.map((fault) => `  ${fault.id} — ${fault.measured}`).join('\n') +
+    `\nThe generator can see WHY it turned each of these down; it cannot see whether losing them ` +
+    `is acceptable, and a host's saved workspace loses one of them exactly as hard as it loses an ` +
+    `id the vendor deleted. Write the id and the reason in ${ledgerPath}, which is append-only, or ` +
+    `keep the rule from refusing the row. A catalogue only shrinks through a declaration.`
+  );
 }
 
 /**

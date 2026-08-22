@@ -75,6 +75,8 @@ import {
   settleWithinBars,
   vendorPin,
   widthsOf,
+  withdrawalFaults,
+  withdrawalRefusal,
 } from './indicator-proof/manifest-shape.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -85,6 +87,7 @@ const CHECK_ONLY = process.argv.includes('--check');
 const DEFECTS = JSON.parse(readFileSync(join(HERE, 'indicator-proof', 'DEFECT_LEDGER.json'), 'utf8'));
 const RENAMES = readJson('renames');
 const VALUE_CHANGES = readJson('valueChanges');
+const WITHDRAWALS = readJson('withdrawals');
 const PIN = vendorPin(JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8')));
 
 /** THE VENDOR NAMES ITS OWN SOURCES. Never typed out here. */
@@ -318,11 +321,12 @@ for (const row of indicators) {
   const committed = readJson('manifest');
   const derived = new Set(indicators.map((r) => r.id));
   const renamedFrom = new Map((RENAMES.renames ?? []).map((r) => [r.from, r]));
-  // AN ID THIS RUN REFUSED, WITH ITS REASON, IS NOT AN ID THAT VANISHED. The block exists because
-  // the generator can see that an id left the LIBRARY and cannot see whether it was renamed or
-  // removed. That ambiguity does not exist for a row still in the registry that a rule here turned
-  // down: the reason is written, printed, and in the diff. Refusing those too would mean no rule
-  // could ever be tightened without hand-editing a ledger to say what the generator already said.
+  // AN ID THIS RUN REFUSED, WITH ITS REASON, IS NOT AN ID THAT VANISHED — it is a WITHDRAWAL, and
+  // it answers to the ledger below instead. The block this sits in exists because the generator can
+  // see that an id left the LIBRARY and cannot see whether it was renamed or removed; that
+  // ambiguity does not exist for a row still in the registry that a rule here turned down. But
+  // exempting those outright removed the only ratchet on catalogue size: three ordinary indicators
+  // were withdrawn behind a new rule and 307 rows were written with every gate green.
   const refused = new Map(rejected.map((r) => [r.id, r.reason]));
   const unexplained = [];
   for (const row of committed.indicators ?? committed) {
@@ -333,13 +337,28 @@ for (const row of indicators) {
     if (refused.has(row.id)) continue;
     unexplained.push(row.id);
   }
+  /* ---- AND A WITHDRAWAL THAT NOBODY SIGNED STOPS IT TOO -------------------- *
+   * The generator already knows WHY it turned each of these down and prints it. What it cannot
+   * know is whether losing the row is acceptable, and a host's saved workspace loses a withdrawn
+   * id exactly as hard as one the vendor deleted. So the reason is not invented here; it is
+   * SIGNED in example/indicators/withdrawals.json, and until it is the build is red.        */
+  const undeclared = withdrawalFaults({
+    offered: (committed.indicators ?? committed).map((row) => row.id),
+    derived,
+    refused,
+    ledger: WITHDRAWALS,
+  });
+  if (undeclared.length > 0) {
+    console.error(withdrawalRefusal(undeclared, MANIFEST_PATHS.withdrawals));
+    process.exit(1);
+  }
   const withdrawn = (committed.indicators ?? committed)
     .filter((row) => !derived.has(row.id) && refused.has(row.id))
     .map((row) => `${row.id} — ${refused.get(row.id)}`);
   if (withdrawn.length > 0) {
     console.error(
-      `build-indicator-manifest: WITHDRAWING ${withdrawn.length} row(s) the committed manifest ` +
-      `still offers, each because a rule in this generator turned it down:\n  ${withdrawn.join('\n  ')}`,
+      `build-indicator-manifest: WITHDRAWING ${withdrawn.length} declared row(s) the committed ` +
+      `manifest still offers, each because a rule in this generator turned it down:\n  ${withdrawn.join('\n  ')}`,
     );
   }
   if (unexplained.length > 0) {
