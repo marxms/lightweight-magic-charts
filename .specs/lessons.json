@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 22,
+  "next_id": 31,
   "lessons": [
     {
       "id": "L-001",
@@ -384,6 +384,168 @@
       ],
       "created": "2026-08-21T07:18:58Z",
       "last_seen": "2026-08-21T07:18:58Z"
+    },
+    {
+      "id": "L-022",
+      "key": "surviving_mutant::when a pixel check counts a hue prove the hue is exclusive to the channel under test two channels of the same study can write the same colour turning an existence test into a permanent pass",
+      "text": "When a pixel check counts a hue, prove the hue is exclusive to the channel under test: two channels of the same study can write the same colour, turning an existence test into a permanent pass.",
+      "signal": "surviving_mutant",
+      "scope": "e2e/pixel-assertions",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M5 :: scripts/e2e-demo.mjs:1419 (e2e/pixel-assertions)"
+      ],
+      "created": "2026-08-22T04:55:32Z",
+      "last_seen": "2026-08-22T04:55:32Z"
+    },
+    {
+      "id": "L-023",
+      "key": "surviving_mutant::re run every earlier deletion control at the end of the phase not only when it is written a later task in the same phase can silently disarm an earlier task s sensor",
+      "text": "Re-run every earlier deletion control at the end of the phase, not only when it is written: a later task in the same phase can silently disarm an earlier task's sensor.",
+      "signal": "surviving_mutant",
+      "scope": "process/deletion-controls",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M5 :: 37b1190 disarmed 39d5083 (process/deletion-controls)"
+      ],
+      "created": "2026-08-22T04:55:32Z",
+      "last_seen": "2026-08-22T04:55:32Z"
+    },
+    {
+      "id": "L-024",
+      "key": "surviving_mutant::a host module that narrows vendor data needs its own suite the end to end pixel check downstream of it cannot see the narrowing being deleted",
+      "text": "A host module that narrows vendor data needs its own suite; the end-to-end pixel check downstream of it cannot see the narrowing being deleted.",
+      "signal": "surviving_mutant",
+      "scope": "host/adapters",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M20 :: example/studyMarks.ts (host/adapters)"
+      ],
+      "created": "2026-08-22T04:55:32Z",
+      "last_seen": "2026-08-22T04:55:32Z"
+    },
+    {
+      "id": "L-025",
+      "key": "surviving_mutant::assert a declared constant on the production object not only on a synthetic probe through the seam testing the mapping proves the seam never the value the real object declares",
+      "text": "Assert a declared constant on the production object, not only on a synthetic probe through the seam: testing the mapping proves the seam, never the value the real object declares.",
+      "signal": "surviving_mutant",
+      "scope": "overlays",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M16 :: example/bandOverlay.ts:159 (overlays)"
+      ],
+      "created": "2026-08-22T04:55:32Z",
+      "last_seen": "2026-08-22T04:55:32Z"
+    },
+    {
+      "id": "L-026",
+      "key": "surviving_mutant::when a generator gains a rule that withdraws rows pin the row count or require a written ledger entry per withdrawal exempting self refused ids from the vanished id guard removes the only ratchet on catalogue size",
+      "text": "When a generator gains a rule that withdraws rows, pin the row count or require a written ledger entry per withdrawal - exempting self-refused ids from the vanished-id guard removes the only ratchet on catalogue size.",
+      "signal": "surviving_mutant",
+      "scope": "generators/refusal",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M19b :: scripts/build-indicator-manifest.mjs:329 (generators/refusal)"
+      ],
+      "created": "2026-08-22T04:55:32Z",
+      "last_seen": "2026-08-22T04:55:32Z"
+    },
+    {
+      "id": "L-027",
+      "key": "ac_gap::an ac about a specific object must be traced to that object a test of the mechanism it travels through is evidence for the mechanism only",
+      "text": "An AC about a specific object must be traced to that object; a test of the mechanism it travels through is evidence for the mechanism only.",
+      "signal": "ac_gap",
+      "scope": "spec/acs",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "FILL-03 :: spec.md:74 (spec/acs)"
+      ],
+      "created": "2026-08-22T04:55:43Z",
+      "last_seen": "2026-08-22T04:55:43Z"
+    },
+    {
+      "id": "L-028",
+      "key": "spec_precision_gap::do not word an ac as an equality the catalogue wide check can only verify as an inequality either narrow the wording or add the case that measures the equality",
+      "text": "Do not word an AC as an equality the catalogue-wide check can only verify as an inequality; either narrow the wording or add the case that measures the equality.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/wording",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "LINES-03 :: spec.md:95 (spec/wording)"
+      ],
+      "created": "2026-08-22T04:55:43Z",
+      "last_seen": "2026-08-22T04:55:43Z"
+    },
+    {
+      "id": "L-029",
+      "key": "spec_deviation::never shrink a deliverable on the authority of an assumption row marked unconfirmed while a confirmed row points the other way surface the conflict to the owner instead of resolving it in code",
+      "text": "Never shrink a deliverable on the authority of an assumption row marked unconfirmed while a confirmed row points the other way: surface the conflict to the owner instead of resolving it in code.",
+      "signal": "spec_deviation",
+      "scope": "spec/assumptions",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:47 (Confirmed=n) vs spec.md:39 (Confirmed=y) (spec/assumptions)"
+      ],
+      "created": "2026-08-22T04:55:43Z",
+      "last_seen": "2026-08-22T04:55:43Z"
+    },
+    {
+      "id": "L-030",
+      "key": "spec_precision_gap::re measure a defect narrative against the vendor result before writing it into the spec the ichimoku kumo is bicoloured by two fills not by the per bar colors the spec blames",
+      "text": "Re-measure a defect narrative against the vendor result before writing it into the spec: the Ichimoku Kumo is bicoloured by two fills, not by the per-bar colors[] the spec blames.",
+      "signal": "spec_precision_gap",
+      "scope": "spec/measurements",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:40 vs measured vendor result for ichimoku (spec/measurements)"
+      ],
+      "created": "2026-08-22T04:55:43Z",
+      "last_seen": "2026-08-22T04:55:43Z"
     }
   ]
 }

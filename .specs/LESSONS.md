@@ -140,6 +140,60 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: scripts/indicator-proof/value-ledger.mjs:115 (scripts/)
 - last seen: 2026-08-21T07:18:58Z
 
+### L-022 - When a pixel check counts a hue, prove the hue is exclusive to the channel under test: two channels of the same study can write the same colour, turning an existence test into a permanent pass.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `e2e/pixel-assertions` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: M5 :: scripts/e2e-demo.mjs:1419 (e2e/pixel-assertions)
+- last seen: 2026-08-22T04:55:32Z
+
+### L-023 - Re-run every earlier deletion control at the end of the phase, not only when it is written: a later task in the same phase can silently disarm an earlier task's sensor.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `process/deletion-controls` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: M5 :: 37b1190 disarmed 39d5083 (process/deletion-controls)
+- last seen: 2026-08-22T04:55:32Z
+
+### L-024 - A host module that narrows vendor data needs its own suite; the end-to-end pixel check downstream of it cannot see the narrowing being deleted.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `host/adapters` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: M20 :: example/studyMarks.ts (host/adapters)
+- last seen: 2026-08-22T04:55:32Z
+
+### L-025 - Assert a declared constant on the production object, not only on a synthetic probe through the seam: testing the mapping proves the seam, never the value the real object declares.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `overlays` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: M16 :: example/bandOverlay.ts:159 (overlays)
+- last seen: 2026-08-22T04:55:32Z
+
+### L-026 - When a generator gains a rule that withdraws rows, pin the row count or require a written ledger entry per withdrawal - exempting self-refused ids from the vanished-id guard removes the only ratchet on catalogue size.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `generators/refusal` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: M19b :: scripts/build-indicator-manifest.mjs:329 (generators/refusal)
+- last seen: 2026-08-22T04:55:32Z
+
+### L-027 - An AC about a specific object must be traced to that object; a test of the mechanism it travels through is evidence for the mechanism only.
+- signal: `ac_gap` · recurrence: 1 feature(s) · scope: `spec/acs` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: FILL-03 :: spec.md:74 (spec/acs)
+- last seen: 2026-08-22T04:55:43Z
+
+### L-028 - Do not word an AC as an equality the catalogue-wide check can only verify as an inequality; either narrow the wording or add the case that measures the equality.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/wording` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: LINES-03 :: spec.md:95 (spec/wording)
+- last seen: 2026-08-22T04:55:43Z
+
+### L-029 - Never shrink a deliverable on the authority of an assumption row marked unconfirmed while a confirmed row points the other way: surface the conflict to the owner instead of resolving it in code.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `spec/assumptions` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: spec.md:47 (Confirmed=n) vs spec.md:39 (Confirmed=y) (spec/assumptions)
+- last seen: 2026-08-22T04:55:43Z
+
+### L-030 - Re-measure a defect narrative against the vendor result before writing it into the spec: the Ichimoku Kumo is bicoloured by two fills, not by the per-bar colors[] the spec blames.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `spec/measurements` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: spec.md:40 vs measured vendor result for ichimoku (spec/measurements)
+- last seen: 2026-08-22T04:55:43Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
