@@ -417,7 +417,18 @@ against **0 and 0** before the pick. The five lines are under it.
 **Two of the brief's numbers did not reproduce, and the measurement wins.**
 - The resolver is **247/247 over the whole registry**, exactly as briefed, and **14** bound
   references name an `hlines` entry rather than a plot.
-- Per-bar colour is **86 of 186** as briefed, of which **76** actually change colour.
+- Per-bar colour is **86 of 186** as briefed, of which **76** actually change colour. Re-measured
+  over the 310 rows the catalogue now offers, the same fixture reads **83 of 180**: same conclusion,
+  smaller scope. (T15 withdrew ten rows after this task was written.)
+- **THE KUMO IS NOT ONE OF THEM, and this task said it was.** Corrected here and at `spec.md:40`:
+  Ichimoku emits **TWO fills** — `plot5`/`plot4` at `#43A047 transp 90` titled "Bullish Cloud" and
+  `plot6`/`plot4` at `#F44336 transp 90` titled "Bearish Cloud" — each colour in its own
+  `options.color`, and **neither fill carries a `colors` array at all** (`colorsLen: null` on both).
+  The green-above/red-below IS the signal and this task does keep it; what would lose it is
+  collapsing the two fills into one, not ignoring a per-bar array. The sensor separates them
+  cleanly: ignoring `fills[].colors` kills one unit test and leaves the e2e at 96/96, while
+  collapsing the two fills turns the e2e red with `kumo-is-shaded` reading bullish 21,900 and
+  bearish **0**. Two real defects, two different clauses, and the narrative had merged them.
 - Interrupted fills measure **171 of 186** on this fixture, not 164 — same conclusion, common case.
 - The alpha defect is NOT "46% painted opaque black". Measured on the offered rows at their own
   defaults, **0 of the 16 fills that carry `transp` have an `rgba` base**, so the reference's
@@ -970,3 +981,45 @@ vanished id as a withdrawal → 1 red.
 existed, so nothing refuses them; writing them in would settle 320 vs 310 by default, which is the
 one thing the file exists to prevent. The question is recorded in the ledger's own `openQuestion` and
 goes to the owner in the PR body.
+
+---
+
+### T22: The Kumo's two colours get the right mechanism
+
+**What**: Correct `spec.md:40` and T10's narrative — the Kumo is bicoloured by TWO fills with their own `options.color`, not by a `fills[].colors` array.
+**Where**: `.specs/features/indicator-render-fidelity/spec.md`
+**Depends on**: T21
+**Reuses**: the Verifier's measurement, re-run here rather than copied
+**Requirement**: FILL-01
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The claim is re-measured on the vendor result before it is rewritten
+- [x] Both places that carry the wrong mechanism are corrected
+- [x] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+**Status**: DONE — documentation only, 0 B.
+
+**Re-measured, not taken on trust.** `ichimoku.calculate` at its own defaults over the proof's
+fixture emits `fills.length === 2`:
+
+```
+{ plot1: 'plot5', plot2: 'plot4', options: { color: '#43A047', transp: 90, title: 'Bullish Cloud' }, colorsLen: null }
+{ plot1: 'plot6', plot2: 'plot4', options: { color: '#F44336', transp: 90, title: 'Bearish Cloud' }, colorsLen: null }
+```
+
+**Two fills, two `options.color`, no `colors` array on either.** The spec and T10 both said the
+reference "ignores `fills[].colors` and collapses 86 of 186 bicoloured fills, **including the
+Ichimoku Kumo**". The first clause is true; the Kumo is not an instance of it. The sensor separates
+them cleanly and always did: ignoring `fills[].colors` kills one unit test and leaves the e2e at
+96/96, while collapsing the two fills turns the e2e red with `kumo-is-shaded` reading bullish 21,900
+and bearish **0**. Two real defects, two different clauses, and the narrative had merged them.
+
+Re-measured at the same time, over the 310 rows now offered rather than the 320 the brief was
+written against: **104 rows emit a fill, 180 fills, 83 carrying a per-bar `colors[]`, 47 rows
+emitting more than one fill.** Same conclusions, smaller scope.
