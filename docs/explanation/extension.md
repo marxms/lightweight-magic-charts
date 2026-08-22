@@ -46,6 +46,25 @@ open, what to do with a value it cannot place.
 `Overlay.zOrder` is `'behind' | 'ahead'`. `behind` puts the overlay under the price action, which
 is where a density field belongs.
 
+### An overlay may name its anchor
+
+`Overlay.anchor` is a `seriesStyleKey` — the `pane:series` pair the surface files a created series
+under. It decides ONE thing: whose price scale `Projection.priceToY` reads. Absent, the overlay
+anchors to the pane-zero series, which is the candles when a price pane is drawn; that is the
+behaviour every overlay had before the member existed, which is why the member is optional.
+
+It exists because an overlay that shades between two of a STUDY's lines has to measure on the
+study's axis, and a study in its own lane is on a different one from the candles. Anchoring it to
+pane zero would place the shading at the right times and the wrong prices.
+
+The anchor also has to be a series that HAS data: the base library answers `null` from
+`priceToCoordinate` while a series has no first value, so an empty lane slot projects nothing. The
+first drawn plot of the study is the one guaranteed to have a reading.
+
+Layering is not affected. A `behind` overlay maps to the base library's bottom layer, which is
+painted for every source in the pane before any series is — so a fill anchored to one line still
+sits under all of them, including the lines it knows nothing about.
+
 ### Series arrive as instances
 
 `SeriesProvider` is a computed series: the consumer builds it and hands the instance over. The

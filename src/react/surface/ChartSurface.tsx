@@ -229,7 +229,11 @@ export function ChartSurface({
   useEffect(() => {
     const anchor = handles?.anchor ?? null;
     if (anchor === null || overlays === undefined || overlays.length === 0) return;
-    const detachers = overlays.map((overlay) => attachOverlay(anchor, overlay));
+    // `''` is not a series key — `seriesKey` always carries a colon — so an overlay that named
+    // nothing falls through to the pane-zero anchor, which is what every overlay had before.
+    const detachers = overlays.map((overlay) =>
+      attachOverlay(handles?.series.get(overlay.anchor ?? '') ?? anchor, overlay),
+    );
     return () => {
       for (const detach of detachers) detach();
     };

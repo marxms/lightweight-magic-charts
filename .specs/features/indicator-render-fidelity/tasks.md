@@ -316,12 +316,25 @@ and why `test/hostSlots.spec.ts` reads the artefact off disk the way the gates d
 - Skill: NONE
 
 **Done when**:
-- [ ] The member is OPTIONAL, so every existing overlay keeps compiling and attaching
-- [ ] An anchored overlay draws beneath the lines it spans — asserted by reading pixels, not by trusting the call
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] The member is OPTIONAL, so every existing overlay keeps compiling and attaching
+- [x] An anchored overlay draws beneath the lines it spans — asserted by reading pixels, not by trusting the call
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **+30 B** (entry 103921 -> 103951), exactly the design's number; the
+variant with an explicit `undefined` ternary measured +54 and was refused. `ChartWorkspace`
+94685 -> 94715, `ChartSurface` 23786 -> 23815 of its 23840.
+
+**What "reading pixels" turned into here, and why.** `test/overlayAnchor.spec.tsx` mounts
+`ChartSurface` and drives the primitive through the two calls the base library drives it through —
+`paneViews()` then `renderer().draw(target)` — over the recording context `test/renderFakes.ts`
+already exists for. Every fake series converts price by its OWN factor, so the `y` of the rectangle
+that comes out NAMES the scale it was measured on: 42 anchored to `ind1p2`, 30 to `ind1p1`, 18 to
+`ovl1p2`, 66 unanchored. A test that asserted `attachPrimitive` was called on the right handle would
+pass against an implementation that then projected through the wrong one. The four anchored cases
+were RED before the resolution landed and returned 66 — the pane-zero answer — which is the defect
+in its exact shape. Real canvas bytes are T10 and T17, where a fill exists to read.
 
 ---
 

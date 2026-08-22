@@ -32,6 +32,8 @@ export interface OverlayHost {
 
 export interface Overlay {
   readonly zOrder: 'behind' | 'ahead';
+  /** Whose price scale to read, by `seriesStyleKey`. See docs/explanation/extension.md#an-overlay-may-name-its-anchor */
+  readonly anchor?: string;
   attached(host: OverlayHost): void;
   detached(): void;
   draw(target: RenderTarget, projection: Projection): void;
