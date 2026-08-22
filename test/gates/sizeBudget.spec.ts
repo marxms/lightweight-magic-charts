@@ -170,13 +170,20 @@ const SYMBOLS_AT_CUTOVER = 13;
  * question: its declaration ends with the caller's own `...style`, so a value spread last would
  * overrule every caller. Its own candidate in its own commit. Estimated -145 B, measured -148 B on
  * the entry and -145 B on the composed root.
+ * RE-PINNED DOWN 2026-08-21, entry 104564 -> 104367 (-197 B) and ChartWorkspace 95219 -> 95022
+ * (-197 B): the scope machine's three appliers each opened with the same five-line preamble and
+ * now call one `deferred(state, frame)`. `openScope` measures 4300 -> 4103. Nothing moves in
+ * behaviour — the three copies were literally identical — and the doors that had never been
+ * asserted are asserted now: the suite reached the preamble through `append` alone and the buffer
+ * cap through no frame kind at all. Its own candidate in its own commit. Estimated -197 B and
+ * `openScope` 4300 -> 4103; both measured exactly.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104564,
+  '*': 104367,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -189,7 +196,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95219,
+  ChartWorkspace: 95022,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

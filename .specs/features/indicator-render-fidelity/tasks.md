@@ -160,12 +160,15 @@ sites, `STACK` beside `CENTER_ROW` in `src/react/theme.ts`.
 - Skill: NONE
 
 **Done when**:
-- [ ] Every existing scope-machine assertion passes untouched
-- [ ] Re-pinned DOWN separately, with the measured number
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] Every existing scope-machine assertion passes untouched
+- [x] Re-pinned DOWN separately, with the measured number
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **-197 B** (entry 104564 -> 104367) and `openScope` **4300 -> 4103**,
+both exactly the design's numbers. Two of the three doors and the buffer cap had no assertion at
+all; `test/scopeDeferral.spec.ts` closes that.
 
 ---
 
