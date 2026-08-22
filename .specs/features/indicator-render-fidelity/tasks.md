@@ -242,12 +242,16 @@ No task in this file names that host-side widening; T16 cannot read five lines w
 - Skill: NONE
 
 **Done when**:
-- [ ] `ChartWorkspace.tsx` is at most 346 code lines, measured by the gate's own counter
-- [ ] Behaviour is unchanged, asserted through a mounted workspace
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] `ChartWorkspace.tsx` is at most 346 code lines, measured by the gate's own counter
+- [x] Behaviour is unchanged, asserted through a mounted workspace
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — `ChartWorkspace.tsx` 347 -> **345** and the cost is **+45 B**, not the +75 the
+design measured: it measured a PAIR of closures and only `read` exists yet. `readColors` arrives
+with the point-colour channel and lands in the same module. Re-pinned UP against this feature's own
+bank, which stands at -1071 B.
 
 ---
 

@@ -1082,6 +1082,53 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
     expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI 77');
   });
 
+  /**
+   * The reader the surface takes, asserted through a MOUNTED composition after it left the file.
+   *
+   * `studyReader` decides three things in one expression and the composition is the only place all
+   * three meet: a resolved reading WINS over whatever the host reads, the host's reader fills a
+   * series the resolution never resolved, and a series neither of them answers for says nothing.
+   * A unit test of the function would prove the function; this proves the wiring, which is the half
+   * that moves when a closure leaves a file.
+   */
+  it('takes the resolved reading first, the host’s next, and asserts nothing for neither', async () => {
+    const props = minimalProps(fakePort());
+    // The host reads a DIFFERENT number for the same series the study resolves, so "resolved wins"
+    // is a value comparison and not a presence check.
+    const hostSaysNine: SeriesReader = () => [9, 9];
+    render(
+      <ChartWorkspace
+        {...props}
+        catalogue={WITH_MOMENTUM}
+        panes={[TIPPED_PANE]}
+        studies={STUDIES}
+        data={{ ...props.data, read: hostSaysNine }}
+      />,
+    );
+    await settle();
+
+    openStudies();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-alpha'));
+
+    // RESOLVED WINS: the lane draws the study's own close, not the host's 9.
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent(`Alpha ${BARS[1].close}`),
+    );
+    // THE HOST FILLS THE REST: the momentum pane is not a study, so its value is the host's.
+    expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI 9');
+  });
+
+  it('says nothing for a series no reader answers for, rather than carrying a value across', async () => {
+    // The third branch, on its own mount: with no host reader and no resolution, the legend has to
+    // read the em dash. A default that fell back to some other series' value would be the chart
+    // asserting a measurement nobody took.
+    const props = minimalProps(fakePort());
+    render(<ChartWorkspace {...props} catalogue={WITH_MOMENTUM} panes={[TIPPED_PANE]} />);
+    await settle();
+    expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI —');
+  });
+
   it('keeps the tip OUT of every live region, because it changes on every tick', async () => {
     const props = minimalProps(fakePort());
     render(

@@ -188,13 +188,20 @@ const SYMBOLS_AT_CUTOVER = 13;
  * label and the branch that read it are gone, and `drawn` is every live line. The member was
  * removed for LYING and not for being dead: measured on 0.2.1 the Ichimoku draws ONE line while
  * the panel reads three of five. Estimated -212 B, measured -216 B.
+ * RE-PINNED 2026-08-21, entry 103876 -> 103921 (+45 B) and ChartWorkspace 94640 -> 94685 (+45 B):
+ * the reader that decides where a drawn value comes from left `ChartWorkspace.tsx` for
+ * `react/workspace/studyReaders.ts`, and the file measures 347 -> 345 of the 350 code lines
+ * `fileSize` allows. Spent from this feature's OWN bank — the four shrinkages and the line-ceiling
+ * deletion took the entry from 104992 to 103876 first — so nothing was raised that had not been
+ * paid for, and `PROVISIONAL_ENTRY_LIMIT` is untouched with the entry 1073 B under it. The design
+ * predicted +75 B for a PAIR of closures; only one of the two exists yet, and it measures +45.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 103876,
+  '*': 103921,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -207,7 +214,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 94640,
+  ChartWorkspace: 94685,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

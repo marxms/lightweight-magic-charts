@@ -12,7 +12,6 @@ import type { PriceAlert } from '../../alerts/priceAlerts';
 import type { Bar, PaneSpec, PriceScaleConvention } from '../../domain/types';
 import type { DrawingBinding } from '../../drawing/drawingLayer';
 import { drawingScopeKey } from '../../drawing/drawingMemory';
-import { readingWithTip } from '../../indicator/liveTip';
 import type { ResolvedSourceView, SourceResolution } from '../../indicator/resolution';
 import type { StackApplication } from '../../layout/application';
 import { PRICE_PANE_ID } from '../../layout/computeLayout';
@@ -48,6 +47,7 @@ import type { WorkspaceLanes } from './paneViews';
 import { PrimaryActions } from './PrimaryActions';
 import { SeriesMenuRegion } from './SeriesMenuRegion';
 import { StatusFooter } from './StatusFooter';
+import { studyReader } from './studyReaders';
 import { StylePickerRegion, styleChoicesOf } from './StylePickerRegion';
 import { SymbolTrigger } from './SymbolTrigger';
 import { TabsRegion, workspaceTabPanelAria } from './TabsRegion';
@@ -145,8 +145,6 @@ export interface ChartWorkspaceProps {
 const NONE: readonly never[] = [];
 const NO_GROUP: Readonly<Record<string, never>> = {};
 const NO_TOOLS: DrawingVocabulary = { tools: NONE };
-/** Nothing computed. A host drawing only candles never has to say so. */
-const NO_READINGS: SeriesReader = () => NONE;
 const noop = (): void => undefined;
 const DEFAULT_STUDY_CAPACITY = 6;
 /** Western default; a host reading red-is-up hands over its own. */
@@ -210,9 +208,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
       lanes: studies.lanes, labels: resolved?.labels, laneTitle: labels.laneTitle }),
     [specs, setup.panes, chosen, capacity, studies.lanes, resolved, labels],
   );
-  // See docs/explanation/react-workspace.md#the-tip-fills-the-bar-in-progress
-  const read: SeriesReader = (pane, series) =>
-    readingWithTip(series.id, resolved?.readings.get(series.id) ?? (data.read ?? NO_READINGS)(pane, series), data.tip);
+  const read = studyReader(resolved, data.read, data.tip);
   const write = (patch: Partial<WorkspaceSetup>): void =>
     act({ kind: 'update-active', setup: { ...setup, ...patch } });
   const footerId = `${testIdPrefix}-state`;
