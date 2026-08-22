@@ -33,10 +33,17 @@ const TOOLS: readonly DrawingTool[] = [
 
 const provider = (id: string): SeriesProvider => ({ id: seriesId(id), compute: () => [] });
 
+/**
+ * THE `id` IS NOW EXPLICIT, and the reason is worth keeping. `selected` is a list of IDENTITIES, and
+ * this fixture used to leave the member out while feeding provider ids — so the menu agreed with
+ * itself about a value the composition never stored, and the pressed state could disagree with the
+ * pick for a whole release without a single case going red. No assertion below moved; the fixture
+ * now says which member those ids are.
+ */
 const CATALOGUE: readonly SeriesCatalogueEntry[] = [
-  { provider: provider('alpha'), label: 'Alpha average', category: 'Averages' },
-  { provider: provider('beta'), label: 'Beta average', category: 'Averages' },
-  { provider: provider('gamma'), label: 'Gamma band', category: 'Bands & channels' },
+  { provider: provider('alpha'), id: 'alpha', label: 'Alpha average', category: 'Averages' },
+  { provider: provider('beta'), id: 'beta', label: 'Beta average', category: 'Averages' },
+  { provider: provider('gamma'), id: 'gamma', label: 'Gamma band', category: 'Bands & channels' },
 ];
 
 describe('DrawingToolbar', () => {

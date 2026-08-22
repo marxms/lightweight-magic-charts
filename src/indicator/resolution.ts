@@ -8,6 +8,7 @@ import type { Bar, SeriesId } from '../domain/types';
 import { lanePaneId, laneSeriesId, priceOverlaySeriesId } from '../catalogue/lanes';
 import type { PlottedSeries, ResolutionPolicy, SourceLookup } from '../catalogue/sources';
 import {
+  alignColors,
   alignReadings,
   availabilityOf,
   barPositions,
@@ -28,10 +29,8 @@ export interface ResolvedSourceView {
   readonly label: string | null;
   /** Drawn over the price action instead of in its own lane. MEASURED, not merely declared. */
   readonly overlay: boolean;
-  /** Lines actually drawn. With `truncated` it forms the "4 of 7" a panel can show. */
+  /** Lines drawn: every plot of this source that produced a finite value in this window. */
   readonly drawn: number;
-  /** Lines that did not fit the lane. Declared, never discarded in silence. */
-  readonly truncated: number;
   /** The source's neutral guide, when it has a lane of its own to mark it against. */
   readonly guide?: number;
   readonly availability: IndicatorAvailability;
@@ -48,10 +47,13 @@ export interface SourceResolution {
   readonly readings: ReadonlyMap<SeriesId, readonly Reading[]>;
   /** Series identity -> the plot's title, so the legend names the SOURCE and not the lane. */
   readonly labels: ReadonlyMap<SeriesId, string>;
+  /** Series identity -> the colour each bar declares. Absent = every bar takes the series' own. */
+  readonly colors?: ReadonlyMap<SeriesId, readonly (string | null)[]>;
   /** Lanes with something to draw. A source drawn over the price lights no lane at all. */
   readonly activePaneIds: ReadonlySet<string>;
 }
 
+const NO_POINTS: readonly never[] = [];
 const EMPTY_READINGS: ReadonlyMap<SeriesId, readonly Reading[]> = new Map();
 const EMPTY_LABELS: ReadonlyMap<SeriesId, string> = new Map();
 const EMPTY_PANES: ReadonlySet<string> = new Set();
@@ -89,7 +91,6 @@ export function resolveSources(
           label: source?.label ?? null,
           overlay: source?.placement === 'over-price',
           drawn: 0,
-          truncated: 0,
           // Nothing was MEASURED, so nothing is asserted: `'ok'` is the absence of a diagnosis.
           availability: 'ok',
           warmUpBars: 0,
@@ -105,6 +106,7 @@ export function resolveSources(
   const positionOf = barPositions(bars);
   const readings = new Map<SeriesId, readonly Reading[]>();
   const labels = new Map<SeriesId, string>();
+  const colors = new Map<SeriesId, readonly (string | null)[]>();
   const activePaneIds = new Set<string>();
   /** The price level of this window, against which a declared overlay's scale is measured. */
   const priceMid = median(bars.map((bar) => bar.close));
@@ -112,7 +114,7 @@ export function resolveSources(
   const views = ordered.map((id, lane): ResolvedSourceView => {
     const paneId = lanePaneId(lane);
     const source = lookup(id);
-    const unknown = { id, lane, paneId, drawn: 0, truncated: 0, warmUpBars: 0, windowBars: bars.length } as const;
+    const unknown = { id, lane, paneId, drawn: 0, warmUpBars: 0, windowBars: bars.length } as const;
     if (source === undefined) {
       return { ...unknown, label: null, overlay: false, availability: 'empty' };
     }
@@ -128,15 +130,15 @@ export function resolveSources(
     // A DEAD LINE OCCUPIES NEITHER LANE NOR LEGEND. See docs/explanation/indicator.md#a-dead-line-draws-nothing
     const computed = plots.map((plot) => {
       try {
-        return { plot, values: alignReadings(plot.provider.compute(bars), positionOf, bars.length) };
+        const points = plot.provider.compute(bars);
+        return { plot, points, values: alignReadings(points, positionOf, bars.length) };
       } catch {
-        return { plot, values: null };
+        return { plot, points: NO_POINTS, values: null };
       }
     });
     const alive = computed.flatMap((item) =>
       item.values?.some((value) => value !== null) === true ? [{ ...item, values: item.values }] : [],
     );
-    const drawn = alive.slice(0, policy.plotsPerLane);
 
     // The placement is a REQUEST; the scale is the FACT. See docs/explanation/indicator.md#the-scale-is-the-fact
     const offScale =
@@ -148,17 +150,19 @@ export function resolveSources(
     const fieldOf = (plot: number): SeriesId =>
       seriesId(overlay ? priceOverlaySeriesId(lane, plot) : laneSeriesId(lane, plot));
 
-    drawn.forEach((item, at) => {
+    alive.forEach((item, at) => {
       const field = fieldOf(at);
       labels.set(field, item.plot.spec.label);
       readings.set(field, item.values);
+      const hues = alignColors(item.points, positionOf);
+      if (hues !== null) colors.set(field, hues);
     });
 
-    if (!overlay && drawn.length > 0) activePaneIds.add(paneId);
+    if (!overlay && alive.length > 0) activePaneIds.add(paneId);
 
     // The lines that exist stay drawn even at `'warmup'`: real measurements are not rubbish.
     const warmUpBars = firstReadingAt(
-      drawn.map((item) => item.values),
+      alive.map((item) => item.values),
       bars.length,
     );
 
@@ -168,15 +172,14 @@ export function resolveSources(
       paneId,
       label: source.label,
       overlay,
-      drawn: drawn.length,
-      truncated: alive.length - drawn.length,
+      drawn: alive.length,
       // A guide only means anything against the source's OWN axis.
       ...(overlay || source.guide === undefined ? {} : { guide: source.guide }),
-      availability: availabilityOf(drawn.length, warmUpBars, bars.length, policy.warmUpShare),
+      availability: availabilityOf(alive.length, warmUpBars, bars.length, policy.warmUpShare),
       warmUpBars,
       windowBars: bars.length,
     };
   });
 
-  return { views, readings, labels, activePaneIds };
+  return { views, readings, labels, colors, activePaneIds };
 }

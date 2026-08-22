@@ -43,10 +43,13 @@
  * Exit code 0 means every check passed. Anything else is a failure — including a failure to even
  * launch a browser, which prints a sentence naming what is missing rather than a stack trace.
  */
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import * as esbuild from 'esbuild';
+
+import { BOOT_CHUNK_CEILING, bootChunkVerdict, splittingControl } from './boot-chunk.mjs';
 
 const chromium = await import('playwright-core').then(
   (module) => module.chromium,
@@ -61,6 +64,8 @@ const chromium = await import('playwright-core').then(
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EXAMPLE = join(HERE, '..', 'example');
+/** The committed catalogue, so "what the form offers" is compared against the artefact, not a copy. */
+const CATALOGUE = JSON.parse(readFileSync(join(HERE, '..', 'example', 'indicators', 'manifest.json'), 'utf8'));
 const HOST = '127.0.0.1';
 const VIEWPORT = { width: 1400, height: 900 };
 /** How long the demo's own settle timers (ResizeObserver, chart auto-fit) need before a read is honest. */
@@ -106,16 +111,74 @@ async function openStudies(page) {
 }
 
 async function pickStudy(page, category, entryId) {
-  await page.locator(`[data-testid="workspace-catalogue-category-${category}"]`).click();
+  // `SeriesMenu`'s own `domId` narrowing: a category is the host's string and may hold a space.
+  const chip = category.replace(/[^a-zA-Z0-9]+/g, '-');
+  await page.locator(`[data-testid="workspace-catalogue-category-${chip}"]`).click();
   await page.waitForTimeout(150);
   await page.locator(`[data-testid="workspace-catalogue-entry-${entryId}"]`).click();
   await page.waitForTimeout(200);
 }
 
-/** How many mute (em-dash) readings sit in a legend line's text — the CONTROL a study picks against. */
-async function dashCount(page, testId) {
-  const text = await page.locator(`[data-testid="${testId}"]`).textContent();
-  return (text.match(/—/g) ?? []).length;
+/**
+ * READINGS THAT ARE ACTUALLY DRAWN on a legend line, counted one span at a time.
+ *
+ * The instrument used to be the opposite — count the em dashes and watch the number fall — and that
+ * only worked while every unoccupied over-price slot carried a placeholder label. The host now mints
+ * one slot per line the catalogue declares, 336 of them, labelled `''` exactly as `laneDraft` labels
+ * a lane's; an unoccupied one is filtered out of the legend entirely, so there is no dash left to
+ * lose. Counting what arrived is the stronger question anyway: a line that draws is a span with a
+ * number in it, and a study that resolved five lines and drew one is the defect this feature is for.
+ *
+ * A LABELLED entry is not counted: `O 147.48` and `+0.01%` belong to the price series and to the
+ * change, and neither moves when a study is picked.
+ */
+async function drawnReadingCount(page, testId) {
+  return page.evaluate((id) => {
+    const line = document.querySelector(`[data-testid="${id}"]`);
+    if (line === null) return 0;
+    return Array.from(line.querySelectorAll('span')).filter((span) =>
+      /^[+-]?[\d,]+(\.\d+)?$/.test((span.textContent ?? '').trim()),
+    ).length;
+  }, testId);
+}
+
+/**
+ * How many pixels of the surface carry a given hue — read from the bitmap, never from a call.
+ *
+ * A translucent fill lands on a pane layer whose own background is transparent, so the byte that
+ * says "this was painted" is the alpha, and the three that say WHICH fill are the channels. Both are
+ * compared with a tolerance because the base library composites onto the layer before we read it.
+ */
+async function hueCount(page, hostSelector, rgb, tolerance = 6) {
+  return page.evaluate(
+    ({ selector, want, slack }) => {
+      const host = document.querySelector(selector);
+      if (host === null) return 0;
+      let found = 0;
+      for (const canvas of host.querySelectorAll('canvas')) {
+        const ctx = canvas.getContext('2d');
+        if (ctx === null || canvas.width === 0 || canvas.height === 0) continue;
+        let data;
+        try {
+          data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        } catch {
+          continue;
+        }
+        for (let at = 0; at < data.length; at += 4) {
+          if (data[at + 3] === 0) continue;
+          if (
+            Math.abs(data[at] - want[0]) <= slack &&
+            Math.abs(data[at + 1] - want[1]) <= slack &&
+            Math.abs(data[at + 2] - want[2]) <= slack
+          ) {
+            found += 1;
+          }
+        }
+      }
+      return found;
+    },
+    { selector: hostSelector, want: rgb, slack: tolerance },
+  );
 }
 
 /** A cheap, deterministic checksum of every canvas the surface currently draws. Identical inputs and
@@ -353,13 +416,13 @@ async function sceneStudiesCatalogue(browser, base) {
 
   // OVER-PRICE PLACEMENT: baseline captured on THIS page, before the pick — the control the rule
   // asks for, rather than a hard-coded slot count.
-  const baselineDashes = await dashCount(page, 'workspace-legend-price');
+  const baselineDrawn = await drawnReadingCount(page, 'workspace-legend-price');
   await pickStudy(page, 'Over-the-price', 'ma-fast');
-  const afterOverPrice = await dashCount(page, 'workspace-legend-price');
+  const afterOverPrice = await drawnReadingCount(page, 'workspace-legend-price');
   check(
     'catalogue.over-price-study-reads-numeric',
-    afterOverPrice === baselineDashes - 1,
-    `price legend mute readings: ${baselineDashes} -> ${afterOverPrice} after picking "Average, 20 bars"`,
+    afterOverPrice === baselineDrawn + 1,
+    `price legend drawn readings: ${baselineDrawn} -> ${afterOverPrice} after picking "Average, 20 bars", which declares one line`,
   );
 
   reportConsole('catalogue.console-clean', console_);
@@ -376,7 +439,7 @@ async function sceneManyStudiesAllPlot(browser, base) {
   const { page, console_ } = await freshPage(browser, base);
 
   await openStudies(page);
-  const baselineDashes = await dashCount(page, 'workspace-legend-price');
+  const baselineDrawn = await drawnReadingCount(page, 'workspace-legend-price');
 
   // Own-lane picks FIRST: a lane's index is the pick's LIST POSITION (see `resolveSources` /
   // `laneOrder`), not a count of own-lane picks alone, so picking lane studies first lands them
@@ -397,12 +460,14 @@ async function sceneManyStudiesAllPlot(browser, base) {
   );
   check('many-studies.panel-shows-all-chosen', activeChips === picks.length, `${activeChips}/${picks.length} chosen chips in the panel`);
 
+  // Each over-price pick here declares exactly ONE line, so the drawn count rises by the number of
+  // picks. A study with five would raise it by five, which is the whole point of the widened slots.
   const overPricePicks = picks.filter(([, , lane]) => lane === null).length;
-  const afterDashes = await dashCount(page, 'workspace-legend-price');
+  const afterDrawn = await drawnReadingCount(page, 'workspace-legend-price');
   check(
     'many-studies.all-over-price-picks-plot',
-    afterDashes === baselineDashes - overPricePicks,
-    `price legend mute readings: ${baselineDashes} -> ${afterDashes} (expected -${overPricePicks})`,
+    afterDrawn === baselineDrawn + overPricePicks,
+    `price legend drawn readings: ${baselineDrawn} -> ${afterDrawn} (expected +${overPricePicks})`,
   );
 
   const lanePicks = picks.filter(([, , lane]) => lane !== null);
@@ -864,18 +929,664 @@ async function sceneMagnetPlacesTheAnchor(browser, base) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Scene 11 — the host's own section on the studies rail keeps its identity.
+//
+// THE DEFECT THIS TARGETS is the one that costs a caret per keystroke. `<activeSection.Body />`
+// reconciles by the FUNCTION REFERENCE, so a host that builds its `Body` inline hands React a new
+// element type on every render and gets a remount instead of a re-render. `ChromeContext`'s churn
+// sensor already watches for exactly that and warns; nothing had ever read the warning. This does,
+// and it is the cheapest possible guard on the one host mistake the design measured as fatal.
+// ---------------------------------------------------------------------------------------------
+async function sceneHostSectionIsStable(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+
+  await openStudies(page);
+  const tab = page.locator('[data-testid="workspace-catalogue-section-params"]');
+  check('params.host-section-on-the-rail', (await tab.count()) === 1, 'the host declared one section and the rail shows it');
+
+  // A THIRD-PARTY STUDY FIRST, and not for the study: it is what makes the host's own `App`
+  // re-render, because the arithmetic arriving is state. Without a host re-render the sensor below
+  // has nothing to compare and would pass over an inline `Body` — measured.
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+
+  await tab.click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const body = page.locator('[data-testid="param-form"]');
+  const fields = await page.locator('[data-testid^="param-rsi-"]').count();
+  check(
+    'params.host-section-body-renders',
+    (await body.count()) === 1 && fields > 0,
+    `the host Body is what the tabpanel draws, with ${fields} node(s) for the chosen study`,
+  );
+
+  // The rail is walked and returned to, which is what re-renders the menu repeatedly. A `Body`
+  // whose identity moved would be reported by the sensor on the first of these.
+  for (const id of ['workspace-catalogue-section-panes', 'workspace-catalogue-section-params']) {
+    await page.locator(`[data-testid="${id}"]`).click();
+    await page.waitForTimeout(120);
+  }
+  const churn = console_.warnings.filter(
+    (line) => line.includes('WorkspaceChromeProvider') && line.includes('sections'),
+  );
+  check(
+    'params.no-section-churn',
+    churn.length === 0,
+    churn.length === 0
+      ? `${console_.warnings.length} warning(s) on the page and none of them section-identity churn — the params Body kept its identity across the rail being walked`
+      : churn.slice(0, 2).join(' | '),
+  );
+
+  reportConsole('params.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 12 — the catalogue lists the third-party names before a byte of the library exists, and
+// the library arrives only when a study asks for it.
+//
+// THE TWO ARTEFACTS ARE TOLD APART ON THE WIRE, not by the page's own report of itself. A page
+// that quietly imported the library at boot would still render a perfect catalogue; only the bytes
+// say which happened. The entry is excluded by name — this build is DEVELOPMENT, so React's own
+// warning codebase makes `bundle.js` larger than the committed catalogue — and the two CHUNKS then
+// differ by an order of magnitude: the manifest is ~190 KB and the library ~2.1 MB, so the floor
+// sits between them with a decade of room on either side.
+// ---------------------------------------------------------------------------------------------
+const LIBRARY_BYTES_FLOOR = 1_000_000;
+
+async function sceneCatalogueBeforeTheLibrary(browser, base) {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const console_ = watchConsole(page);
+  const heavy = [];
+  page.on('response', (response) => {
+    const file = response.url().split('/').pop() ?? '';
+    const declared = Number(response.headers()['content-length'] ?? 0);
+    if (/^chunk-.*\.js$/.test(file) && declared >= LIBRARY_BYTES_FLOOR) heavy.push(`${file} ${declared} B`);
+  });
+
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-testid="workspace-root"]').waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(SETTLE_MS);
+
+  await openStudies(page);
+  await page.locator('[data-testid="workspace-catalogue-category-Oscillators"]').click();
+  await page.waitForTimeout(150);
+  const listed = await page
+    .locator('[data-testid="workspace-catalogue-results"] [data-testid^="workspace-catalogue-entry-"]')
+    .count();
+  const beforePick = [...heavy];
+  check(
+    'params.catalogue-lists-before-the-library',
+    listed > 0 && beforePick.length === 0,
+    beforePick.length === 0
+      ? `${listed} third-party studies listed under "Oscillators" and nothing over ${LIBRARY_BYTES_FLOOR} B has crossed the wire`
+      : `the library arrived at boot: ${beforePick.join(', ')}`,
+  );
+
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+  check(
+    'params.library-fetched-on-demand',
+    heavy.length > 0,
+    heavy.length > 0
+      ? `the chunk arrived with the first study and not before: ${heavy.join(', ')}`
+      : 'no chunk over the floor ever arrived, so the study cannot be drawing vendor arithmetic',
+  );
+
+  // AND IT DRAWS. A catalogue that lists names and resolves nothing is the silent toggle the spec
+  // forbids, so the lane it landed in has to read a number.
+  const laneText = (await page.locator('[data-testid="workspace-legend-ind1"]').textContent()) ?? '';
+  check(
+    'params.third-party-study-reads-numeric',
+    /\d/.test(laneText) && !/—/.test(laneText),
+    `own-lane legend after picking rsi: ${JSON.stringify(laneText)}`,
+  );
+
+  reportConsole('params.on-demand-console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 13 — the catalogue fails to arrive and the page still draws.
+//
+// The spec's edge case, executed rather than asserted from the source: the manifest chunk is
+// refused at the network, which is the one failure a visitor can actually meet.
+// ---------------------------------------------------------------------------------------------
+async function sceneCatalogueFailureStillMounts(browser, base) {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  const console_ = watchConsole(page);
+  // The manifest chunk is the only file over 100 KB that is fetched without being imported by the
+  // entry, so it is identified by what it holds rather than by a hash that changes every build.
+  await page.route('**/chunk-*.js', async (route) => {
+    const response = await route.fetch().catch(() => null);
+    const body = response === null ? '' : await response.text();
+    if (body.includes('fallbackShortLabel')) return route.abort();
+    return response === null ? route.abort() : route.fulfill({ response, body });
+  });
+
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-testid="workspace-root"]').waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(SETTLE_MS);
+
+  await openStudies(page);
+  const vendorTab = await page.locator('[data-testid="workspace-catalogue-category-Oscillators"]').count();
+  const ownTab = await page.locator('[data-testid="workspace-catalogue-category-Own-lane"]').count();
+  const priceLegend = (await page.locator('[data-testid="workspace-legend-price"]').textContent()) ?? '';
+  check(
+    'params.a-failed-catalogue-still-mounts',
+    vendorTab === 0 && ownTab === 1 && /C\xa0\d/.test(priceLegend),
+    vendorTab === 0 && ownTab === 1
+      ? `the third-party catalogue is refused at the network and the workspace mounts anyway: no "Oscillators" tab, the demo's own studies still offered, price still reading ${JSON.stringify(priceLegend.slice(0, 24))}`
+      : `${vendorTab} third-party tab(s) and ${ownTab} demo tab(s) after refusing the catalogue chunk`,
+  );
+
+  // The refused fetch itself is reported by the browser, and that report is the point rather than
+  // a defect. What may NOT appear is anything else — an uncaught exception from the import
+  // rejecting is exactly the failure this scene exists to refuse.
+  const unexpected = console_.errors.filter((line) => !line.includes('Failed to load resource'));
+  check(
+    'params.a-failed-catalogue-throws-nothing',
+    unexpected.length === 0,
+    unexpected.length === 0
+      ? `${console_.errors.length} console error(s), every one of them the browser reporting the refused chunk, and no uncaught exception behind it`
+      : unexpected.slice(0, 3).join(' | '),
+  );
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 14 — an edited input changes what is DRAWN, and changes nothing else.
+//
+// THE ASSERTION THIS FEATURE STANDS OR FALLS ON. Everything else can be green while the value the
+// visitor typed goes into a payload and never reaches the arithmetic: `studySettings` was neither an
+// argument of `resolve` nor a dependency of the memo that calls it, and the symptom of that is a
+// chart drawing the old numbers with no error anywhere. So the reading is taken off the LEGEND —
+// a number the page computed — and the negative control puts the value back and demands the
+// original number returns. Without it the check passes on "any edit redraws something", which is
+// not the claim.
+//
+// NO SCREENSHOT, NO GOLDEN FILE: the same rule as every other scene here.
+// ---------------------------------------------------------------------------------------------
+async function sceneEditedInputRedraws(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+
+  await openStudies(page);
+  // The locator is built from `provider.id` while the persisted list keys on `studyIdentity`. The
+  // adapter puts the vendor id in BOTH on purpose; if they ever diverge this scene fails first,
+  // because the chip would render under one name while the pick was stored under another.
+  await pickStudy(page, 'Oscillators', 'rsi');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const readLane = async () => {
+    const text = (await page.locator('[data-testid="workspace-legend-ind1"]').textContent()) ?? '';
+    return (text.match(/-?\d+(?:\.\d+)?/g) ?? []).join(',');
+  };
+  const chips = () => page.locator('[data-testid^="workspace-active-"]').count();
+
+  const before = await readLane();
+  const beforeChips = await chips();
+
+  await page.locator('[data-testid="workspace-catalogue-section-params"]').click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+
+  // OFFERED IS WHAT THE MANIFEST OFFERS, and the manifest is read off disk rather than restated: a
+  // control that moves nothing was held back at generation time, and a form drawing it anyway would
+  // be a control the visitor can turn with nothing happening.
+  const promised = (CATALOGUE.indicators.find((row) => row.id === 'rsi')?.inputs ?? [])
+    .map((input) => input.id)
+    .sort();
+  const drawn = (
+    await page.locator('[data-testid^="param-rsi-"]').evaluateAll((nodes) =>
+      nodes
+        .filter(
+          (node) =>
+            node.tagName === 'INPUT' ||
+            node.tagName === 'SELECT' ||
+            node.getAttribute('role') === 'switch',
+        )
+        .map((node) => node.getAttribute('data-testid')?.replace('param-rsi-', '') ?? ''),
+    )
+  ).sort();
+  check(
+    'params.the-form-offers-exactly-the-controls-the-manifest-offers',
+    promised.length > 0 && drawn.join(',') === promised.join(','),
+    drawn.join(',') === promised.join(',')
+      ? `${drawn.length} controls drawn and ${promised.length} promised, the same set: ${drawn.join(', ')}`
+      : `drawn [${drawn.join(', ')}] against promised [${promised.join(', ')}]`,
+  );
+
+  // REACHED BY ITS LABEL. `getByLabel` resolves through the accessibility tree, so a field whose
+  // `label`/`htmlFor` pair does not associate is not found at all.
+  const field = page.getByLabel('RSI Length');
+  check(
+    'params.every-control-is-reachable-by-its-label',
+    (await field.count()) === 1 &&
+      (await field.getAttribute('aria-describedby')) === 'param-rsi-length-bounds',
+    `the length field answers to its own label and points at ${await field.getAttribute('aria-describedby')}, which reads ${JSON.stringify(await page.locator('#param-rsi-length-bounds').textContent())}`,
+  );
+
+  await field.fill('50');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const after = await readLane();
+  check(
+    'params.edit-changes-the-drawing',
+    before.length > 0 && after.length > 0 && before !== after,
+    `ind1 legend readings: ${before} -> ${after} after setting the length 14 -> 50`,
+  );
+  check(
+    'params.edit-keeps-the-study',
+    (await chips()) === beforeChips && beforeChips > 0,
+    `${beforeChips} chosen chip(s) before the edit, ${await chips()} after — a redraw, never a remount`,
+  );
+
+  // THE NEGATIVE CONTROL. Put it back and the number comes back.
+  await field.fill('14');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const restored = await readLane();
+  check(
+    'params.edit-is-reversible',
+    restored === before,
+    `back to ${restored}, which is what it read before the edit`,
+  );
+
+  // AND THE REFUSAL IS VISIBLE ON THE PAGE: below the declared minimum nothing is written, so the
+  // drawing does not move and the field says why.
+  await field.fill('0');
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  check(
+    'params.an-out-of-range-value-is-refused-not-drawn',
+    (await readLane()) === before && (await field.getAttribute('aria-invalid')) === 'true',
+    `0 against a declared minimum of 1: aria-invalid=${await field.getAttribute('aria-invalid')} and the lane still reads ${await readLane()}`,
+  );
+
+  const editChurn = console_.warnings.filter(
+    (line) => line.includes('WorkspaceChromeProvider') && line.includes('sections'),
+  );
+  check(
+    'params.no-churn-across-the-edit',
+    editChurn.length === 0,
+    editChurn.length === 0
+      ? 'four values typed into the same field and no section-identity churn warning — the Body was re-rendered, never remounted'
+      : editChurn.slice(0, 2).join(' | '),
+  );
+
+  reportConsole('params.edit-console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
 
 const context = await esbuild.context({
   entryPoints: [join(EXAMPLE, 'main.tsx')],
-  outfile: join(EXAMPLE, 'bundle.js'),
+  // The SAME configuration `scripts/build-example.mjs` uses, and it has to be the same one: a split
+  // build in one and an inlined build in the other measures nothing. `entryNames` keeps the entry at
+  // `bundle.js`, which is the relative specifier `index.html` already loads.
+  outdir: EXAMPLE,
+  entryNames: 'bundle',
+  chunkNames: 'chunk-[hash]',
+  splitting: true,
   bundle: true,
   write: false,
   format: 'esm',
   target: 'es2021',
   jsx: 'automatic',
+  metafile: true,
   logLevel: 'error',
   define: { 'process.env.NODE_ENV': '"development"' },
 });
+
+// ---------------------------------------------------------------------------------------------
+// THE BUNDLE ITSELF, before a browser is launched: what a visitor downloads before anything draws.
+// ---------------------------------------------------------------------------------------------
+
+const built = await context.rebuild();
+const overCeiling = bootChunkVerdict(
+  built.metafile,
+  'bundle.js',
+  BOOT_CHUNK_CEILING.development,
+);
+check(
+  'bundle.boot-chunk-under-its-ceiling',
+  overCeiling === null,
+  overCeiling ??
+    `the entry chunk is under ${BOOT_CHUNK_CEILING.development} B, so nothing that was written to ` +
+      'load on demand is arriving at boot',
+);
+
+/**
+ * THE PACKAGE STILL DECLARES NOTHING IT DOES NOT SHIP.
+ *
+ * The example now takes a 1.05 MB indicator library and its required peer, and the whole point of
+ * putting them in the HOST is that the published package gains neither. `packaging.spec.ts` says
+ * this too, and it is one of the three suites `jest.config.js` skips outside the monorepo — so
+ * outside the monorepo this is the only place the claim is measured, next to the bundle it is a
+ * claim about.
+ */
+{
+  const manifest = JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8'));
+  const runtime = Object.keys(manifest.dependencies ?? {});
+  const peers = Object.keys(manifest.peerDependencies ?? {}).sort();
+  const vendorAsDev = ['lightweight-charts-indicators', 'oakscriptjs'].filter(
+    (name) => typeof manifest.devDependencies?.[name] === 'string',
+  );
+  check(
+    'params.the-package-declares-zero-dependencies-and-two-peers',
+    runtime.length === 0 &&
+      peers.length === 2 &&
+      peers.join(', ') === 'lightweight-charts, react' &&
+      vendorAsDev.length === 2,
+    runtime.length === 0 && peers.length === 2 && vendorAsDev.length === 2
+      ? `zero runtime dependencies, exactly two peers (${peers.join(', ')}), and ${vendorAsDev.join(' + ')} declared where the example can reach them and an installer cannot`
+      : `${runtime.length} runtime dependenc(ies) [${runtime.join(', ')}], ${peers.length} peer(s) [${peers.join(', ')}], ${vendorAsDev.length}/2 vendor devDependencies`,
+  );
+}
+
+/**
+ * THE CEILING THE PANEL OFFERS AND THE LANE COUNT THE RESOLVER TRUNCATES TO ARE ONE NUMBER.
+ *
+ * `resolveSources` starts with `laneOrder(active, policy.lanes)`, which cuts the chosen list to
+ * that many entries — overlays included. A host whose `capacity` exceeds `policy.lanes` therefore
+ * lets a visitor choose studies that are silently never resolved, and this page shipped exactly
+ * that: a capacity of six against two lanes, six chosen, two drawn, nothing said. The fix was not a
+ * report; it was REMOVING THE CONDITION, by writing the two as one symbol. So the assertion is on
+ * the symbol — a literal in either position brings the divergence back, and there is no cut left to
+ * report because there is no cut.
+ */
+{
+  // Comments are stripped first: this file's own prose quotes the defect (`capacity: 6`), and a
+  // guard that read the description of the bug instead of the code would be reporting on itself.
+  const app = readFileSync(join(EXAMPLE, 'App.tsx'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const laneCount = /resolutionPolicy\(\{\s*lanes:\s*([\w$]+)/.exec(app)?.[1] ?? null;
+  const offered = /\bcapacity:\s*([\w$]+)/.exec(app)?.[1] ?? null;
+  check(
+    'params.the-ceiling-and-the-lane-count-are-one-number',
+    laneCount !== null && laneCount === offered,
+    laneCount !== null && laneCount === offered
+      ? `the panel's ceiling and the resolver's lane count both read \`${laneCount}\`, so the host's capacity cannot exceed its lane count and there is nothing for it to report`
+      : `lanes reads ${JSON.stringify(laneCount)} and capacity reads ${JSON.stringify(offered)} — a divergence here is a study a visitor can choose and never see`,
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 16 — THE FILL. The Kumo is the reading the Ichimoku is named for, and until this feature
+// the demo drew none of it: the two cloud boundaries are hidden plots the vendor fills BETWEEN, and
+// nothing carried a fill to the canvas at all. It exists only as pixels, so it is read as pixels —
+// and in TWO colours, because a reference that collapses them deletes the signal.
+// ---------------------------------------------------------------------------------------------
+const KUMO_BULLISH = [67, 160, 71]; // #43A047, the vendor's own
+const KUMO_BEARISH = [244, 67, 54]; // #F44336
+
+/**
+ * THE FIVE LINES, BY THE HUE EACH ONE IS DRAWN IN.
+ *
+ * The colour is the HOST'S, not the vendor's: `example/panes.ts` cycles `OVERLAY_COLORS` by plot
+ * position, so plot 0 of a study drawn over the price is `#4c9aff` and plot 4 is `#66bb6a`. Reading
+ * five distinct hues is therefore reading five distinct LINES — and it is the only instrument that
+ * can count them. The legend shows four, because the Lagging Span is displaced 26 bars back and has
+ * no value at the right edge to print; a legend-only count would report four for ever and could not
+ * tell that from a line that failed to draw.
+ *
+ * Measured before this feature: ONE. The host minted a single over-price slot per lane, so four of
+ * the five readings were filed against a series id nothing had declared.
+ */
+const ICHIMOKU_LINES = [
+  { title: 'Conversion Line', rgb: [76, 154, 255] },
+  { title: 'Base Line', rgb: [199, 146, 234] },
+  { title: 'Lagging Span', rgb: [38, 198, 218] },
+  { title: 'Leading Span A', rgb: [245, 166, 35] },
+  { title: 'Leading Span B', rgb: [102, 187, 106] },
+];
+
+async function sceneCloudIsShaded(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const beforeGreen = await hueCount(page, surface, KUMO_BULLISH);
+  const beforeRed = await hueCount(page, surface, KUMO_BEARISH);
+  const beforeLines = await Promise.all(ICHIMOKU_LINES.map(({ rgb }) => hueCount(page, surface, rgb, 4)));
+  check(
+    'cloud.nothing-shaded-before-the-pick',
+    beforeGreen === 0 && beforeRed === 0,
+    `cloud pixels before picking anything: bullish ${beforeGreen}, bearish ${beforeRed}`,
+  );
+
+  await openStudies(page);
+  await pickStudy(page, 'Trend', 'ichimoku');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const green = await hueCount(page, surface, KUMO_BULLISH);
+  const red = await hueCount(page, surface, KUMO_BEARISH);
+  check(
+    'cloud.kumo-is-shaded',
+    green > 0 && red > 0,
+    `cloud pixels after picking Ichimoku: bullish ${green}, bearish ${red}`,
+  );
+  // THE TWO COLOURS ARE THE READING. One of them alone is what the reference implementation
+  // produces, and it is the failure this clause exists to name rather than the success.
+  check(
+    'cloud.keeps-both-colours',
+    green > 0 && red > 0 && green !== red,
+    `bullish ${green} px and bearish ${red} px are both present and are different regions`,
+  );
+
+  const legend = await page.locator('[data-testid="workspace-legend-price"]').textContent();
+  check(
+    'cloud.five-lines-under-it',
+    (await drawnReadingCount(page, 'workspace-legend-price')) >= 4,
+    `price legend after Ichimoku: ${JSON.stringify(legend)}`,
+  );
+
+  // FIVE LINES, COUNTED ON THE BITMAP. Measured before this feature at one.
+  const lines = await Promise.all(ICHIMOKU_LINES.map(({ rgb }) => hueCount(page, surface, rgb, 4)));
+  check(
+    'cloud.five-lines-are-drawn',
+    lines.every((count) => count > 0) && beforeLines.every((count) => count === 0),
+    lines.every((count) => count > 0)
+      ? `${ICHIMOKU_LINES.map(({ title }, at) => `${title} ${lines[at]}px`).join(', ')} — five distinct hues, five drawn lines, where the page drew ONE before this feature`
+      : `drawn: ${ICHIMOKU_LINES.map(({ title }, at) => `${title} ${lines[at]}px`).join(', ')} · before the pick: ${beforeLines.join(', ')}`,
+  );
+
+  /* ---- FILL-04: editing a bound moves the lines AND the shading, in the same frame ---------- */
+  await page.locator('[data-testid="workspace-catalogue-section-params"]').click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const span = page.getByLabel('Leading Span B Length');
+  await span.fill('26');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const movedLine = await hueCount(page, surface, ICHIMOKU_LINES[4].rgb, 4);
+  const movedGreen = await hueCount(page, surface, KUMO_BULLISH);
+  const movedRed = await hueCount(page, surface, KUMO_BEARISH);
+  check(
+    'cloud.editing-a-bound-moves-the-line-and-the-shading-together',
+    movedLine !== lines[4] && (movedGreen !== green || movedRed !== red) && movedGreen + movedRed > 0,
+    movedLine !== lines[4] && (movedGreen !== green || movedRed !== red)
+      ? `Leading Span B 52 -> 26: the line moves ${lines[4]} -> ${movedLine} px and the Kumo bounded by it moves ${green}/${red} -> ${movedGreen}/${movedRed} px. A fill still drawn against the OLD bounds would leave the second pair alone while the first moved, which is the shape of the defect the clause is about`
+      : `line ${lines[4]} -> ${movedLine}, bullish ${green} -> ${movedGreen}, bearish ${red} -> ${movedRed}`,
+  );
+
+  reportConsole('cloud.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 17 — THE MARKS. 77 offered indicators emit them, and until this feature none of them drew:
+// `ISeriesApi` in the installed base library has no `setMarkers` at all — the member lives on
+// `ISeriesMarkersPluginApi` — so the optional call was swallowed and nothing was red. The published
+// 0.2.1's candlestick pattern marks are the same no-op. Counted here on the REAL engine and off the
+// real bitmap, because a repository fake that implements what the base library lacks is exactly how
+// this survived.
+//
+// THE STUDY IS CHOSEN SO THAT ONLY THE MARKER CHANNEL CAN WRITE THESE TWO HUES, and that is the
+// whole point of the scene. It used to read `realtime-volume-bars` at #00FF00/#FF0000, and that
+// study emits the SAME two hues twice: once as markers and once as `plots.plot0`/`plots.plot1`
+// point colours. The moment per-bar point colours started drawing, the count stopped being able to
+// fall to zero, and deleting the marker plugin outright left this scene green. Measured over all 72
+// marker-emitting rows at their own defaults: `t3-psar` is one of six whose marker colours appear
+// nowhere else in its own result — its point colours are #EF5350 and #64B5F6, its `barColors` are
+// neither of these two, and its 259 marks are `arrowUp` #00E676 below the bar and `arrowDown`
+// #FFEB3B above it. Nothing else on this page paints either hue, which `marks.none-before-the-pick`
+// measures rather than assumes.
+// ---------------------------------------------------------------------------------------------
+const MARK_UP = [0, 230, 118]; // t3-psar's arrowUp, #00E676 — its markers and nothing else
+const MARK_DOWN = [255, 235, 59]; // its arrowDown, #FFEB3B
+
+async function sceneMarksReachTheBars(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const beforeUp = await hueCount(page, surface, MARK_UP, 2);
+  const beforeDown = await hueCount(page, surface, MARK_DOWN, 2);
+  check(
+    'marks.none-before-the-pick',
+    beforeUp === 0 && beforeDown === 0,
+    `marker pixels before picking anything: up ${beforeUp}, down ${beforeDown}`,
+  );
+
+  await openStudies(page);
+  await pickStudy(page, 'Moving Averages', 't3-psar');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const up = await hueCount(page, surface, MARK_UP, 2);
+  const down = await hueCount(page, surface, MARK_DOWN, 2);
+  check(
+    'marks.reach-the-bars',
+    up > 0 && down > 0,
+    `marker pixels after picking "T3 PSAR": up ${up}, down ${down} — two hues this study writes from its marker channel alone, so removing the marker plugin takes both to zero`,
+  );
+
+  reportConsole('marks.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 18 — THE COLOURED BAR. 52 offered indicators repaint the candles with `barcolor()` and
+// 45,209 of those colours had nowhere to land: `Point` carries none and `SeriesSpec.color` is one
+// colour for a whole series. Read off the bitmap, because a candle painted the wrong colour renders
+// exactly as well as one painted the right one.
+// ---------------------------------------------------------------------------------------------
+const BAR_PAINT = [156, 39, 176]; // buying-selling-volume paints its own #9C27B0
+
+async function sceneBarsAreRecoloured(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const before = await hueCount(page, surface, BAR_PAINT, 2);
+  check('barcolor.none-before-the-pick', before === 0, `bars in the study's colour before the pick: ${before}`);
+
+  await openStudies(page);
+  await pickStudy(page, 'Volume', 'buying-selling-volume');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const after = await hueCount(page, surface, BAR_PAINT, 2);
+  check(
+    'barcolor.candles-take-the-colour',
+    after > 0,
+    `bars in the study's colour after picking "Buying/Selling Volume": ${after} — it is drawn in a LANE and still repaints the price, which is what barcolor() means`,
+  );
+
+  reportConsole('barcolor.console-clean', console_);
+  await page.close();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Scene 19 — THE LAST FOUR CHANNELS. Background shading, labels, drawn lines and boxes: 34 offered
+// indicators between them, and until this feature not one of the four reached a canvas. They ride
+// the anchor and the overlay channel the fill already paid for, so the package gains nothing for
+// them — which is exactly why the proof has to be pixels. A host primitive that is never attached
+// costs zero bytes and draws zero pixels, and only one of those two is detectable from `src/`.
+//
+// Each colour below is the VENDOR'S OWN, read off the registry at its own defaults over the proof's
+// fixture: an overlay paints onto a transparent pane layer, so the three colour bytes survive the
+// composite verbatim and the alpha is what says the pixel was painted at all.
+// ---------------------------------------------------------------------------------------------
+const CHANNEL_SCENES = [
+  {
+    id: 'bgColors',
+    category: 'Oscillators',
+    study: 'kdj',
+    // `rgba(0,128,0,0.3)` and `rgba(255,0,0,0.3)`, one per bar, a full-height column each.
+    hues: [[0, 128, 0], [255, 0, 0]],
+    note: 'KDJ shades its own pane green and red, one column per bar',
+  },
+  {
+    id: 'labels',
+    category: 'Trend',
+    study: 'pivot-hh-hl-lh-ll',
+    // 171 labels, text only: 4 of the 7 emitters carry no bubble colour, so the text IS the label.
+    // The row's OTHER label colour is `rgba(0,128,128,0.5)`, and it is deliberately not read here:
+    // measured, the chrome already carries 17 pixels within four of that teal before any study is
+    // picked, so a control on it could never read zero and would be asserting nothing.
+    hues: [[255, 0, 0]],
+    note: '171 pivot labels, drawn as text in the colour the vendor names',
+  },
+  {
+    id: 'lines',
+    category: 'Oscillators',
+    study: 'triangular-momentum-osc',
+    hues: [[255, 68, 31], [0, 196, 43]],
+    note: '19 drawn lines between two endpoints in time and price',
+  },
+  {
+    id: 'boxes',
+    category: 'Trend',
+    study: 'hema-trend-levels',
+    // `#00ffbb4D` and `#ff11004D` — hex8, the alpha already in the string.
+    hues: [[0, 255, 187], [255, 17, 0]],
+    note: '34 boxes between two corners, filled and unbordered',
+  },
+];
+
+/**
+ * FOUR, and the number was measured in both directions rather than copied from the fill's six.
+ *
+ * A translucent fill does not read back byte-exact: the canvas keeps colour PREMULTIPLIED and
+ * `getImageData` divides the alpha out again, so the shading the vendor writes as `rgba(0,128,0,0.3)`
+ * comes back as 127 and an exact match counts ZERO of its 50,000 pixels. Measured: at a tolerance of
+ * zero the green column reads 0 and the red one reads 40,416, which is the rounding and not the
+ * drawing. Four admits the round-trip and still refuses a neighbouring hue.
+ */
+const SLACK = 4;
+
+async function sceneRemainingChannelsDraw(browser, base) {
+  const surface = '[data-testid="workspace-surface"]';
+  for (const scene of CHANNEL_SCENES) {
+    const { page, console_ } = await freshPage(browser, base);
+    const before = await Promise.all(scene.hues.map((hue) => hueCount(page, surface, hue, SLACK)));
+    check(
+      `channels.${scene.id}-absent-before-the-pick`,
+      before.every((count) => count === 0),
+      `pixels in ${scene.study}'s own colours before picking anything: ${before.join(', ')}`,
+    );
+
+    await openStudies(page);
+    await pickStudy(page, scene.category, scene.study);
+    await page.waitForTimeout(SETTLE_MS);
+
+    const after = await Promise.all(scene.hues.map((hue) => hueCount(page, surface, hue, SLACK)));
+    check(
+      `channels.${scene.id}-draw`,
+      after.every((count) => count > 0),
+      `after picking "${scene.study}": ${after.join(' and ')} pixels — ${scene.note}`,
+    );
+    reportConsole(`channels.${scene.id}-console-clean`, console_);
+    await page.close();
+  }
+}
+
+const control = await splittingControl();
+check(
+  'bundle.splitting-is-what-keeps-it-small',
+  control.inlined !== null &&
+    control.split !== null &&
+    control.inlined > control.heavyBytes &&
+    control.split < control.heavyBytes / 100 &&
+    control.chunks > 1,
+  `a synthetic entry whose only weight sits behind an await import() builds to ${control.inlined} B ` +
+    `at boot with outfile and ${control.split} B across ${control.chunks} files with outdir + ` +
+    'splitting — which is the difference the ceiling above is able to see',
+);
 // Port 0 asks the OS for a free one: a suite that collides with a developer's own `npm run example`
 // on 5173 is a false red, exactly as `layout-probe.mjs` already reasons about the same collision.
 const served = await context.serve({ servedir: EXAMPLE, host: HOST, port: 0 });
@@ -893,6 +1604,14 @@ try {
   await sceneAlertAddAndDragRemove(browser, base);
   await sceneAnchorDragHoldsTheRange(browser, base);
   await sceneMagnetPlacesTheAnchor(browser, base);
+  await sceneHostSectionIsStable(browser, base);
+  await sceneCatalogueBeforeTheLibrary(browser, base);
+  await sceneCatalogueFailureStillMounts(browser, base);
+  await sceneEditedInputRedraws(browser, base);
+  await sceneCloudIsShaded(browser, base);
+  await sceneMarksReachTheBars(browser, base);
+  await sceneBarsAreRecoloured(browser, base);
+  await sceneRemainingChannelsDraw(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

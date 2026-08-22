@@ -17,6 +17,9 @@ import { shouldReframe } from './reframe';
  * See docs/explanation/react-surface.md#raw-readings-and-the-declared-drawing */
 export type SeriesReader = (pane: PaneSpec, series: SeriesSpec) => readonly (number | null)[];
 
+/** The same series, one colour per bar. `null` at a bar = that segment takes the series' own. */
+export type SeriesColorReader = (pane: PaneSpec, series: SeriesSpec) => readonly (string | null)[];
+
 export interface SeriesDataPaneView {
   readonly spec: PaneSpec;
 }
@@ -30,10 +33,15 @@ export interface SeriesDataInput {
   readonly panes: readonly SeriesDataPaneView[];
   readonly pricePane?: PaneSpec;
   readonly read: SeriesReader;
+  readonly readColors?: SeriesColorReader;
   readonly upColor: string;
   readonly downColor: string;
   readonly seriesStyles?: Readonly<Record<string, SeriesShape>>;
   readonly priceMarkers?: readonly SeriesMarkerPoint[];
+  /** Marks on a COMPUTED series, by `seriesStyleKey`. See docs/explanation/react-surface.md#a-study-marks-its-own-series */
+  readonly seriesMarkers?: ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
+  /** One colour per bar, positionally. See docs/explanation/react-surface.md#a-bar-the-study-colours */
+  readonly barColors?: readonly (string | null)[];
   /** The dataset's IDENTITY: changed = dataset replaced, and the scale is redone once. */
   readonly datasetId?: string;
   readonly autoFit?: boolean;
@@ -54,10 +62,13 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     panes,
     pricePane,
     read,
+    readColors,
     upColor,
     downColor,
     seriesStyles,
     priceMarkers,
+    seriesMarkers,
+    barColors,
     datasetId,
     autoFit,
     futureBars,
@@ -89,13 +100,17 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     // library's payload, so overlays, providers and the legend keep reading real bars with no guard
     // of their own. See docs/explanation/domain.md#the-future-room-is-whitespace-not-candles
     handles.candle?.setData([
-      ...bars.map((bar) => ({
-        time: bar.time,
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close,
-      })),
+      ...bars.map((bar, at) => {
+        const color = barColors?.[at] ?? null;
+        return {
+          time: bar.time,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          ...(color === null ? {} : { color, borderColor: color, wickColor: color }),
+        };
+      }),
       ...futureTail(bars, futureBarCount(futureBars, bars.length)),
     ]);
 
@@ -107,10 +122,13 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
         const series = handles.series.get(key);
         if (series === undefined) return;
         // Mirroring and sign/direction colouring are DOMAIN vocabulary, applied in domain/readings.
-        const points = plottedPoints(readings[position] ?? [], bars, spec, {
-          up: upColor,
-          down: downColor,
-        });
+        const points = plottedPoints(
+          readings[position] ?? [],
+          bars,
+          spec,
+          { up: upColor, down: downColor },
+          readColors?.(view.spec, spec),
+        );
         series.setData(points);
         // The twin carries the SAME readings, so flipping style never waits for a data pass.
         handles.series.get(twinKey(key))?.setData(points);
@@ -143,7 +161,7 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     // all of it is the right picture.
     // See docs/explanation/react-surface.md#framing-is-fitcontent-and-nothing-after-it
     scale.fitContent();
-  }, [bars, dataPanes, handles, readingsByPane, upColor, downColor, datasetId, autoFit, futureBars]);
+  }, [bars, barColors, dataPanes, handles, readColors, readingsByPane, upColor, downColor, datasetId, autoFit, futureBars]);
 
   /** THE SHAPE PAIR — which of the two members is on screen. Applied to the PAIR only.
    * See docs/explanation/react-surface.md#the-shape-pair-applies-to-the-pair-only */
@@ -167,6 +185,11 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     if (priceMarkers === undefined) return;
     handles?.candle?.setMarkers?.(priceMarkers);
   }, [handles, priceMarkers]);
+
+  useEffect(() => {
+    if (seriesMarkers === undefined) return;
+    for (const [key, marks] of seriesMarkers) handles?.series.get(key)?.setMarkers?.(marks);
+  }, [handles, seriesMarkers]);
 
   return readingsByPane;
 }

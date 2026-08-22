@@ -29,6 +29,7 @@ import type {
   WorkspaceChartHandle,
 } from '../src/port/chartApi';
 import type { FrameSink, HistoryRequest, HistoryResult, MarketDataPort, Unsubscribe } from '../src/port/ports';
+import { OverlayPrimitive } from '../src/render/overlayBridge';
 import { WorkspaceChromeProvider } from '../src/react/chrome/ChromeContext';
 import { CanvasSurface } from '../src/react/workspace/CanvasSurface';
 import type { CandleLaneState } from '../src/react/useCandleLane';
@@ -144,6 +145,22 @@ function fakeEngine(
   return { engine, series };
 }
 
+/**
+ * A host's own overlay, tying with the package's fields on z-order so the COMPOSITION decides which
+ * paints over which. It is identified among the attached primitives through `detached()`, which is
+ * the one member of the primitive contract that reaches its overlay without an attachment: the fake
+ * engine records primitives, and `OverlayPrimitive` keeps the overlay it wraps private.
+ */
+class HostOverlay implements Overlay {
+  readonly zOrder = 'behind' as const;
+  constructor(private readonly told: string[], private readonly label: string) {}
+  attached(): void {}
+  detached(): void {
+    this.told.push(this.label);
+  }
+  draw(): void {}
+}
+
 class FakeLayer implements DrawingLayer {
   readonly armed: (string | null)[] = [];
   setActiveTool(toolId: string | null): void {
@@ -173,6 +190,8 @@ interface HarnessProps {
   readonly onLane?: (state: CandleLaneState) => void;
   readonly showDensity?: boolean;
   readonly showProfile?: boolean;
+  /** The host's own overlays, which the region composes with the fields it draws itself. */
+  readonly overlays?: readonly Overlay[];
   readonly engine: ChartEngine;
   readonly heightPx?: number;
 }
@@ -186,6 +205,7 @@ function Harness({
   onLane,
   showDensity,
   showProfile,
+  overlays,
   engine,
   heightPx = 600,
 }: HarnessProps): ReactElement {
@@ -212,6 +232,7 @@ function Harness({
           a11y={{ label: 'BTC/USDT · 1h', describedBy: 'state' }}
           lane={{ scope: SCOPE, port, barCount: 800 }}
           fields={{ showDensity, showProfile }}
+          overlays={overlays}
           snapThresholdPx={snapThresholdPx}
           onLane={onLane}
         />
@@ -328,6 +349,97 @@ describe('the canvas surface region', () => {
     render(<Harness port={port} engine={on.engine} showDensity showProfile />);
     await settle();
     expect(on.series[0].attached).toHaveLength(2);
+  });
+
+  /**
+   * THE CONJUNCTION ITSELF — both halves present at once, neither discarded.
+   *
+   * Dropping `fielded` whenever the host supplies its own array survived all 1524 unit tests and
+   * died in exactly one e2e scene (`scripts/e2e-demo.mjs:516`), and only by accident: that scene
+   * reaches the conjunction because `example/App.tsx:76` always hands over a non-empty
+   * `studies.overlays` while `:143` switches the density on, so the demo happens to sit permanently
+   * in it. Both dedicated suites scope themselves to one side on purpose —
+   * `test/workspaceOverlays.spec.tsx:60` with `showDensity: false`, `test/overlayFields.spec.tsx:58`
+   * with no host array at all — so nothing asserted the two TOGETHER.
+   *
+   * The two single-sided renders are the controls that make 3 mean 2 + 1 rather than a coincidence:
+   * discard the fields and the count falls to the host's 1, discard the host's and it falls to the
+   * fields' 2.
+   */
+  it('keeps BOTH the package fields and the host overlays when the two arrive together', async () => {
+    const order: string[] = [];
+    const { port } = recordingPort(order);
+
+    const fieldsOnly = fakeEngine();
+    const first = render(<Harness port={port} engine={fieldsOnly.engine} showDensity showProfile />);
+    await settle();
+    expect(fieldsOnly.series[0].attached).toHaveLength(2);
+    first.unmount();
+
+    const hostOnly = fakeEngine();
+    const alone = new HostOverlay([], 'host');
+    const second = render(<Harness port={port} engine={hostOnly.engine} overlays={[alone]} />);
+    await settle();
+    expect(hostOnly.series[0].attached).toHaveLength(1);
+    second.unmount();
+
+    const both = fakeEngine();
+    const told: string[] = [];
+    const own = new HostOverlay(told, 'host');
+    render(<Harness port={port} engine={both.engine} showDensity showProfile overlays={[own]} />);
+    await settle();
+
+    const attached = both.series[0].attached as unknown as readonly OverlayPrimitive[];
+    expect(attached).toHaveLength(3);
+    // AND THE THREE ARE THE TWO PLUS THE ONE: the host's overlay is among them, and the other two
+    // are not it — so neither side was swallowed by the other.
+    const hostAt: number[] = [];
+    attached.forEach((primitive, at) => {
+      const before = told.length;
+      primitive.detached();
+      if (told.length > before) hostAt.push(at);
+    });
+    expect(hostAt).toHaveLength(1);
+    expect(told).toEqual(['host']);
+  });
+
+  /**
+   * EDGE CASE spec.md — the package's fields are composed BEFORE the host's own overlays.
+   *
+   * The z-order tie case (`test/overlayBridge.spec.ts`) fixes only that an order, once chosen,
+   * survives a redraw. It never said WHICH order, and nothing did: swapping the two halves of
+   * `CanvasSurface.tsx:74` left 1524 unit tests and 96 e2e scenes green. Both halves land on the
+   * same anchor — the fields name nothing, and a host overlay that names nothing falls through to
+   * the pane-zero anchor — and both answer `'behind'`, so they TIE, and the composition order is the
+   * only thing deciding which paints over which.
+   *
+   * The package draws the ground and the host annotates on it: a field is a full-pane gradient and a
+   * host overlay is a statement about one study, so a field composed last would cover the annotation
+   * the host asked for, with no way for the host to fix it — the array it hands in is all it
+   * controls. Fields first is therefore the only order that keeps a host overlay usable.
+   */
+  it('composes the package fields BEFORE the host overlays, which tie with them on z-order', async () => {
+    const order: string[] = [];
+    const { port } = recordingPort(order);
+    const { engine, series } = fakeEngine();
+    const told: string[] = [];
+    const own = new HostOverlay(told, 'host');
+    render(<Harness port={port} engine={engine} showDensity showProfile overlays={[own]} />);
+    await settle();
+
+    const attached = series[0].attached as unknown as readonly OverlayPrimitive[];
+    // THE TIE IS REAL: all three answer the same layer, so nothing but the order decides.
+    expect(attached.map((primitive) => primitive.paneViews()[0].zOrder())).toEqual([
+      'bottom', 'bottom', 'bottom',
+    ]);
+    // AND THE HOST'S IS LAST, so it paints over the fields rather than under them.
+    const at = attached.findIndex((primitive) => {
+      const before = told.length;
+      primitive.detached();
+      return told.length > before;
+    });
+    expect(at).toBe(attached.length - 1);
+    expect(told).toEqual(['host']);
   });
 
   it('takes the drawing seam from the rail above it, not from a prop of its own', async () => {

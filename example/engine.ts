@@ -6,12 +6,14 @@
  * library talks to the base API through the structural port in `src/port/chartApi.ts`, and a file
  * like this one is where that port meets the real package.
  *
- * IT IS A PASS-THROUGH. Exactly one member needs translating: the base library names a series kind
- * with an imported VALUE, and a value is the one thing a structural type cannot carry.
+ * IT IS ALMOST A PASS-THROUGH. One member needs translating — the base library names a series kind
+ * with an imported VALUE, and a value is the one thing a structural type cannot carry — and one
+ * member needs BUILDING, because the base library does not have it on a series at all.
  */
 import type {
   ChartEngine,
   SeriesHandle,
+  SeriesMarkerPoint,
   SeriesShape,
   WorkspaceChartHandle,
 } from 'lightweight-magic-charts';
@@ -21,11 +23,15 @@ import {
   HistogramSeries,
   LineSeries,
   createChart,
+  createSeriesMarkers,
   type ChartOptions,
   type DeepPartial,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type SeriesMarker,
   type SeriesType,
+  type Time,
 } from 'lightweight-charts';
 
 /** Resolved one shape at a time, so an example that draws no area series retains no area series. */
@@ -40,6 +46,35 @@ function definitionOf(shape: SeriesShape): unknown {
     case 'area':
       return AreaSeries;
   }
+}
+
+/**
+ * THE MARKER DOOR, OPENED — and it needed opening, which is the point.
+ *
+ * `SeriesHandle.setMarkers?` has been on the port since it was written, with a docblock saying an
+ * adapter has to add the plugin, and no adapter ever did. Measured on the installed
+ * `lightweight-charts@5`: `ISeriesApi` has no `setMarkers` at all — the member lives on
+ * `ISeriesMarkersPluginApi`, which `createSeriesMarkers` returns — so a host handing back the raw
+ * series has a door that swallows every call. The candlestick pattern marks the published 0.2.1
+ * offers do not draw, and nothing was red, because the repository's own test doubles implemented
+ * what the real object does not.
+ *
+ * THE PLUGIN IS CREATED ON THE FIRST CALL, not at `addSeries`. Six studies over six lanes is 505
+ * series, and a plugin per series that never receives a mark is 505 plugins nobody asked for.
+ */
+const MARKER_PLUGINS = new WeakMap<ISeriesApi<SeriesType>, ISeriesMarkersPluginApi<Time>>();
+
+function withMarkers(created: ISeriesApi<SeriesType>): SeriesHandle {
+  return Object.assign(created, {
+    setMarkers: (marks: readonly SeriesMarkerPoint[]): void => {
+      let plugin = MARKER_PLUGINS.get(created);
+      if (plugin === undefined) {
+        plugin = createSeriesMarkers(created, []);
+        MARKER_PLUGINS.set(created, plugin);
+      }
+      plugin.setMarkers([...marks] as SeriesMarker<Time>[]);
+    },
+  });
 }
 
 /**
@@ -86,7 +121,7 @@ export const demoEngine: ChartEngine = (container, options) => {
         seriesOptions as never,
         paneIndex,
       );
-      return created;
+      return withMarkers(created);
     },
   };
   REAL_CHARTS.set(handle, chart);

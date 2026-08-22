@@ -37,10 +37,11 @@ changes in the code changes here.
 ## Exports
 
 - **`DEFAULT_SERIES_MENU_LABELS`** · value · `SeriesMenuLabels`
-- **`SeriesCatalogueEntry`** · type · `interface SeriesCatalogueEntry { provider: SeriesProvider; label: string; category: string; hint?: string | undefined }`
+- **`SeriesCatalogueEntry`** · type · `interface SeriesCatalogueEntry { provider: SeriesProvider; id?: string | undefined; label: string; category: string; hint?: string | undefined }`
 - **`SeriesMenu`** · value · `({ catalogue, selected: chosenIds, onSelect, capacity, labels, theme, testIdPrefix, maxResults, sections, onClose, }: SeriesMenuProps) => ReactElement`
 - **`SeriesMenuLabels`** · type · `interface SeriesMenuLabels { title: string; search: string; searchResults: string; categories: string; chosenCount: (chosen: number, capacity: number | null) => string; atCapacity: string; empty: string; close?: string | undefined }`
 - **`SeriesMenuProps`** · type · `interface SeriesMenuProps { catalogue: readonly SeriesCatalogueEntry[]; selected?: readonly string[] | undefined; onSelect: (entry: SeriesCatalogueEntry) => void; capacity?: number | undefined; labels?: SeriesMenuLabels | undefined; theme?: WorkspaceTheme | undefined; testIdPrefix?: string | undefined; maxResults?: number | undefined; sections?: readonly WorkspaceSection[] | undefined; onClose?: (() => void) | undefined }`
+- **`studyIdentity`** · value · `(entry: SeriesCatalogueEntry) => string`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).

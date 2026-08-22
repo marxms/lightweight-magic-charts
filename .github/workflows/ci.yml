@@ -67,6 +67,84 @@ jobs:
           npm pack --dry-run
           node scripts/verify-package-paths.mjs
 
+  # WHAT THIS JOB PROVES, AND WHAT IT DOES NOT. Stated in full because the honest answer is not the
+  # same for both halves of the owner's acceptance condition, and a job named after the condition
+  # would imply it was.
+  #
+  # PARAMETERISATION — proven exhaustively. All 320 offered indicators and all 1021 offered controls:
+  # every control demonstrably moves the drawing, and every control HELD BACK is in an exact-set
+  # ledger with a written reason (46 inert, 2 colour, 120 moving only a channel this package cannot
+  # draw). Both directions are asserted, so the ledger cannot be padded or thinned unnoticed.
+  #
+  # VENDOR DRIFT — proven exhaustively. 310 digests of computed VALUES, re-derived here and compared;
+  # a release that moves a reading by one part in a billion turns this red and names the indicator.
+  # And since it is regenerating the digests that would launder such a move, a digest may only change
+  # when `example/indicators/value-changes.json` says who changed it and why.
+  #
+  # NUMERIC CORRECTNESS — proven at the TIER each indicator carries, which is not uniform and is not
+  # claimed to be. 6 are pinned against hand-computed golden vectors; 6 series are cross-checked
+  # against this repository's own `example/studies.ts` and agree to ~1e-13; 111 hold a family
+  # invariant that does not depend on the implementation; 203 carry `structural` — they draw, are
+  # deterministic, pure, aligned and on the scale they declare, and NOTHING is claimed about their
+  # values. The manifest publishes that tally, and a run whose measured tiers disagree with it fails.
+  # Uniform numeric verification of all 320 would need an independent oracle per family; it is not
+  # this job and this job does not imply it.
+  #
+  # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 117.5,
+  # 122.2, 140.7 and 150.4 s across four runs in a linux/amd64 Node 22 container against 12.4 s on
+  # the author's macOS/arm64 machine — a 10x gap that is the container's (amd64 under emulation),
+  # not the suite's, and the reason the timeout below has room in it.
+  #
+  # THE PLATFORM SENSOR'S COST IS INSIDE THAT NOISE and is not claimed to be more: the same container
+  # measured 118.2 and 118.1 s on the commit immediately before it. A 33 s spread between runs of
+  # identical code is what the emulation costs, so any per-clause figure read off two runs of it
+  # would be a number invented by rounding.
+  #
+  # ONE NODE, AND THE REASON WAS WRONG UNTIL IT WAS FIXED. This comment used to say that none of what
+  # the job measures varies by Node runtime. It did: the digests were taken over raw doubles, and
+  # ECMAScript leaves `Math.exp`, `pow`, `log`, `log10`, `sin`, `cos`, `atan` and `acos`
+  # implementation-approximated — only `sqrt` is exact by IEEE 754 — so the SAME pinned vendor over
+  # the SAME fixture reported 31/33 on linux/amd64/Node 22 and 33/33 on macOS/arm64/Node 25, over a
+  # largest disagreement of 3.304e-16 relative. A single-Node job is what kept that invisible until
+  # a contributor on another machine hit it. `value-encoding.mjs` now quantises each reading against
+  # its own series before digesting — measured at 2^-36 of the series scale, no digest of the 310
+  # moves under a 1, 2, 4, 8, 16 or 64 ULP perturbation of those eight — and
+  # `catalogue.the-digest-survives-a-platform-re-rounding-a-transcendental` asserts that here, on
+  # whatever machine runs it, by nudging those eight one ULP and re-deriving. So one Node is enough
+  # BECAUSE of the encoding and the clause that watches it, rather than in spite of the question.
+  #
+  # It does NOT build. It reads `example/indicators/manifest.json` and the vendor directly; nothing
+  # under `src/` is involved, and `test/boundary.spec.ts` is what keeps it that way.
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          # The lowest Node this package still supports. The vendor's arithmetic is what this job
+          # measures, and it does not depend on which supported Node runs it.
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Indicator proof (parameterisation sensor + tiered correctness + manifest)
+        run: npm run proof
+
+      # THE COMMITTED CATALOGUE IS THE GENERATOR'S OUTPUT, or it is stale. `--check` derives it
+      # again and writes nothing: an edit by hand, or a vendor release the manifest has not been
+      # regenerated against, fails here rather than being discovered by a visitor. A digest that
+      # moved is refused outright rather than reported as stale — "re-run the generator" is the
+      # instruction that laundered the change in the first place.
+      - name: The catalogue is what the generator produces
+        run: node scripts/build-indicator-manifest.mjs --check
+
   # THE ONLY JOB THAT RENDERS A PIXEL. `gate` runs 1198+ cases and none of them mount `example/` —
   # `jest.config.js`'s own docblock explains why `testEnvironment` stays browser-free by default. On
   # 2026-08-16 that gap let seven defects reach `example/` at once (an empty volume pane, an empty

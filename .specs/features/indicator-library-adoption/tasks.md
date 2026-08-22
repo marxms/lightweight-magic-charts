@@ -1,0 +1,732 @@
+# Indicator library adoption — Tasks
+
+## Execution Protocol (MANDATORY -- do not skip)
+
+Implement these tasks with the `tlc-spec-driven` skill: **activate it by name and follow its Execute flow and Critical Rules.** Do not search for skill files by filesystem path.
+
+**If the skill cannot be activated, STOP and tell the user.**
+
+---
+
+**Design**: `.specs/features/indicator-library-adoption/design.md`
+**Status**: T1..T23 done. The second independent Verifier pass returned FAIL on two Major gaps and
+one Minor (`validation.md`); T24..T26 are those gaps, routed back as fix tasks
+
+---
+
+## Test Coverage Matrix
+
+> Guidelines found: `CONTRIBUTING.md` ("A green `npm run build && npm test`. Paste the counts jest prints", plus `npm run e2e` when the change can reach the page), `jest.config.js` (no coverage threshold; `roots: ['src','test']`; three monorepo-only gates ignored), `.github/workflows/ci.yml` (Node 22/24/26 matrix + a separate Chromium e2e job).
+
+| Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
+| --- | --- | --- | --- | --- |
+| Architectural gate (`test/gates/`, `test/boundary.spec.ts`) | unit | Every clause carries a synthetic POSITIVE CONTROL proving it discriminates, in both directions | `test/gates/*.spec.ts`, `test/boundary.spec.ts` | `npm test` |
+| Package seam (`src/tabs/`, `src/indicator/`, `src/catalogue/`) | unit | 1:1 to spec ACs; every listed edge case; round-trip asserted through the real codec | `test/*.spec.ts` | `npm test` |
+| React composition (`src/react/`) | unit | Mounted as a HOST mounts it — through `<ChartWorkspace>` with a real `WorkspaceStore` — never through a probe of the hook | `test/*.spec.tsx` | `npm test` |
+| Published surface (`src/index.ts`) | unit | Every new symbol appears in the derived reference byte-for-byte | `test/gates/docReference.spec.ts` | `npm run build && npm test` |
+| Host adapter + example (`example/`, `scripts/`) | e2e | The drawn result changes when an input changes: a legend value, a `data-testid` counter or a canvas checksum — never screenshot-equals-golden | `scripts/e2e-demo.mjs` | `npm run e2e` |
+| Vendor correctness (`scripts/indicator-proof.mjs`) | integration | Every offered indicator draws, is deterministic and pure; every offered input demonstrably moves the output or is in the inert ledger with a written reason | `scripts/indicator-proof.mjs` | `npm run proof` |
+| Byte budget / comment budget | none | Build gate only — the gate IS the assertion, and a task that moves 0 B proves it by the gate reporting no change | - | `node scripts/size-gate.mjs` |
+| Documentation & decision log | none | Build gate only — `docReference` compares byte-for-byte, `commentBudget` resolves every pointer to a document and a heading | `docs/**`, `.specs/STATE.md` | `npm run build && npm test` |
+
+## Gate Check Commands
+
+| Gate Level | When to Use | Command |
+| --- | --- | --- |
+| Quick | After tasks with unit tests only | `npm test` |
+| Full | After tasks that can reach the page | `npm run build && npm test && npm run e2e` |
+| Build | After a byte delta, a published symbol, or phase completion | `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs` |
+| Proof | After tasks touching the vendor catalogue | `npm run proof` |
+
+---
+
+## Execution Plan
+
+Each phase position is forced by a gate, not by preference. The order is derived in `design.md` §
+"Execution order, and what it forces".
+
+### Phase 1: The boundary, closed
+
+```
+T1
+```
+
+### Phase 2: Pay before spending
+
+Nothing that grows may land before these. `S1d` alone leaves the comment aggregate at 0.2001 (RED), so
+the trim precedes the shrinkage too.
+
+```
+T1 → T2 → T3 → T4
+```
+
+### Phase 3: Identity
+
+```
+T4 → T5 → T6
+```
+
+### Phase 4: The opaque channel
+
+```
+T6 → T7 → T8 → T9
+```
+
+### Phase 5: The bundler stops lying
+
+```
+T9 → T10
+```
+
+### Phase 6: The proof
+
+```
+T10 → T11 → T12
+```
+
+### Phase 7: The host
+
+```
+T12 → T13 → T14 → T15
+```
+
+### Phase 8: Close
+
+```
+T15 → T16 → T17
+```
+
+### Phase 9: The Verifier's gaps, closed
+
+Routed back from `validation.md` — the report is the input to this phase, not a summary of it. Ordered
+so the mechanism lands before the claim about it, and the spec is honest before its arithmetic is
+recounted.
+
+```
+T17 → T18 → T19 → T20 → T21 → T22 → T23
+```
+
+### Phase 10: The second pass's gaps, closed
+
+Routed back from the second `validation.md`. Two Major and one Minor, all measured: a fingerprint
+entry DELETED launders a wrong number through the sanctioned command (T24), the rewritten LANE-02
+still has no behavioural evidence and a mutation falsifying it survives every gate (T25), and the
+file a forger edits carries none of the doctrine that governs it (T26). The mechanism lands before
+the doctrine written about it.
+
+```
+T23 → T24 → T25 → T26
+```
+
+---
+
+## Task Breakdown
+
+### T1: The import guard fails closed ✅
+
+**What**: Teach `importsOf` to capture `import()` and to report any module reference it cannot read as a literal.
+**Where**: `test/boundary.spec.ts`
+**Depends on**: None
+**Reuses**: the existing `ImportRef`/`kindOfImport` shape and the synthetic-source helper already used by the by-name ban
+**Requirement**: GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A dynamic import of a bare specifier is captured with kind `runtime` and judged by the same allow-lists as a static one
+- [x] A non-literal reference — template literal, identifier, concatenation — is itself reported, for `import()` and `require()` alike
+- [x] Synthetic positive controls assert BOTH directions: the banned name is reported, a relative dynamic import is not
+- [x] `grep -rn "import(" src/` still returns nothing, so no existing source changes meaning
+- [x] Gate check passes: `npm test`
+- [x] Test count recorded, no suite deleted
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T2: Give the comment budget its line back ✅
+
+**What**: Delete comment lines that duplicate another comment line in the same file, and write the pick's JSX at the density the line above it already uses.
+**Where**: `src/react/workspace/ChartWorkspace.tsx`
+**Depends on**: T1
+**Reuses**: the density of the neighbouring `<SymbolTrigger …/>` call
+**Requirement**: enabling — no requirement of its own; every later task depends on it
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `ChartWorkspace.tsx` is at most 348 code lines, measured by the gate's own counter
+- [x] The comment aggregate leaves at least one line of slack under 0.20
+- [x] No deleted line carries a block's closing marker (two candidates do; deleting them breaks the build)
+- [x] No prose was cut — only exact duplicates within one file
+- [x] `node scripts/size-gate.mjs` shows the entry unchanged: this task moves 0 B
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: none
+**Gate**: build
+
+---
+
+### T3: One sentence for every hook mounted outside its provider ✅
+
+**What**: Collapse the four near-identical "was called outside" diagnostics into one exported factory, and give that throw path the discriminating test it never had.
+**Where**: `src/react/chrome/labels.ts`
+**Depends on**: T2
+**Reuses**: the four existing messages at `setupContext.tsx:76,89`, `DrawingRail.tsx:160`, `ChromeContext.tsx:167`
+**Requirement**: enabling — pays −319 B toward the feature
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] All four call sites read from the factory; no sentence is written twice
+- [x] A test mounts each hook outside its provider and asserts it throws with the provider named — none existed before
+- [x] `size-budget.json` re-pinned DOWN with the measured number and a written reason
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T4: One factory for the rail-tab style ✅
+
+**What**: Collapse the duplicated rail-tab style literals in the series menu into a single factory.
+**Where**: `src/react/SeriesMenu.tsx`
+**Depends on**: T3
+**Reuses**: the two existing literal blocks
+**Requirement**: enabling — pays −159 B toward the feature
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The two literals are one call; rendered output is byte-identical
+- [x] `size-budget.json` re-pinned DOWN separately from T3 — one measured candidate per re-pin
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T5: A study is identified by something that is not on screen ✅
+
+**What**: Add the optional `id` to a catalogue entry, export `studyIdentity`, and make the menu's pressed state and the pick agree on it.
+**Where**: `src/react/SeriesMenu.tsx`
+**Depends on**: T4
+**Reuses**: the existing `chosen` set and `aria-pressed` wiring
+**Requirement**: IDENT-01, IDENT-02, IDENT-03
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:react-patterns, ecc:react-testing
+
+**Done when**:
+- [x] `studyIdentity(entry) = entry.id ?? entry.label`, and the pressed state compares against it
+- [x] The DOM test id is unchanged, so every existing test id stays where it was
+- [x] A test mounts `<ChartWorkspace>` with a fixture where `id`, `label` and `provider.id` are three different strings, picks, and asserts the chip lights — it does not today
+- [x] A test changes the label while holding the id and asserts the study stays selected
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T6: Two entries cannot share one identity ✅
+
+**What**: Refuse a pick whose identity is already held, reporting it through the notice channel with an optional label and a default.
+**Where**: `src/react/workspace/ChartWorkspace.tsx`
+**Depends on**: T5
+**Reuses**: the `notice.report` path already used by `studyLimit`
+**Requirement**: IDENT-04
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:react-patterns, ecc:react-testing
+
+**Done when**:
+- [x] The label member is OPTIONAL with a default, so a host that typed the whole group still compiles
+- [x] The labels contract member count moves 85 → 86 in the same commit
+- [x] A test picks the same identity twice and asserts the notice fires and the list does not grow
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T7: The tab holds values it never reads ✅
+
+**What**: Add `StudySettings = unknown`, the optional `studySettings` map on the setup, the optional `coerceStudySettings` sibling, and own-property-only pruning that passes values through when the policy declares nothing.
+**Where**: `src/tabs/setup.ts`
+**Depends on**: T6
+**Reuses**: `coerceIndicators`, which is already the injected migration point
+**Requirement**: PARAM-01, PARAM-02, PARAM-03, PARAM-04, PARAM-05, PARAM-06, PARAM-07, PARAM-08
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Key pruning reads OWN properties only; a test asserts a study whose key exists only on the prototype chain yields NO value — `Object.prototype.hasOwnProperty.call`, because `Object.hasOwn` is ES2022 and this package declares `lib: ES2021`
+- [x] With `coerceStudySettings` absent, values pass through key-pruned rather than being emptied
+- [x] A pre-feature payload loads with no error, no version bump, and empty values
+- [x] Values for a study no longer in the list are dropped
+- [x] The `socketParity` blindness ledger is updated in the same commit
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T8: Editing a value redraws the chart ✅
+
+**What**: Widen `resolve` with an optional third parameter, pass the settings, add them to the memo dependencies, and prove the whole path through a mounted workspace.
+**Where**: `src/react/workspace/ChartWorkspace.tsx`
+**Depends on**: T7
+**Reuses**: the existing `useMemo` over `studies.resolve`
+**Requirement**: ADAPT-06
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:react-patterns, ecc:react-testing
+
+**Done when**:
+- [x] A host's existing two-parameter `resolve` still compiles — asserted, not assumed
+- [x] A test mounts `<ChartWorkspace>` with a real `WorkspaceStore` and a host section that writes a value, then asserts the resolve call count rises and carries the value
+- [x] The same test asserts an idle re-render does NOT re-resolve
+- [x] A clause of that test dies if the memo dependency is removed, and a different clause dies if the pass-through is removed — each verified by deletion
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T9: The host gets a door to the setup ✅
+
+**What**: Publish `studyIdentity`, the `StudySettings` type and the two setup hooks, and regenerate the derived reference.
+**Where**: `src/index.ts`
+**Depends on**: T8
+**Reuses**: `scripts/gen-reference.mjs`
+**Requirement**: enabling — ADAPT-04 and DEMO-02 cannot be built without this door
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The three publications appear in the derived reference byte-for-byte, regenerated in the same commit
+- [x] `verify-package-paths.mjs` exits 0
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: unit
+**Gate**: build
+
+---
+
+### T10: The bundler stops inlining the dynamic import ✅
+
+**What**: Move the example and e2e builds to `outdir` with `splitting: true`, and assert the boot chunk stays small.
+**Where**: `scripts/build-example.mjs`
+**Depends on**: T9
+**Reuses**: the existing esbuild invocation and its pinned version
+**Requirement**: APP-02 (enabling), DEMO-01
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The same change is applied to `scripts/e2e-demo.mjs` in the same commit — a split build in one and not the other measures nothing
+- [x] A ceiling on the boot chunk's bytes is asserted, so an inlined dynamic module turns red instead of silently costing 62×
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T11: Every offered indicator is proven, and every offered input is proven to matter ✅
+
+**What**: Land the correctness and parameterisation proof as a script with its own CI job, including the inert-input ledger as an exact set with written reasons.
+**Where**: `scripts/indicator-proof.mjs`
+**Depends on**: T10
+**Reuses**: `example/studies.ts` as the independent counter-implementation; the methodology of `scripts/e2e-demo.mjs` running in its own job
+**Requirement**: ADAPT-04, ADAPT-07, ADAPT-08
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Every offered indicator is asserted to draw, to be deterministic, to be pure, and to sit on the declared scale — 320/320
+- [x] Every offered input is asserted to move the output, or is in the ledger with a written reason; the ledger is an EXACT set and the check discriminates in both directions — proven by mutation: offering `sma.offset` and holding back `rsi.length` both turn it red
+- [x] Bounded-range rules are asserted by exact id with the definition written beside them — never by name pattern, which fired 40 false positives when tried
+- [x] The cross-check against `example/studies.ts` is asserted, and `example/studies.ts` is NOT deleted: it is the oracle — read out of the real file, stripped of its TypeScript and evaluated, so a port that drifts is red
+- [x] No offered control can be given a legal value that makes one recomputation exceed one second — 796 controls probed; `supertrend-ai-clustering.maxFactor` measured 20,276 ms unbounded and is now bounded at 100 (33 ms)
+- [x] A CI job runs it, separate from `npm test`, with the measured runtime recorded — 8.5 s
+- [x] Gate check passes: `npm run proof`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T12: The catalogue cannot change behind the check ✅
+
+**What**: Generate the committed catalogue manifest with a verification tier and settle-window per indicator, plus per-indicator value fingerprints, and a re-derivation check that compares values.
+**Where**: `scripts/build-indicator-manifest.mjs`
+**Depends on**: T11
+**Reuses**: the doctrine `size-budget.json` already applies to esbuild — exact version pin, no range
+**Requirement**: ADAPT-09, ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The manifest carries, per indicator, the tier reached and the bars within which a retroactive indicator settles — 313 of 320 never restate a closed bar, the other seven settle within 28
+- [x] Fingerprints are digests of computed VALUES, so a vendor upgrade that changes a number turns the check red — proven by mutation, in both the digest and the settle window
+- [x] The vendor version is pinned EXACTLY, not by range — asserted against `package.json`, the manifest and what is installed; a `^` turns it red naming the field
+- [x] The three definitional exclusions are named with their measurement — `td-macd`, `double-macd`, `transient-zones`, alongside the three T11 measured
+- [x] Gate check passes: `npm run build && npm test && npm run proof`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T13: The vendor's numbers become this domain's points ✅
+
+**What**: Write the adapter — plot key from `plotConfig`, each `Point` built from the bar index, non-finite becomes a declared gap, placement from `metadata.overlay`.
+**Where**: `example/indicators.ts`
+**Depends on**: T12
+**Reuses**: the `PlottableSource`/`SeriesProvider` shapes and `example/studies.ts` conventions
+**Requirement**: ADAPT-01, ADAPT-02, ADAPT-03, ADAPT-05
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:e2e-testing
+
+**Done when**:
+- [x] Each `Point` takes its time from `bars[index].time` and only its value from the vendor, which neutralises the shifted-point class for all of them
+- [x] A non-finite value becomes a point with no `value`
+- [x] The plot key comes from `plotConfig`; `plot0` is never assumed
+- [x] A vendor computation that throws costs one study and nothing else
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T14: The host draws the form the library refuses to name ✅
+
+**What**: A module-scope `WorkspaceSection.Body` that renders the vendor's `inputConfig` as accessible controls and writes through the published setup writer.
+**Where**: `example/studyForm.tsx`
+**Depends on**: T13
+**Reuses**: `useWorkspaceSetupWriter`, and the five chrome roles for the control obligations
+**Requirement**: ADAPT-04, DEMO-02
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:react-patterns, ecc:react-testing
+
+**Done when**:
+- [x] `Body` is defined at module scope and the section is never reordered — an inline `Body` loses the caret on the first character
+- [x] Every control has an associated label and its bounds reachable by a screen reader
+- [x] A value the host's own coercion rejects loads the study with no values rather than refusing the payload
+- [x] The `unknown` is narrowed here, in the host, with validation — the package cannot and must not
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T15: The demo offers the catalogue before the library loads ✅
+
+**What**: Wire the manifest-driven catalogue and the deferred `import()` into the example's workspace mount.
+**Where**: `example/App.tsx`
+**Depends on**: T14
+**Reuses**: the existing `studies` prop and `chrome.sections`
+**Requirement**: DEMO-01, DEMO-03, DEMO-04
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:e2e-testing
+
+**Done when**:
+- [x] The catalogue lists names from the manifest with the library still unloaded
+- [x] The library loads on the first study, never at boot
+- [x] If it fails to load, the workspace mounts with an empty catalogue rather than failing
+- [x] `package.json` still declares zero runtime dependencies and exactly two peers
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T16: The page proves an edited input changed the drawing ✅
+
+**What**: Add the e2e assertion that toggling a study and editing its input changes a drawn value while the study count holds.
+**Where**: `scripts/e2e-demo.mjs`
+**Depends on**: T15
+**Reuses**: the script's existing legend-value and `data-testid` counter assertions
+**Requirement**: DEMO-02, LANE-02
+
+**Tools**:
+- MCP: NONE
+- Skill: ecc:e2e-testing
+
+**Done when**:
+- [x] The assertion reads a legend value or a counter, never a screenshot compared to a golden file
+- [x] The study count is unchanged across the edit, proving no remount
+- [x] The churn warning stays silent, proving the `Body` is stable
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T17: The reversal is written down ✅
+
+**What**: Record AD-019, mark AD-006 superseded on its example clause only, and document the seam where a host will look for it.
+**Where**: `.specs/STATE.md`
+**Depends on**: T16
+**Reuses**: the existing decision table format
+**Requirement**: DEMO-03, DOC-01, DOC-02, LANE-01, LANE-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] AD-019 names what changed and by what evidence; AD-006's `src/` clause is stated as standing
+- [x] `docs/how-to/inject-catalogue.md` gains the third-party wiring, including that values are stored and never read
+- [x] The documentation states that `views.length` is the resolved count and the cut is the difference
+- [x] Every doc pointer written in a comment resolves to a document and a heading
+- [x] Gate check passes: `npm run build && npm test && npm run e2e && node scripts/size-gate.mjs && node scripts/verify-package-paths.mjs`
+
+**Tests**: none
+**Gate**: build
+
+---
+
+### T18: A number may not move without a declaration ✅
+
+**What**: Give the digest the rule an id already has — an append-only ledger a human writes, and a generator that refuses to overwrite a digest nobody declared.
+**Where**: `example/indicators/value-changes.json`, `scripts/indicator-proof/value-ledger.mjs`, `scripts/build-indicator-manifest.mjs`, `scripts/indicator-proof.mjs`
+**Depends on**: T17
+**Reuses**: the refusal `renames.json` already carries for an id that vanished
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A ledger carries id, old digest, new digest and reason, and nothing is ever deleted from it
+- [x] The generator REFUSES to write while a derived digest differs from the committed one and nothing declares the move
+- [x] `--check` refuses on the same terms instead of reporting the move as merely stale
+- [x] The rule discriminates: undeclared → red, correctly declared → green, wrong old digest → red
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T19: The claim says what the proof proves ✅
+
+**What**: Rewrite the owner-facing text around the proof job so no sentence implies 320 indicators were checked numerically.
+**Where**: `.github/workflows/ci.yml`, `scripts/indicator-proof.mjs`, `CONTRIBUTING.md`
+**Depends on**: T18
+**Reuses**: the seal's own three tiers, which are already honest
+**Requirement**: ADAPT-07, ADAPT-09
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The text states exhaustive parameterisation, drift-pinning and tiered numeric verification, with the counts
+- [x] No sentence presents the job as answering "correctly calculated" for every indicator
+- [x] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+
+---
+
+### T20: LANE-02 says what a host can actually do ✅
+
+**What**: Rewrite LANE-02 to the invariant the host enforces, and record the missing notice door as a gap rather than building it.
+**Where**: `.specs/features/indicator-library-adoption/spec.md`, `.specs/STATE.md`
+**Depends on**: T19
+**Reuses**: the e2e assertion already written at T16
+**Requirement**: LANE-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] LANE-02 states the derivable cut and the one-symbol invariant, not a channel no host can reach
+- [x] The absent host-facing notice channel is named in the Handoff as a candidate feature of its own
+- [x] No `onNotice` is added to `ChartWorkspaceProps`
+- [x] Gate check passes: `npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T21: IDENT-02's second conjunct is asserted ✅
+
+**What**: Assert that a study keeps its parameter values across a label change, in the same mounted composition that asserts it stays selected.
+**Where**: `test/chartWorkspace.spec.tsx`
+**Depends on**: T20
+**Reuses**: `recordingStudies`, `HostStudyForm` and the real `WorkspaceStore` already in the file
+**Requirement**: IDENT-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] A value is written before the label changes and read back after it
+- [x] The assertion dies when identity goes back to being the label
+- [x] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T22: The traceability arithmetic agrees with its own table ✅
+
+**What**: Recount the coverage line, resolve ADAPT-04 to one status, and scope APP-02 to what is provable here.
+**Where**: `.specs/features/indicator-library-adoption/spec.md`
+**Depends on**: T21
+**Reuses**: the table itself, which is the source of truth
+**Requirement**: bookkeeping — no requirement of its own
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The counts match the rows
+- [x] ADAPT-04 reads one status in the table and in the prose
+- [x] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+
+---
+
+### T23: The value edited while history is loading ✅
+
+**What**: Add the direct test for the listed edge case: a value edited before the window arrives recomputes against the bars present and draws gaps.
+**Where**: `test/chartWorkspace.spec.tsx`
+**Depends on**: T22
+**Reuses**: the deferred-port shape and `recordingStudies`
+**Requirement**: edge case — "a parameter value is edited while history is still loading"
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The write happens while the port's history has not resolved
+- [x] `resolve` is reached with the value and the bars present, and nothing throws
+- [x] What is drawn for the warm-up is a declared gap, never a zero
+- [x] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T24: A deleted fingerprint is a proof that vanished, not an indicator that appeared ✅
+
+**What**: Refuse an id the committed manifest offers whose fingerprint entry is absent, on the same terms as an undeclared move, and assert both directions of the new discrimination.
+**Where**: `scripts/indicator-proof/value-ledger.mjs`, `scripts/build-indicator-manifest.mjs`, `scripts/indicator-proof.mjs`
+**Depends on**: T23
+**Reuses**: the refusal and the four-direction discrimination T18 already built
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The generator REFUSES to write, and `--check` refuses to pass, while an id the committed manifest offers has no committed fingerprint and nothing declares it
+- [x] An id the committed manifest does NOT offer still enters with no declaration — a new indicator is not a deleted proof
+- [x] The absence can be declared: a `value-changes.json` entry ending at the derived digest carries it, like any other move
+- [x] The rule discriminates in both new directions, and stubbing the new clause leaves the proof red
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
+
+**Tests**: integration
+**Gate**: proof
+
+---
+
+### T25: Seven ids against three lanes, which is the test LANE-02 already names ✅
+
+**What**: Write LANE-02's own Independent Test — the resolved count is the lane count, so the host reads the cut as the difference.
+**Where**: `test/indicatorResolution.spec.ts`
+**Depends on**: T24
+**Reuses**: `scanLookup`, `source` and `BARS` already in the file
+**Requirement**: LANE-02, LANE-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Seven ids against three lanes resolve three views, and `ids.length - views.length` reads four
+- [x] The three that survive are the first three, in order and identical to resolving them alone
+- [x] A repeated id in the list is counted honestly: the difference covers the duplicate too, so it is not called a cut
+- [x] The test dies when `resolveSources` dedups without cutting at the lane count
+- [x] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+
+---
+
+### T26: The file a forger edits carries the doctrine that governs it ✅
+
+**What**: Name `value-changes.json` and the refusal in `fingerprints.json`'s own preamble, and correct the sentence that claimed the doctrine was already written there.
+**Where**: `scripts/build-indicator-manifest.mjs`, `example/indicators/fingerprints.json`, `scripts/indicator-proof/value-ledger.mjs`
+**Depends on**: T25
+**Reuses**: the preambles `value-changes.json` and `renames.json` already carry
+**Requirement**: ADAPT-10
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] `grep -c value-changes example/indicators/fingerprints.json` is no longer 0
+- [x] The preamble is generated, not typed, so it cannot drift from the generator that writes the file
+- [x] The admission in `value-ledger.mjs` describes the forgery's real cost, one file and the doctrine at its top
+- [x] Gate check passes: `npm run proof && node scripts/build-indicator-manifest.mjs --check && npm test`
+
+**Tests**: integration
+**Gate**: proof

@@ -142,7 +142,6 @@ export const resolve = (ids: readonly string[], bars: readonly Bar[]): SourceRes
       label: id,
       overlay: true,
       drawn: bars.length,
-      truncated: 0,
       availability: bars.length === 0 ? 'empty' : 'ok',
       warmUpBars: 20,
       windowBars: bars.length,
@@ -158,6 +157,120 @@ export const resolve = (ids: readonly string[], bars: readonly Bar[]): SourceRes
 height for that lane comes out of the same budget as everything else. What happens when the budget
 runs out is decided by the library, and measured in
 [`../explanation/layout.md`](../explanation/layout.md).
+
+## Step 5 — how many of your picks were actually drawn
+
+`resolveSources` builds `views` by mapping over the list `laneOrder` has already deduplicated and
+truncated to the lane count, so **`views.length` IS the resolved count**, and what was cut is the
+difference against the list you passed in. The library publishes no `cut` member because nothing
+inside it would read one; the subtraction is yours, and it is exact.
+
+```ts
+import type { SourceResolution } from 'lightweight-magic-charts';
+
+/** Chosen minus resolved. Two ids that resolve to one identity fold into one view, not two. */
+export const laneCut = (chosen: readonly string[], resolution: SourceResolution): number =>
+  chosen.length - resolution.views.length;
+```
+
+If that number is ever above zero your `studies.capacity` is larger than the lane count your
+`resolutionPolicy` truncates to, and a reader can choose studies that silently never resolve. Report
+it, or do what the example does and write the two as one number so the difference cannot arise.
+
+## Step 6 — bind a third-party indicator catalogue
+
+The library ships no indicator arithmetic and takes no dependency on any: a single indicator from a
+general-purpose catalogue is around a megabyte of minified JavaScript, roughly ten times this whole
+package, and the boundary suite fails the build if a name from one appears under `src/`. **The bytes
+and the words are yours.** What the library adds is the two things a host cannot do alone.
+
+**A stable identity.** `SeriesCatalogueEntry.id` is what gets persisted; absent, the label stands in.
+Put the same string in `provider.id`, because the menu builds its DOM and test ids from that one
+while the pressed state and the stored list use the identity — if they disagree nothing throws, the
+chip renders under one name and compares another, and the study looks unselectable while the payload
+fills up correctly.
+
+**Values it stores and never reads.** `WorkspaceSetup.studySettings` is a map from that identity to
+`StudySettings`, which is `unknown`. That is not laziness: the compiler refuses the package a
+property read, which is exactly what keeps a vendor's vocabulary out of it. The narrowing is yours,
+it happens in `coerceStudySettings`, and a value outside the bounds your catalogue declares is best
+REFUSED rather than clamped — a silently rewritten value is one the reader did not choose, arriving
+back on every load.
+
+```ts
+import type { StudySettings, WorkspaceSetupPolicy } from 'lightweight-magic-charts';
+
+/** Your vocabulary. The library never sees inside this shape. */
+interface Period {
+  readonly length: number;
+}
+
+const readPeriod = (held: StudySettings): Period | null => {
+  if (typeof held !== 'object' || held === null || Array.isArray(held)) return null;
+  const length = (held as { readonly length?: unknown }).length;
+  return typeof length === 'number' && Number.isInteger(length) && length > 0 ? { length } : null;
+};
+
+export const coerceStudySettings: NonNullable<WorkspaceSetupPolicy['coerceStudySettings']> = (
+  raw,
+  indicators,
+) => {
+  const held = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+  const kept: Record<string, StudySettings> = {};
+  for (const id of indicators) {
+    // OWN properties only: `in` answers for `toString` and fabricates a value nobody stored.
+    if (!Object.prototype.hasOwnProperty.call(held, id)) continue;
+    const values = readPeriod(held[id]);
+    if (values !== null) kept[id] = values;
+  }
+  return kept;
+};
+```
+
+Values for a study no longer in the list are dropped, a payload written before this feature existed
+loads with no values and no version bump, and the whole map survives duplicate, export and re-import
+because it is part of the tab.
+
+**The form is yours too.** A catalogue of hundreds of studies with thousands of inputs is not an
+enumerable vocabulary, and `chrome.labels` is a closed record of groups that could not hold it. So
+the library renders your component and sees nothing inside it: declare one `chrome.sections` entry,
+define its `Body` at **module scope**, and read and write through the two published doors. A `Body`
+built inline in your render is a new element type on every render — a remount, and the caret dies on
+the first character typed into it.
+
+```tsx
+import { useWorkspaceSetup, useWorkspaceSetupWriter } from 'lightweight-magic-charts';
+import type { ReactElement } from 'react';
+
+/** MODULE SCOPE, and the section that carries it is declared once and never reordered. */
+export function StudyInputs(): ReactElement {
+  const write = useWorkspaceSetupWriter();
+  const held = useWorkspaceSetup((setup) => setup.studySettings);
+  const length = (held?.['sma'] as { readonly length?: number } | undefined)?.length ?? 20;
+  return (
+    <label>
+      Length
+      <input
+        type="number"
+        min={1}
+        value={length}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          // Refused, never clamped: out of range writes nothing at all.
+          if (Number.isInteger(next) && next > 0) {
+            write({ studySettings: { ...held, sma: { length: next } } });
+          }
+        }}
+      />
+    </label>
+  );
+}
+```
+
+Load the arithmetic behind the reader's first pick rather than at boot, and check that your bundler
+actually defers it: with `outfile` and no code splitting, esbuild inlines a dynamically imported
+module into the entry, and the megabyte an `await import()` was written to defer is on the wire
+anyway with nothing red.
 
 ## What you did not have to do
 

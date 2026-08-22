@@ -40,6 +40,7 @@ export function plottedPoints(
   bars: readonly Bar[],
   spec: SeriesSpec,
   palette: DirectionPalette,
+  hues?: readonly (string | null)[],
 ): PlottedPoint[] {
   const points: PlottedPoint[] = [];
   readings.forEach((value, index) => {
@@ -50,7 +51,8 @@ export function plottedPoints(
       time: bar.time,
       value: plotted,
       color:
-        spec.barDirectionColoring === true
+        hues?.[index] ??
+        (spec.barDirectionColoring === true
           ? bar.close >= bar.open
             ? palette.up
             : palette.down
@@ -58,7 +60,7 @@ export function plottedPoints(
             ? plotted >= 0
               ? palette.up
               : palette.down
-            : undefined,
+            : undefined),
     });
   });
   return points;

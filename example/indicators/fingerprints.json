@@ -1,0 +1,1260 @@
+{
+ "why": "NAMES AND SHAPES ARE NOT ENOUGH. A check that compares ids, plot keys and input shapes stays green when a vendor release changes what a number IS — the upgrade that matters and the one nobody would notice. These are digests of computed VALUES.",
+ "declaredIn": "NOT EDITED BY HAND, AND NOT REGENERATED IN SILENCE EITHER. A digest that moved has to be DECLARED in example/indicators/value-changes.json — the id, the digest it moved from, the digest it moved to and the reason — and until it is, `scripts/build-indicator-manifest.mjs` REFUSES to write and `--check` REFUSES to pass. Deleting an entry is not a way round it: while the committed manifest still offers the id, an absent digest is a proof that vanished, not an indicator that appeared. Typing a number in here to agree with a vendor you patched yourself is the one move this file cannot catch, which is why the sentence you are reading is at the top of the file you would be editing.",
+ "algorithm": {
+  "id": "series-scaled-2^-36/sha256/v2",
+  "how": "sha256 over `plotId:index:reading` for every finite reading of every promised plot, at the entry's own defaults, over the fixture named in the manifest — each reading first divided by a step of 2^-36 of its own series' scale and rounded to the nearest whole number, with that scale digested beside the readings. The scale is the smallest power of two at or above the largest reading in the series, read from the exponent bits.",
+  "why": "NOT THE RAW DOUBLE, BECAUSE THAT DIGESTS THE PLATFORM TOO. ECMAScript leaves Math.exp, pow, log, log10, sin, cos, atan and acos implementation-approximated — only sqrt is exact by IEEE 754 — and the vendor calls those eight 66 times, so the same version over the same fixture produced different digests on linux/amd64/Node 22 and macOS/arm64/Node 25 and the check went red over a difference no chart could show. MEASURED: the four indicators that disagreed differed by at most 3.304e-16 relative, about 1.5 ULP. The quantum is 2^-36 of the SERIES scale (~1.46e-11) rather than a count of significant digits of each reading, because a reading near zero has no significant digits to round — trix loses its flat stretches to cancellation, and 1 ULP in moves it 1.68e-12 out. At 12 significant digits two of the 310 still move under 1 ULP; at 2^-36 of the series scale none of them move under 1, 2, 4, 8, 16 or 64. It stays sensitive at the other end, also measured: a uniform relative change of 1e-13 across every reading moves 262 of the 310 digests, 1e-12 moves 292, 1e-11 moves 309, and the 2.1e-2 inverted-weight wma this file exists to catch is nine orders above the quantum."
+ },
+ "vendor": {
+  "name": "lightweight-charts-indicators",
+  "version": "0.5.0",
+  "peer": {
+   "name": "oakscriptjs",
+   "version": "0.5.0"
+  },
+  "why": "EXACTLY, never a range. Every digest below is a number this exact build produced; a range would let the numbers move while the check stayed green, which is the failure this file exists to prevent. Both are devDependencies: `packaging.spec.ts` forbids declaring them as dependencies and `test/boundary.spec.ts` forbids importing either from `src/`."
+ },
+ "entries": {
+  "sma": {
+   "values": "c098f0de935bd0a794c71d5c18ea02a325de445f7067f3a47a3a894d7c94f7c6",
+   "confirmsWithinBars": 0
+  },
+  "adr": {
+   "values": "85d6cebde390a09dc58c337bc08c4c64862b0e1d4c0dd7320c24c90db28b3820",
+   "confirmsWithinBars": 0
+  },
+  "alma": {
+   "values": "7636c71ad784a5f76ab95c2b6efe36f149f9d708b00158f000d5612a3ea0ca10",
+   "confirmsWithinBars": 0
+  },
+  "atr": {
+   "values": "6b1fd646a99c2ddb32b51e7e0d20c666b9907d16efe3601c7c10a1e89c7a3ab6",
+   "confirmsWithinBars": 0
+  },
+  "bb": {
+   "values": "0df19dcc5edfa523a335b4824b0e6630d87ffcfb6db7d36383919efb3225606b",
+   "confirmsWithinBars": 0
+  },
+  "bop": {
+   "values": "fdaf321333aa8cce28b0d0911bd589a1127cf2a7cfb9ae6ac8e9d3b196f51514",
+   "confirmsWithinBars": 0
+  },
+  "cci": {
+   "values": "aee4d3212505056ba5642cfdb5f6554d96feaebb429cc53da73cc79105808452",
+   "confirmsWithinBars": 0
+  },
+  "dema": {
+   "values": "e803e3e0de6ae4fc3f8094fb703814dbc58cdd64c9985135507b9be080c55195",
+   "confirmsWithinBars": 0
+  },
+  "ema": {
+   "values": "5bec79ff7b8ecba2e8fece53e05320e414461c8a2f068e8b247775f185372672",
+   "confirmsWithinBars": 0
+  },
+  "hma": {
+   "values": "99559484bba2b20a604a329b70270672211c77d722a53bda76af916562133b00",
+   "confirmsWithinBars": 0
+  },
+  "ichimoku": {
+   "values": "736d4283e9f49dde3867f516033f46bb2ec3fbe404ef1fdde17bc82bc7189f9a",
+   "confirmsWithinBars": 24
+  },
+  "keltner": {
+   "values": "0f60bcfbf1d0520298915ed2eb857413a9a87febd699644ac6bfa80341c84df6",
+   "confirmsWithinBars": 0
+  },
+  "lsma": {
+   "values": "13b8720c42c2eea8df2095dfc7b0e199cb5d38675a46e938dcd0c45d433ab9d8",
+   "confirmsWithinBars": 0
+  },
+  "macd": {
+   "values": "f250584706c433014e2d6e1b94d7ae364264cd141f8b274fb8ef5702634f5cff",
+   "confirmsWithinBars": 0
+  },
+  "mass-index": {
+   "values": "f26b3c5a7e63db1f4ca2360b8d02f91b0928dd7a4950a031af6d9a0821040def",
+   "confirmsWithinBars": 0
+  },
+  "mc-ginley-dynamic": {
+   "values": "31524653f879e4fc05491f3a6b018187101d208ddf86d524d948349186af8eb3",
+   "confirmsWithinBars": 0
+  },
+  "momentum": {
+   "values": "34b11ad2713d4c721165abd4956c58f933e763308486d0a9ce17ff98ee73572c",
+   "confirmsWithinBars": 0
+  },
+  "obv": {
+   "values": "84d5778536b1c124ec8249555b07869b90a7893d764aefa5fd57fc89405dc3ad",
+   "confirmsWithinBars": 0
+  },
+  "rma": {
+   "values": "45d6c17945816151e33510338bc7b43278e906e2ba160f013764accae49c73c1",
+   "confirmsWithinBars": 0
+  },
+  "roc": {
+   "values": "997df183aea7388af52ead7c91a0045101ac77e637660ba32918e0f20e909a53",
+   "confirmsWithinBars": 0
+  },
+  "rsi": {
+   "values": "a19741752af9addd0727ba290a0ea01a41c25eef912b0335f805dcf2bd561c75",
+   "confirmsWithinBars": 0
+  },
+  "stoch": {
+   "values": "703daab93c9cfc7d3529c64dd8c516baa58d63f9bc5d8948e33b15484a6d57e3",
+   "confirmsWithinBars": 0
+  },
+  "tema": {
+   "values": "042542da86ff23bfd4b9041a17421044ce5819803e7d6b81af215f883dfd3ab2",
+   "confirmsWithinBars": 0
+  },
+  "vwma": {
+   "values": "7ca855f45ee046cd7e26737270cfc23f34012c0e1a54219d83780216e6465cf6",
+   "confirmsWithinBars": 0
+  },
+  "wma": {
+   "values": "164192aca8f9463491a64e70482f0cda574c1cfb7309e24a256bf4c13f20a208",
+   "confirmsWithinBars": 0
+  },
+  "donchian": {
+   "values": "41d13f931b8168660bc5393ebd89f4017121c0cc5846fe09121e62c15715d829",
+   "confirmsWithinBars": 0
+  },
+  "parabolic-sar": {
+   "values": "c48869a4c7c81206d0d0b4c506c54e512dbd9ed48301cd6f9735eea5fa31aa28",
+   "confirmsWithinBars": 0
+  },
+  "supertrend": {
+   "values": "76bfb3119a03b73cfac9cdb098cb095602060c497c7dc0df0dd6a054e6b70367",
+   "confirmsWithinBars": 0
+  },
+  "adx": {
+   "values": "3d6bd894a87012216934f3ebf972639a605a7495ecf7945444e7538eb8f43437",
+   "confirmsWithinBars": 0
+  },
+  "awesome-oscillator": {
+   "values": "44335699b31e0809d0c07987b3b5646505cba54ad565cac1ae0d971386a6ac19",
+   "confirmsWithinBars": 0
+  },
+  "bbtrend": {
+   "values": "b497459695c41d17acfdff0ef1ecb9d6078674269a3c70a34fd2fcffe256e213",
+   "confirmsWithinBars": 0
+  },
+  "bull-bear-power": {
+   "values": "5ab9a2f9466241d1b384dae8220b635074215ed7cb0f3ae832bbbf37a1569a55",
+   "confirmsWithinBars": 0
+  },
+  "chande-mo": {
+   "values": "031a23a096ba06b12e84802696bf022b2bd443bd148ea81bd29d4c261d7ad6bc",
+   "confirmsWithinBars": 0
+  },
+  "dpo": {
+   "values": "83aa727c0b4511268ba392953f01dca86f023ef77bbe7c6197a6a2fa1bf9e62b",
+   "confirmsWithinBars": 0
+  },
+  "elder-force": {
+   "values": "e1dd38cd0bebf342506431b667eee815c852a90a43c2930eb74d8f4aa8e766ce",
+   "confirmsWithinBars": 0
+  },
+  "hist-volatility": {
+   "values": "6b846ffcfe17523fdd739fb5e748af4372e4875669e78c4eddddab1a20bb9d26",
+   "confirmsWithinBars": 0
+  },
+  "ma-cross": {
+   "values": "1ca64ca7a8049127b2a4648d33a41ff7e465a50f26d1a2b2d90a359a8f6f7dbe",
+   "confirmsWithinBars": 0
+  },
+  "ma-ribbon": {
+   "values": "0b5d643212f0b58b7c39ecd1b2a042190499d0fa662c380a0f4612b62ed254da",
+   "confirmsWithinBars": 0
+  },
+  "median": {
+   "values": "3f568386652d0eaeb0bd9fca9a5cbc2fba16be6015e38dce99bc02cc88149475",
+   "confirmsWithinBars": 0
+  },
+  "mfi": {
+   "values": "a7b7c6d2a00995976f4b89d35f6e33d8bdedc722ac495772d5b08336f196572e",
+   "confirmsWithinBars": 0
+  },
+  "pvt": {
+   "values": "8b3c93b9829986b0767b67cc6a644c7304564edcbc74bb9f357efd91302f7b70",
+   "confirmsWithinBars": 0
+  },
+  "rvi": {
+   "values": "f27f3a29df1ca5d49f9bc7c3eb933dbb2a3b4aead053041c1c91c0f3f5774549",
+   "confirmsWithinBars": 0
+  },
+  "smi-ergodic": {
+   "values": "97d6c9530a293e86f8f5d30d86be2f89ec7092a3ad2fb7acea58dacf61b12a8d",
+   "confirmsWithinBars": 0
+  },
+  "smi-ergodic-osc": {
+   "values": "4c50e95b03ff967b756fd34bebf44a5b57880f0feff182b00e2d564aecfe5f89",
+   "confirmsWithinBars": 0
+  },
+  "smma": {
+   "values": "45d6c17945816151e33510338bc7b43278e906e2ba160f013764accae49c73c1",
+   "confirmsWithinBars": 0
+  },
+  "stdev": {
+   "values": "ff4ce334712feccfe381ce08d07f71a9c2d3a5c7348041b8ea36acaa48f114b3",
+   "confirmsWithinBars": 0
+  },
+  "stoch-rsi": {
+   "values": "c0422ce810473415bf41ea77cdf9c6be711f06b375426beb0e6ca00b49bf070a",
+   "confirmsWithinBars": 0
+  },
+  "trend-strength": {
+   "values": "70f13920aeba8ae9ea67a8f4c418d22b35739e489fbcda1552540cb6244a2ee3",
+   "confirmsWithinBars": 0
+  },
+  "tsi": {
+   "values": "ccf6f7a015c71c58eec28eca4e94a5a2bd30a45a657ca32bfaa50a72f4186546",
+   "confirmsWithinBars": 0
+  },
+  "volume-osc": {
+   "values": "8a37bc55aea1126c3464951e024fd1124dc8517aae455101dbfcc3fb06ac20d4",
+   "confirmsWithinBars": 0
+  },
+  "vortex": {
+   "values": "b378d33837ae03b59d9dee467abe71fb8f1ddc7ee9485d04cf72cce6edd6b995",
+   "confirmsWithinBars": 0
+  },
+  "williams-alligator": {
+   "values": "4ef82712afe7a21920e62af6fafba18978d3301541fdde21ae93c2fde6615d6f",
+   "confirmsWithinBars": 0
+  },
+  "williams-r": {
+   "values": "217910d94fab1f58f6bcf8bed04036368d133c9c293f5b36261972dd80cb6ed3",
+   "confirmsWithinBars": 0
+  },
+  "woodies-cci": {
+   "values": "b950563c96b23c8a255507be3e19b1bbd8bc75b8336965c22883e8a83761c912",
+   "confirmsWithinBars": 0
+  },
+  "bb-percent-b": {
+   "values": "997f889a4f5b721ff40afcf54876df6952cca613af2dabb8366d4e4a774f411d",
+   "confirmsWithinBars": 0
+  },
+  "bb-bandwidth": {
+   "values": "87815af503502e39c02d2f62b6d33d0e3742c1ad21c698d19c88f17e8a4ecdc2",
+   "confirmsWithinBars": 0
+  },
+  "chaikin-mf": {
+   "values": "ce026c3d8aa31854d5a4f371b086bd0a6bfcc4b0cc7cfe63c35730b829095b1a",
+   "confirmsWithinBars": 0
+  },
+  "envelope": {
+   "values": "558ca4c7cfeeb3383ffd6b51d6ffddf7be8f407249275aee40ad4ae78de9b703",
+   "confirmsWithinBars": 0
+  },
+  "price-oscillator": {
+   "values": "5eaa7420875de65e52e41327a0856d0e8f786f4fd1e50e03cef99f46bb9f962c",
+   "confirmsWithinBars": 0
+  },
+  "aroon": {
+   "values": "2a9efa03209025077aef1a3147604c0409e12094227a33c1d48fe09f18b289b2",
+   "confirmsWithinBars": 0
+  },
+  "coppock-curve": {
+   "values": "fe0849fe3f1c6f25a7dc530525ff24b53b7f60b24b4f339e89eb403536bff3cf",
+   "confirmsWithinBars": 0
+  },
+  "choppiness": {
+   "values": "e88b4e087a4e542ff4b105822504322b45708bdb1c2e73aa0276362bcd95db38",
+   "confirmsWithinBars": 0
+  },
+  "eom": {
+   "values": "e01c36b6aa82fd182ad81eabc56b4accf9a146d783fa2f6c28365e7f30518858",
+   "confirmsWithinBars": 0
+  },
+  "chaikin-osc": {
+   "values": "8e0259b734748df2d75a40d1d7c790bb6fbbeba8d33dd7a2ef73cae2e794672c",
+   "confirmsWithinBars": 0
+  },
+  "fisher-transform": {
+   "values": "b5505693d47c1c99debfd0e1c7c6a66303e3c15eeaf8181ca82e9b50bf80bd46",
+   "confirmsWithinBars": 0
+  },
+  "trix": {
+   "values": "174a479d6640b77262f2dd15adb62cbb0e53bc413679863341514813171ca27b",
+   "confirmsWithinBars": 0
+  },
+  "dmi": {
+   "values": "01946f60509791e8c255cdfb5f4f409feec09c4cebf904eb3bd95708a3a33831",
+   "confirmsWithinBars": 0
+  },
+  "klinger": {
+   "values": "30f5accb5110a7019a03be94eac25db3f2be38ef655a40c08ac28c712e7118cd",
+   "confirmsWithinBars": 0
+  },
+  "ultimate-osc": {
+   "values": "67865839c745c39aef1cffe26c6d3a3ee0df539d329be8f99aea455263da99b9",
+   "confirmsWithinBars": 0
+  },
+  "chande-kroll-stop": {
+   "values": "90ee07a3b4aae95aca4e1391f25df7b5136473524eef5eec6fe40c24ac90b3a8",
+   "confirmsWithinBars": 0
+  },
+  "relative-volume-at-time": {
+   "values": "107188c0e83dc3b9e209191fbcc1faaf23a9c5c5b4a4c67cdbb8ab963d233d0e",
+   "confirmsWithinBars": 0
+  },
+  "rci-ribbon": {
+   "values": "f44d3c531c874be6fd371f25fe2d78a9f4a75ae3278e910cececcd981bcd13f1",
+   "confirmsWithinBars": 0
+  },
+  "net-volume": {
+   "values": "f6c81719840b834da4c0d7dcea2dd87f4bb73261c49f5da0b6fc9c8ea16b242c",
+   "confirmsWithinBars": 0
+  },
+  "kst": {
+   "values": "70e4bd3b19fbc820655b5db5133debe7db058b086b05a171a497a0bff0f736be",
+   "confirmsWithinBars": 0
+  },
+  "connors-rsi": {
+   "values": "dcb3f5e0cc5fa7baf0f9c890d635fa31c68a05dfaf42bda66973f53c99508008",
+   "confirmsWithinBars": 0
+  },
+  "chop-zone": {
+   "values": "d8be2d0b864835741fef78d92df2c39cf2d6c95d8e27e750513a29b0f5209915",
+   "confirmsWithinBars": 0
+  },
+  "rci": {
+   "values": "fda75eb4638445dbebde51eb8419e20509d150cb26edf931225fffb651878bb2",
+   "confirmsWithinBars": 0
+  },
+  "rvol": {
+   "values": "e128976521c7a2446d2a483c771a727a9cfd551931a8c12d25fbb94d5db20b93",
+   "confirmsWithinBars": 0
+  },
+  "twap": {
+   "values": "f76e8cea807b23aabbb50cc5a620afa046fe028c167fe6aed811521f4d52d400",
+   "confirmsWithinBars": 0
+  },
+  "zlsma": {
+   "values": "d3c5a32588d6f2e8d8975bc04431422ade48f9ed90961c41517ab2fe600b1f82",
+   "confirmsWithinBars": 0
+  },
+  "forecast-oscillator": {
+   "values": "e6008dc604077aa02deb67e7c070c227968583800dbec2a338e4d7e72585ad20",
+   "confirmsWithinBars": 0
+  },
+  "cct-bbo": {
+   "values": "d1ea7a6603d4cb28fbfb6685e2cb35db9598df8b9aa8372ccbea18255c95ad22",
+   "confirmsWithinBars": 0
+  },
+  "macd-4c": {
+   "values": "9a794e114a0665fc534f3b8035fcbd53f80989f5125f2f1391bb6c0dd79675ae",
+   "confirmsWithinBars": 0
+  },
+  "colored-volume": {
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
+   "confirmsWithinBars": 0
+  },
+  "kdj": {
+   "values": "726f9ea67e20735410baa18a5345fcbb7b46e09c136911a93daf6af42b6cf720",
+   "confirmsWithinBars": 0
+  },
+  "wavetrend": {
+   "values": "74dfa53e48463b65e1ac8512f9243f17d53c3c8833ae5b978c3d96dcb0a9ea08",
+   "confirmsWithinBars": 0
+  },
+  "squeeze-momentum": {
+   "values": "1fd974fce74a70ea30b493bf2c8ff29250e79ae8da43085b891c722bd0648271",
+   "confirmsWithinBars": 0
+  },
+  "coral-trend": {
+   "values": "1f7cae4308f7169fc022b002f1fa1f3c9847a8a15b4a69210163b592ad6ccc92",
+   "confirmsWithinBars": 0
+  },
+  "chandelier-exit": {
+   "values": "5c38d62c0571be70e5049c5e976807685cec8e9cf1bc476cc1011d74ef694865",
+   "confirmsWithinBars": 0
+  },
+  "impulse-macd": {
+   "values": "2a94e3ed9a1c97286fd07b4e6487ac5345014ad205f1bb103bfa1b37b71728cc",
+   "confirmsWithinBars": 0
+  },
+  "schaff-trend-cycle": {
+   "values": "496a1d91d71347271c7fd179a7665c6a93c0b01ee7adc5b85f1c0dfe49f35814",
+   "confirmsWithinBars": 0
+  },
+  "donchian-trend-ribbon": {
+   "values": "41640053e0fe4f47067e5e3efd21595b79686dfa55cb715b7021acd8c439ae6b",
+   "confirmsWithinBars": 0
+  },
+  "obv-macd": {
+   "values": "8bd8e80e046f579f3f78e82c3103d52602204af2ed174951b10aa6075d7f6784",
+   "confirmsWithinBars": 0
+  },
+  "alpha-trend": {
+   "values": "8349e05cb475183a3ffe58a8a13ba16ac0758e4c9f8e18f566d1812a35a6fa45",
+   "confirmsWithinBars": 0
+  },
+  "half-trend": {
+   "values": "7bb1a55e95402992faac075dcce82646366f2bb409af25d23a1edf13daffe37b",
+   "confirmsWithinBars": 0
+  },
+  "qqe-mod": {
+   "values": "d586da06d0a00dd80cf8f5b96a2819a1bd32065ebabc8f7887b5419e8457a792",
+   "confirmsWithinBars": 0
+  },
+  "follow-line": {
+   "values": "f1e161ba80cf4fed95faf6268abb91cbde496b5554313c1e3c68a0ceb67b1b7f",
+   "confirmsWithinBars": 0
+  },
+  "ut-bot": {
+   "values": "6c8823ce32e52f44a59791f9fc4b79798feb9d6125559c55ca80c93740d9de87",
+   "confirmsWithinBars": 0
+  },
+  "hull-suite": {
+   "values": "dc74fdb9a0cc6bb565be62b6612aa22c3754678810385978d18f3f547189f562",
+   "confirmsWithinBars": 0
+  },
+  "optimized-trend-tracker": {
+   "values": "c27671f5e74d8ab9575096684fb368a0fe5f8f5a08600305d0626dc651a62fd4",
+   "confirmsWithinBars": 0
+  },
+  "trend-magic": {
+   "values": "98bc0b1f1aacbecc1f061f454df3c091c0a9fa8d3c87d7b61da1c33e262f1715",
+   "confirmsWithinBars": 0
+  },
+  "ssl-channel": {
+   "values": "b88848d63d0dcfc2935e42048487a32b0bbe8ec1edd75e394ea10ee931cf87c4",
+   "confirmsWithinBars": 0
+  },
+  "mavilimw": {
+   "values": "838f64741af6dd5447f2f54c14e3bc2524bd2d765b3100fa3205dd27611e9a01",
+   "confirmsWithinBars": 0
+  },
+  "cdc-action-zone": {
+   "values": "213080a78c5dbd52ba3a798d36c93b34e363e683baffd24761ff062115bade62",
+   "confirmsWithinBars": 0
+  },
+  "waddah-attar-explosion": {
+   "values": "3eafbcdf5e7e967802609091e4157116616a4c664907aaeeff9d6901d5165ce4",
+   "confirmsWithinBars": 0
+  },
+  "ripster-ema-clouds": {
+   "values": "17ed0e20b0c64314817dddcabff3642190fd443ac14458eee7e6cca8b3bcc58e",
+   "confirmsWithinBars": 0
+  },
+  "premier-rsi": {
+   "values": "713bffa09a702a93579d99d5981da0b12c776013e370db07c106d40082a757b2",
+   "confirmsWithinBars": 0
+  },
+  "laguerre-rsi": {
+   "values": "16bb63aa32a598fdc13cf0740b37ea300283963c1ec7ec22099f974d806a8b4d",
+   "confirmsWithinBars": 0
+  },
+  "zero-lag-macd": {
+   "values": "e5b3b0f92561ece847cd5115ad0326ad98361b6b1e460fe6de401d48a77683ee",
+   "confirmsWithinBars": 0
+  },
+  "awesome-oscillator-v2": {
+   "values": "bc486f1eef3ea6f3e66413d740ea8f076d743245c225496428978f2313cfcf9b",
+   "confirmsWithinBars": 0
+  },
+  "cm-ema-trend-bars": {
+   "values": "c0413d767e2881e8928dc9869c75a99f311f0cbb7734c3623a342ffcc0987e8b",
+   "confirmsWithinBars": 0
+  },
+  "bb-fibonacci-ratios": {
+   "values": "035fb3faa236c4954ac5f112894bc47474d6118b9f047d91e84fdcbe45ed4e4d",
+   "confirmsWithinBars": 0
+  },
+  "average-sentiment-oscillator": {
+   "values": "87ef03cb2bf7ac39af60dbce7b4cf0efbdd5d7b959923782f9e6882fc9bc787d",
+   "confirmsWithinBars": 0
+  },
+  "atr-trailing-stops": {
+   "values": "d41155469a583014d33d858b21bddf38131b9c6c8edbd92270c17b629245aee7",
+   "confirmsWithinBars": 0
+  },
+  "accurate-swing-trading": {
+   "values": "dd15c46e2e2c07f2a1eba238b0f2c9a3e962b2d4409ba70260e4cef5f739de9f",
+   "confirmsWithinBars": 0
+  },
+  "bull-bear-power-trend": {
+   "values": "b554ad79ddf250d70b3cf9becd045622469a32a93eb410d5e49f607b77d84fd3",
+   "confirmsWithinBars": 0
+  },
+  "bb-breakout-oscillator": {
+   "values": "15466e2cc00578ca81d14a1a83455e0bc6df019b8bfdedcc46bef5be568e571d",
+   "confirmsWithinBars": 0
+  },
+  "chandelier-stop": {
+   "values": "9cbb409885425dabb234a852668e7c190815860f7e3fe539208ab797c225517c",
+   "confirmsWithinBars": 0
+  },
+  "ehlers-instantaneous-trend": {
+   "values": "597e67c831d0bc997fcb4010b33e28b78224b52c13ec3df460cb466151744c9a",
+   "confirmsWithinBars": 0
+  },
+  "price-momentum-oscillator": {
+   "values": "c719060676d4f599b6328c8f8617138d082b3594a8396bfb8fbe62358fb2e7e3",
+   "confirmsWithinBars": 0
+  },
+  "fibonacci-bollinger-bands": {
+   "values": "09e016f035070d3df9aa1e92a36f60cc878e8c45b7cc3992524fa1eb5e8b514f",
+   "confirmsWithinBars": 0
+  },
+  "trend-trigger-factor": {
+   "values": "39c369a517ee2af318f7e7390ab6b755c6a809867324177802f18b02e0e2e116",
+   "confirmsWithinBars": 0
+  },
+  "elliott-wave-oscillator": {
+   "values": "bfa213f49854c8b9c1c57f89bf16eae91f0e076476c382c440a62af3286d3c73",
+   "confirmsWithinBars": 0
+  },
+  "kaufman-adaptive-ma": {
+   "values": "6a4015be288d276185501a7cb9b52fe4c1d53a91b8e135f8d8c266dd501ad5e4",
+   "confirmsWithinBars": 0
+  },
+  "williams-vix-fix": {
+   "values": "aa638ffecc5faaaa97bea900b26595877dca9c50a1f94d8e1b4b30de4e9b7838",
+   "confirmsWithinBars": 0
+  },
+  "ehlers-mesa-ma": {
+   "values": "2e073e8ed3d8a779aaebfcec88b2f112f182ad258b2a0ca9148e53da6b13be50",
+   "confirmsWithinBars": 0
+  },
+  "gann-high-low": {
+   "values": "c0a83e8defa79b87e2c986a2fee0001ef589cb33d653aac9c26c5777b5c110c6",
+   "confirmsWithinBars": 0
+  },
+  "cm-sling-shot": {
+   "values": "26551c46f973c181f8d871a2a665d6a0115d927a0de838d5c0426c9311d80c43",
+   "confirmsWithinBars": 0
+  },
+  "range-identifier": {
+   "values": "e78a721082831f2dab6ce3ea15d0c1075e628d47bcee0db9db3664a457a13f47",
+   "confirmsWithinBars": 0
+  },
+  "macd-leader": {
+   "values": "ab70689de4a412c03ba830b8ac2190a7644659ce7c21baac2b18886e745cfb12",
+   "confirmsWithinBars": 0
+  },
+  "ift-stoch-rsi-cci": {
+   "values": "d19bc6232e4648efc9257fa8d94e84ef589e1af2ac39256d3486d0492a2da3e5",
+   "confirmsWithinBars": 0
+  },
+  "variable-ma": {
+   "values": "25073818372131b4adfeb491183901f6fc58c01b83b919cd09f6a7521fd63cfb",
+   "confirmsWithinBars": 0
+  },
+  "obv-oscillator": {
+   "values": "4f2848bf2a502395b22bf55ad4bae667e7f36d05a98949625a9633e0d90ba468",
+   "confirmsWithinBars": 0
+  },
+  "gmma": {
+   "values": "b44cead5433835a3265555f7a5a29fa02cf36efeca634c16552043ccaedd2156",
+   "confirmsWithinBars": 0
+  },
+  "turtle-trade-channels": {
+   "values": "cf63e6c873bb875e24a1563ad9cd1653aeebb92014dd648f02b8aade5030036a",
+   "confirmsWithinBars": 0
+  },
+  "linear-regression-channel": {
+   "values": "d8f8962f3b72185d492a03eab15ce19f15984aa70f42de5877c5c71abea150c6",
+   "confirmsWithinBars": 0
+  },
+  "twin-range-filter": {
+   "values": "4a29f824388217f84b55a38a272daed59f6f9682b41a7bbea2ca38beb56260a8",
+   "confirmsWithinBars": 0
+  },
+  "tma-bands": {
+   "values": "c32b1ba9e6a0428363f606b2f3389f125348943dad1dadbc2fde963c0e706dac",
+   "confirmsWithinBars": 0
+  },
+  "ehlers-stochastic-cg": {
+   "values": "c64ac42d3814368c68306d503c2fa6baf57ad42b9ecb9b3a9a6f16284c7b0938",
+   "confirmsWithinBars": 0
+  },
+  "vpci": {
+   "values": "87358f5228750160d7859c602abcadce9cfe8a5911e1632ebbef9349300f8194",
+   "confirmsWithinBars": 0
+  },
+  "premier-stochastic": {
+   "values": "b1b8c2201bdb43c3231438ca818bd0d48b61c7b3faad6915ea755a342206cdbd",
+   "confirmsWithinBars": 0
+  },
+  "volume-accumulation-pct": {
+   "values": "a7c85dcb9661b0d9ff5f09b779acab48b4af29ce254a53d237a42acd8e7521e1",
+   "confirmsWithinBars": 0
+  },
+  "vervoort-ha-oscillator": {
+   "values": "ca763bcc16f27087c8baad1e1c39c6b74a9b1fc52c789c3e27a3d2dd6182aaf9",
+   "confirmsWithinBars": 0
+  },
+  "adx-cobra": {
+   "values": "20cb570a9ed1660bdfdfb24cf6a19665c32468d59d10b1ff48e1976b8322410a",
+   "confirmsWithinBars": 0
+  },
+  "ai-engulfing": {
+   "values": "ffad862c53c217d69109292dec3d8e5e2c802f97a855ba4f7d5b59adfb5a8558",
+   "confirmsWithinBars": 0
+  },
+  "ak-trend-id": {
+   "values": "34184424fbf2f8c5bfaf8e7a7300163181971dfec4c5699b0cc2f388422e29de",
+   "confirmsWithinBars": 0
+  },
+  "anti-volume-stop": {
+   "values": "2afede2a848b386d16d1e87eec963f1119ecb7e477f24eaf3c075d3acbfe78fb",
+   "confirmsWithinBars": 0
+  },
+  "atr-plus": {
+   "values": "5f4845415f293108c2e76d40b567cea5601e2e5a9e53053cb04a7aca18a9d453",
+   "confirmsWithinBars": 0
+  },
+  "atr-trailing-colored": {
+   "values": "ea779945a105557350b83e5a7c3b196a171f1a9709ab9751ce539df371937c66",
+   "confirmsWithinBars": 0
+  },
+  "auto-fib": {
+   "values": "3fab8a765e2c356300be9f765d40c27a1a421fcd5ff72f4a8c229160c505ddb1",
+   "confirmsWithinBars": 0
+  },
+  "auto-support": {
+   "values": "94317bf3f6768b7a05c1e6439182effff366cf9bd8fbd35691bae2fdfeffcd68",
+   "confirmsWithinBars": 0
+  },
+  "auto-support-resistance": {
+   "values": "751bf7d0283355c8a48b08c3ecbc2cf8a4e888fbabe7ed241c25f70ff832d81c",
+   "confirmsWithinBars": 9
+  },
+  "bb-stoch-rsi": {
+   "values": "c171643b0c7dc720ef114f103e765dcc38448df5cca91332e4de9c1e6310bad4",
+   "confirmsWithinBars": 0
+  },
+  "bulls-bears-control": {
+   "values": "7e7bf04de761d9b43146dbbfa79b971a8f707b93e6b273fdf9ec5049e52ba6c9",
+   "confirmsWithinBars": 0
+  },
+  "buying-selling-volume": {
+   "values": "dfc18d74325ac1b1c237234f2b5837135edcf4eb7101c83b368e800a2ac59ca2",
+   "confirmsWithinBars": 0
+  },
+  "buy-sell-pressure": {
+   "values": "4bdcaf709c03f8f63a7c4a1fb1cc3fc57510fdc677d5000046e7b0542d37c35c",
+   "confirmsWithinBars": 0
+  },
+  "cci-obv": {
+   "values": "f607105fe50906576d1a2ca12fb693a768342f6a3612f178019e92c4c26c481f",
+   "confirmsWithinBars": 0
+  },
+  "cm-enhanced-ichimoku": {
+   "values": "9a6d20d0656d504b919950d0e450e5c5f47d5a75e61e39213ebbd1f5a00276ea",
+   "confirmsWithinBars": 25
+  },
+  "cm-gann-swing": {
+   "values": "1a06e02dc79c9f8f6d102bbffe21996e4ce032bf1a9b3bedf93a24d0fb5b789c",
+   "confirmsWithinBars": 0
+  },
+  "cm-guppy-ema": {
+   "values": "b44cead5433835a3265555f7a5a29fa02cf36efeca634c16552043ccaedd2156",
+   "confirmsWithinBars": 0
+  },
+  "cm-laguerre-ppo": {
+   "values": "8667966a94f12ea7342ed398573a7a4aa3b47fa22c3ab4b5902fed505069b653",
+   "confirmsWithinBars": 0
+  },
+  "cm-rsi-2-lower": {
+   "values": "382077c79ce27f0dc1b390501ce8503252e4b475ebb04ce43eb0b44f8456988f",
+   "confirmsWithinBars": 0
+  },
+  "cm-rsi-2-upper": {
+   "values": "088f5b3ede719ebcb3e450ba0014f74d2fba08161c20f213a99830234ccd9db1",
+   "confirmsWithinBars": 0
+  },
+  "cm-rsi-ema": {
+   "values": "40b66c3528f508b851e3e992dd2366bef791ddf7b9ecd54dd79ba30f52d1e22c",
+   "confirmsWithinBars": 0
+  },
+  "cm-vix-fix-v3": {
+   "values": "6711cff9069e55c92ff176e99a15ff9784a12e23a980376ed64a5450dccbbbfd",
+   "confirmsWithinBars": 0
+  },
+  "cog-channel": {
+   "values": "e17726baab3cde734beb92a25c7f497da78cdc24860ba4f7eec9b4ce5985ee8f",
+   "confirmsWithinBars": 0
+  },
+  "darvas-box": {
+   "values": "1e8cd13490d380501f0d75fb7152b12835ec31f5dbf7ab1148fe0bd8cc41f2b6",
+   "confirmsWithinBars": 0
+  },
+  "dmi-adx-levels": {
+   "values": "20cb570a9ed1660bdfdfb24cf6a19665c32468d59d10b1ff48e1976b8322410a",
+   "confirmsWithinBars": 0
+  },
+  "donchian-custom": {
+   "values": "c07b87f785758ca92af51f708be406a0210c28b4940ef0c7758ab2f75fc448d6",
+   "confirmsWithinBars": 0
+  },
+  "easy-trend-colors": {
+   "values": "0c193aae80902f3740b6fb3e1fe5c571f69d8ff7ff71d5b07b6aadd1b5b2cfff",
+   "confirmsWithinBars": 0
+  },
+  "ema-enveloper": {
+   "values": "54cdeb1666a6742495d76e71c4e2b12b9ad22ef26355551f0d05a938397fe88b",
+   "confirmsWithinBars": 0
+  },
+  "ema-ma-crossover": {
+   "values": "0637ed174a764e86cd9631978b16ab392c81fc26e42ef1ca756a196df6ffd798",
+   "confirmsWithinBars": 0
+  },
+  "ema-multi": {
+   "values": "9955479ae31514a86eeb4872e5b49948a2f7bb91edd76a8256d605e52e256390",
+   "confirmsWithinBars": 0
+  },
+  "ema-ribbon": {
+   "values": "296b5a2dad2eca2492283d0c223e79ce9d49dae776487909abd652afb1136f23",
+   "confirmsWithinBars": 0
+  },
+  "ema-supertrend": {
+   "values": "115bb0c48c2e3acb06b1c713a18b86378c39d6d2a4a033fa4c6cd7684283689e",
+   "confirmsWithinBars": 0
+  },
+  "ema-wave": {
+   "values": "03553e82cd3b6ff91ef35dac069b76d80728d07b4bb28f4111d9db67b0b417bb",
+   "confirmsWithinBars": 0
+  },
+  "evwma-envelope": {
+   "values": "41e7abb8006f202e70414ee50c1802b1c83a3dfec217e3a23413424632ca264e",
+   "confirmsWithinBars": 0
+  },
+  "faith-indicator": {
+   "values": "59398f3665cc738d803086d9e37c30ec094aa0437fc2f2633bf1193781cc456b",
+   "confirmsWithinBars": 0
+  },
+  "fibonacci-levels": {
+   "values": "7f453e3eb6de841860bf562a82dd3151930b5eaf8ce78fa66513d9ad2f442209",
+   "confirmsWithinBars": 0
+  },
+  "fibonacci-zone": {
+   "values": "b0439260e378864945ee32c87e14cbf7927ae329e7be19c2ae578cc62ea04e6e",
+   "confirmsWithinBars": 0
+  },
+  "forex-sessions": {
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
+   "confirmsWithinBars": 0
+  },
+  "fx-sniper-t3-cci": {
+   "values": "8f6c483ee6c2e96d25a3e3a33eafc326bf62469eeec2f285561ee6802214bd47",
+   "confirmsWithinBars": 0
+  },
+  "hawkeye-volume": {
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
+   "confirmsWithinBars": 0
+  },
+  "ichimoku-ema-bands": {
+   "values": "073f2fa6ab70197580650c3f81419705260e5e6fa68b6f96e184b8ef515ce6be",
+   "confirmsWithinBars": 0
+  },
+  "intraday-buy-sell": {
+   "values": "3944388f1bba51dba0d59e1bd0ea1768cbb8c7dd52a1650b63f9fef306c0f65d",
+   "confirmsWithinBars": 0
+  },
+  "intraday-ts-bb": {
+   "values": "01ded61e9dc2e595f8a12977e2cad2b5ba686dd5eb81a0b36072db1b918c54b9",
+   "confirmsWithinBars": 0
+  },
+  "leledc-levels": {
+   "values": "f17d5582cdfd898be2de638896eecf232a8fec023725c1ed716934aa2079f286",
+   "confirmsWithinBars": 0
+  },
+  "ma-adx": {
+   "values": "9f0b00faed81e581f9d69c843f27e3fb13c3fdad30e6e721ae0e5bc249b65e52",
+   "confirmsWithinBars": 0
+  },
+  "macdas": {
+   "values": "b188c54dc23862d412c5c7a30f3f55f599c5fd297d8f44d715b587089a458e04",
+   "confirmsWithinBars": 0
+  },
+  "macd-bb": {
+   "values": "8232b4af8257dd56ff0629335905872aec1fa9eb845aa816973b4fcc48d89e7d",
+   "confirmsWithinBars": 0
+  },
+  "macd-crossover": {
+   "values": "0989621dda86b061ac532e6cc73e1ad357352cfb02049ed5a46bece2d38cabd3",
+   "confirmsWithinBars": 0
+  },
+  "macd-dema": {
+   "values": "36ee020bf7ca529b4e70241230a2b08a8da18e56589bce4c330a4d1c26f0ccf9",
+   "confirmsWithinBars": 0
+  },
+  "macd-divergence": {
+   "values": "81f56d5cb9570d4c2e3ee1baa9a6d6b04bfe27be78ece1a59381eb879b54c498",
+   "confirmsWithinBars": 0
+  },
+  "macd-vxi": {
+   "values": "2ed0ea8a6ca89ed70cd7531c52a17d1b849aba575af7e01b9a2806370c9061ad",
+   "confirmsWithinBars": 0
+  },
+  "ma-colored": {
+   "values": "a419e3a6deb8188d0afb286ab26309cb1eee2b6156a5e86cc9271cbca2a03fb3",
+   "confirmsWithinBars": 0
+  },
+  "ma-deviation-rate": {
+   "values": "3f4b9d5bd6bca2a894b189937a2b3141798939f386ad63d824a2b7397609c90c",
+   "confirmsWithinBars": 0
+  },
+  "market-cipher-a": {
+   "values": "e95a3a506220ed68a6dfb87a214ec63652b61c255382e2dfc65229fefacf04c0",
+   "confirmsWithinBars": 0
+  },
+  "market-cipher-b": {
+   "values": "8375ff61b0ea58bca95314cf964c72d1cf1a5218ddbb7213d12b9bac7654843c",
+   "confirmsWithinBars": 0
+  },
+  "ma-shaded-fill": {
+   "values": "0603872e9dcbc87628ba61a5e9a0b10954c78ed802eee899414a33e44f28f403",
+   "confirmsWithinBars": 0
+  },
+  "mfi-rsi-bb": {
+   "values": "508dfd8d77886f47d3ad742395acff9f8a4403d0fbc330988920ee399955b74f",
+   "confirmsWithinBars": 0
+  },
+  "multiple-ma": {
+   "values": "8968e49a7319ab91bb1ab2c1353abb036e163d0c0edf4ca5bee8adcefed714d4",
+   "confirmsWithinBars": 0
+  },
+  "murreys-math-osc": {
+   "values": "5175c808e53a3d1d92b984605051bbcf2d6da538ea54df0c38a72a53775a496d",
+   "confirmsWithinBars": 0
+  },
+  "normalized-qqe": {
+   "values": "dd835196a370939d9cf4b76bf2b63188e1c486e6f68533590ecb57d037939956",
+   "confirmsWithinBars": 0
+  },
+  "parallel-pivot-lines": {
+   "values": "64e0ce215d4cea5e74ae1ad7fc372b5439f1d462c07eb6ff6b414988f1d1af04",
+   "confirmsWithinBars": 28
+  },
+  "philakone-ema-swing": {
+   "values": "b6fb080f7d8a9a4a51288b39d4b0fe5155bd42ee21fd20edbf7d89b9fd633d0a",
+   "confirmsWithinBars": 0
+  },
+  "pivot-point-supertrend": {
+   "values": "9208430991b476b71eb4fcb280df2e82653fa03ea11b505edcf36a712a0ec7c7",
+   "confirmsWithinBars": 0
+  },
+  "ppo-alerts": {
+   "values": "bb21cf9483d4bc875d5f8231efdc3caa2fc81aa086310a937b11274dc391e9bb",
+   "confirmsWithinBars": 0
+  },
+  "ppo-divergence": {
+   "values": "fe73904f923859bdd9ea94d422c4897a7a0444ba91b033aec83e0ac5d5c554ad",
+   "confirmsWithinBars": 0
+  },
+  "price-action-system": {
+   "values": "a1ec383ed54e7f5fcc7d62802736285ac6aefbe28a2ffdbd9beb1504137bc17c",
+   "confirmsWithinBars": 0
+  },
+  "qqe": {
+   "values": "d534bd342b9ba8c5ad97d850e86d026a65c2d90be29c72530549213214e327f0",
+   "confirmsWithinBars": 0
+  },
+  "rci-3lines": {
+   "values": "6efd95eaa7daa663f85d14a2fdd24e4c82029ef070762dacec1327211d51c9e1",
+   "confirmsWithinBars": 0
+  },
+  "redk-rss-wma": {
+   "values": "a06cc80f99a367e393d1c7d08e063bf92ecd8f06bf1c22ff9c663a4bef34d6b1",
+   "confirmsWithinBars": 0
+  },
+  "rsi-bands": {
+   "values": "03ed7ca48fae737807964d41542e7bc8591d9cd6c5315f4dc145ff3a3bf123ff",
+   "confirmsWithinBars": 0
+  },
+  "rsi-bb-dispersion": {
+   "values": "16b1b339794d38df6b51cdcda8cdc3e17ea9fc42d8e6ef7d3b813c7630b435bb",
+   "confirmsWithinBars": 0
+  },
+  "rsi-divergence": {
+   "values": "24b706c8212369dcb4b52c2552a856413188e3de409b47480e86d98733f32bd1",
+   "confirmsWithinBars": 0
+  },
+  "rsi-histoalert": {
+   "values": "d9202bdfe785cc2edfa985f1769277e94f0f35db99c11ee7d277de1e74275a8e",
+   "confirmsWithinBars": 0
+  },
+  "rsi-snabbel": {
+   "values": "dd6de828cb09e20fef453eb56eb2be281f9c002f3ae07c310c493db1c45095a7",
+   "confirmsWithinBars": 0
+  },
+  "rsi-swing-signal": {
+   "values": "d9870ff85b018f8e0601326d04cb3870a4e6fcf4d8271cdcbf0ae22a57c6051c",
+   "confirmsWithinBars": 0
+  },
+  "rs-support-resistance": {
+   "values": "cef7dd297d40127d3b6f861ef8ffdaf5bc5b6ddb6a5c9d9395eb63440dcc38a2",
+   "confirmsWithinBars": 8
+  },
+  "sar-ema-macd": {
+   "values": "38fb3c505fbc6c89fb3a0300eae38ca98564f85e89f54bf41389d0b155258705",
+   "confirmsWithinBars": 0
+  },
+  "scalping-line": {
+   "values": "1ec0a3843566d27dad1c1f9a713821b576d89526acd48f3ce93c1f1d16778f6d",
+   "confirmsWithinBars": 0
+  },
+  "sell-buy-rates": {
+   "values": "4250e7d4403a98666023bcecd1159396dd5244690621da7250132436cc3ec471",
+   "confirmsWithinBars": 0
+  },
+  "signal-ma": {
+   "values": "5ce4e5d768abd1f8ab9d5c6b0ccc384f77cc722c4e244e9c583c18880f6014c5",
+   "confirmsWithinBars": 0
+  },
+  "simple-moving-averages": {
+   "values": "c5bf2582ce57f0fbcaac3f91adfcb05443d1463c36ac51c31d6bbd035f0bbfec",
+   "confirmsWithinBars": 0
+  },
+  "smi-ucs": {
+   "values": "3d38b195203988ee52c424d61d43817d789d5a4e50260d5279da4c44c90aaff4",
+   "confirmsWithinBars": 0
+  },
+  "squeeze-momentum-v2": {
+   "values": "0cd57ea0c20717ecf6b7df4239826ecba0845ce0aa70b4de94c185d81ed2f132",
+   "confirmsWithinBars": 0
+  },
+  "sr-levels-breaks": {
+   "values": "22873dc701d5ae728b07e75db9af094e8e0518b10f5cc1f830b9dc6fbc796ce9",
+   "confirmsWithinBars": 8
+  },
+  "stoch-pop-1": {
+   "values": "aa5fa9c49d438aea1a33ec9115453e062a8935de750bd3c00297a78f351a0470",
+   "confirmsWithinBars": 0
+  },
+  "stoch-pop-2": {
+   "values": "4c97b3e579c220456b82dc731414a8439007acd69d0045bb88b021950c2958a8",
+   "confirmsWithinBars": 0
+  },
+  "stoch-vx3": {
+   "values": "58dfcb658df638dee1f4a27fdd6598ab124e50c269cea51a8841e56c688c737d",
+   "confirmsWithinBars": 0
+  },
+  "super-smoothed-macd": {
+   "values": "652910bd344a10bf642f9e814dbdd14a639289c897de8e169747c0c8f704b002",
+   "confirmsWithinBars": 0
+  },
+  "supertrend-channels": {
+   "values": "85a837ac69b499592046f5acc9ba70848b6891a6e66ea961fe5f67a5967c0e85",
+   "confirmsWithinBars": 0
+  },
+  "swing-trade-signals": {
+   "values": "c9c84e7bba108085cd0137f86d7594bf77774091a82f9e8dc9f6c77b9383d6c3",
+   "confirmsWithinBars": 0
+  },
+  "tdi-hlc-trix": {
+   "values": "304134fafde05a79210f3bc54b423e1dd426eae9e8e4adc2feb80b6fcf9c62bc",
+   "confirmsWithinBars": 0
+  },
+  "three-moving-averages": {
+   "values": "1754968b7b9e11dea1a1453505b08c6a54eb699b13c8000e8f60f6a5ad31f219",
+   "confirmsWithinBars": 0
+  },
+  "tonyux-ema-scalper": {
+   "values": "7487913e79c014c2832522691ef00437e3c9467ceeaa6f408918da4fa1c1d552",
+   "confirmsWithinBars": 0
+  },
+  "top-bottom-candle": {
+   "values": "408451776afe59b951b220be9e496ed048f3c95bbb59c7159da10e29615fb71a",
+   "confirmsWithinBars": 0
+  },
+  "tops-bottoms": {
+   "values": "01f90ef44916c620fbca44a2cd4dffd4a88e78742171f1d34b3fafb4cb3b1b2f",
+   "confirmsWithinBars": 0
+  },
+  "trama": {
+   "values": "ae15ca9ba5cb3a91e584a46ebad6f63c1e3fa53f951edab6bbb6a72fdf118277",
+   "confirmsWithinBars": 0
+  },
+  "trend-following-ma": {
+   "values": "32af400fe56d6c3b1b15b9e88ad77cc2a226f8c3c7faec5f139328fc83c6853b",
+   "confirmsWithinBars": 0
+  },
+  "trend-trader": {
+   "values": "25b48d089cd4bb885706eb40acdb2c12b0520ceba8fcf23cc5f63a7edd741b33",
+   "confirmsWithinBars": 0
+  },
+  "triangular-momentum-osc": {
+   "values": "8154d4241734e7d57a3379badb73eac5864cac9cc525f227abcc5a13143a6ce8",
+   "confirmsWithinBars": 0
+  },
+  "triple-ma-forecast": {
+   "values": "e2ddd62e7eece4978f3cd5ebd1a85f139ba3277fd19017c0461e841abfe34754",
+   "confirmsWithinBars": 0
+  },
+  "ttm-squeeze-pro": {
+   "values": "1fd974fce74a70ea30b493bf2c8ff29250e79ae8da43085b891c722bd0648271",
+   "confirmsWithinBars": 0
+  },
+  "vdub-sniper": {
+   "values": "84278189d8f31e9a9801a03c9ad7f30dc26d8c6bdb756b16fa3c9cf91b414bb4",
+   "confirmsWithinBars": 0
+  },
+  "vdubus-binarypro": {
+   "values": "64ca5ce74892c6830745cf3fe92f8462d22db041792998b9d745f0d033519178",
+   "confirmsWithinBars": 0
+  },
+  "volume-colored-bars": {
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
+   "confirmsWithinBars": 0
+  },
+  "volume-flow-v3": {
+   "values": "40c12338815ebc5ae3dbf3541f733e43e61d43e001eb3e161f300e2d611428d1",
+   "confirmsWithinBars": 0
+  },
+  "volume-linreg-trend": {
+   "values": "7bb0b063d4eb79d4668f6c22cc0440258d398003ca63d862ac805df3aed11782",
+   "confirmsWithinBars": 0
+  },
+  "vwmacd-szo": {
+   "values": "dd1ce658afcc46e9f12563872e87ff4ec051994143628701c383b2eb67a06e96",
+   "confirmsWithinBars": 0
+  },
+  "vw-macd-v2": {
+   "values": "bfc430e9f70c7718982452e333253d9decd16e1a1c01f2dc37ce2db78ab82208",
+   "confirmsWithinBars": 0
+  },
+  "weis-wave-volume": {
+   "values": "e53a24e2e9b053299a2154cdd7b8935c901487c2d99acfaff3f7d5d9b6347961",
+   "confirmsWithinBars": 0
+  },
+  "williams-combo": {
+   "values": "8233f0ffbaabcc9a03157d54601a6ab78fbfc10dd214bef2ea3594ac6e2acfb9",
+   "confirmsWithinBars": 0
+  },
+  "zero-lag-ema": {
+   "values": "d47cf4ed48e0bfef6d7726c085e9f3a030221d3e5715910966b120a2fa6192cf",
+   "confirmsWithinBars": 0
+  },
+  "bjorgum-triple-ema": {
+   "values": "3cd59b9ecf8fa1fa90c5e8acd01aacc6ce75c2b538b6ea045d66f9df0ca4440c",
+   "confirmsWithinBars": 0
+  },
+  "cci-stochastic": {
+   "values": "a7f5f46bf0e3e94ff302e43d676046f564ad329806678d6504da28589432778c",
+   "confirmsWithinBars": 0
+  },
+  "gaussian-channel": {
+   "values": "572eb16dcdc20c54a2583bce1da5b83d46b12a9877fdc412a012e662e313d322",
+   "confirmsWithinBars": 0
+  },
+  "ichimoku-oscillator": {
+   "values": "b62b19ef5bc18af7f780a2a08f9d7365c86d302c9a57b210ba1170df3aa8b88e",
+   "confirmsWithinBars": 0
+  },
+  "ideal-bb-ma": {
+   "values": "6bd5f20cdfea8d88506e5e42c41118210e89b7e8d31cab052a9f6d5038b0f281",
+   "confirmsWithinBars": 0
+  },
+  "lucid-sar": {
+   "values": "86143da06f2343618e39c0893d23519cd79d99b6cf42c9139b9a1f2d26f11339",
+   "confirmsWithinBars": 0
+  },
+  "madrid-ma-ribbon": {
+   "values": "98f6a46e19d6c926f2fce7c18f71340c30a7e348898a265402cf67c1d2005ef8",
+   "confirmsWithinBars": 0
+  },
+  "most-rsi": {
+   "values": "bcfb76065bc23a7cde7fec9e8066ca5f1cda2e73fb38f333fe25b9749d0b03bb",
+   "confirmsWithinBars": 0
+  },
+  "nrtr": {
+   "values": "91f825a175ec9b00ffed37f6158d5c31167f7fb97f0a726472f9a02b7ed1822e",
+   "confirmsWithinBars": 0
+  },
+  "ott-bands": {
+   "values": "cf2a2373d895a9117bae02cd36876c3f7b4c170224fb2431d8b9fe197870926d",
+   "confirmsWithinBars": 0
+  },
+  "otto": {
+   "values": "bdc0bffefd5d36c3dbb86d8ed6718452099ba08eb3e089ee43582754d89bb24a",
+   "confirmsWithinBars": 0
+  },
+  "parabolic-rsi": {
+   "values": "f919c9e24817590b23782b2c0ef58a092d33c771d9fb82c18fe8c1b1d45a99a6",
+   "confirmsWithinBars": 0
+  },
+  "pivot-hh-hl-lh-ll": {
+   "values": "d3bd095258c19dddb46cd3e016cec413c287bc3ba3be1f714efd385effe4dc78",
+   "confirmsWithinBars": 0
+  },
+  "pmax-rsi-t3": {
+   "values": "26a266f156a059445dde3c4e8131000ffd1c5a8b67005ded10e649b2ba9ecc16",
+   "confirmsWithinBars": 0
+  },
+  "profit-maximizer": {
+   "values": "f9f21d8ef1e661b429db9f335f64a49a1ba576a7c882130eea385859e47601e7",
+   "confirmsWithinBars": 0
+  },
+  "range-filter-dw": {
+   "values": "4f94d2c84e90f53498bf64db6c175c3208baa2bdf08ab49fad2960abac837c2b",
+   "confirmsWithinBars": 0
+  },
+  "redk-vader": {
+   "values": "8da3f86e56bd011ebdca680c04e82d0b26371da2b287f60264fd3186d53406f4",
+   "confirmsWithinBars": 0
+  },
+  "rsi-cyclic-smoothed": {
+   "values": "9c1f50a2b892670a89033bb79f38d1bb5a086b92333b4679d141a96361c4f524",
+   "confirmsWithinBars": 0
+  },
+  "supertrend-ladder": {
+   "values": "ed66d1b22e4cd9e8c99014971dc911c4f8077eb9b4165a42d4688dd4551bb162",
+   "confirmsWithinBars": 0
+  },
+  "t3-psar": {
+   "values": "6dab9ff25e55192a665a1fcaed177a9065e1f4847ec3a27615b8254003449501",
+   "confirmsWithinBars": 0
+  },
+  "zlma-trend-levels": {
+   "values": "84596c5c32a0fbda26cc03fd5ee1b45366eed46acdd21bbf0f71e8dda5740714",
+   "confirmsWithinBars": 0
+  },
+  "ai-trend-navigator": {
+   "values": "30d115040354a6d8f48fb234b78a8804ce4b7234dd296421690f93a770f4f2c5",
+   "confirmsWithinBars": 0
+  },
+  "ml-knn-strategy": {
+   "values": "a1a068da5a46548a8479a0b8b70185e8be92e678335c172434bfe4cc89736eb7",
+   "confirmsWithinBars": 0
+  },
+  "ml-momentum-index": {
+   "values": "cd0fafb612b34b4a80e8cab582e4687a63315bdb71ab7e1d8ed060725d9b9189",
+   "confirmsWithinBars": 0
+  },
+  "ml-moving-average": {
+   "values": "7333ac4f96f6f67177712c418623f9ff6852f8b69425b89e0d31329fdc741aae",
+   "confirmsWithinBars": 0
+  },
+  "volume-supertrend-ai": {
+   "values": "00d259f42a60fe01344b7d6f2cef1776bf151af9f1f80a80057c510ae0eaa008",
+   "confirmsWithinBars": 0
+  },
+  "trader-xo": {
+   "values": "55523cca55c2600a6a9b2c42f1649b34f342976ddc31adf00d23394f4669a2ff",
+   "confirmsWithinBars": 0
+  },
+  "adaptive-macd": {
+   "values": "56a9855dc5df4a78c85f961b5151ecb150ac795de737425b1f2b57fd482ec6e6",
+   "confirmsWithinBars": 0
+  },
+  "ultimate-rsi": {
+   "values": "635824c4332e17a8d531bb6ffe17212d01d78f3176ea8e74553ed974d154fa02",
+   "confirmsWithinBars": 0
+  },
+  "adaptive-trend-flow": {
+   "values": "0ddb80aa1c41ed03195ca1b217d5165fb89244d73873b49858c38918a1b6e81f",
+   "confirmsWithinBars": 0
+  },
+  "adaptive-hull-ma": {
+   "values": "e6cf8be69d219f018c263708256aa4e844483583566069a5f3428ee0fdc78766",
+   "confirmsWithinBars": 0
+  },
+  "weighted-ma-function": {
+   "values": "64917f14674683c17ed3252842790ab6c8eb917102313cc703b106d3c17056df",
+   "confirmsWithinBars": 0
+  },
+  "supertrend-cci": {
+   "values": "736e8ca67e44de395fbac8f79f2f57e9d9ba613992d090a73051f2b4e475dbdd",
+   "confirmsWithinBars": 0
+  },
+  "consolidation-zones": {
+   "values": "b742e93f98083de3682d381b62c39d729fa8e29c6830028d12fa8c813b6a0a64",
+   "confirmsWithinBars": 0
+  },
+  "ma-converging": {
+   "values": "1bc2ec1a24df95d5e58b080560811e99a8efdd61f69869151ebe82d53a7187d1",
+   "confirmsWithinBars": 0
+  },
+  "pivot-trailing-maxmin": {
+   "values": "84fc5beaa729a744e11f883d055ab20a605a7e52524d84b5a10df76e1c9c7ba8",
+   "confirmsWithinBars": 8
+  },
+  "redk-tpx": {
+   "values": "66c58a47346c8436e9a6ef530a3dca5ad67aa48dd363bd6eae7de36b16173f5a",
+   "confirmsWithinBars": 0
+  },
+  "auto-fibo-indicators": {
+   "values": "476d501bda5ae1f804dfd46e0856dda61f9576dd5002d08547cce71aec223838",
+   "confirmsWithinBars": 0
+  },
+  "better-volume": {
+   "values": "7a8716ad3d1099138e399d4babcce2b0c3c0f3e816c713ee8ba62b5cefc196b4",
+   "confirmsWithinBars": 0
+  },
+  "volume-divergence": {
+   "values": "08695b788de62506b2a7ad78b0fbaaa4be5ab81b9043a1682637f2dd3135c8ec",
+   "confirmsWithinBars": 0
+  },
+  "volume-bar-breakout": {
+   "values": "6a8ea3ed280bc2ae4ced117302b7f54a9ee7f4f041f9e99fae031616ed93a73d",
+   "confirmsWithinBars": 0
+  },
+  "vumanchu-swing": {
+   "values": "29d3d2c18f6e3259e0e223da5512a808ecbc2b4c8210f2c4d4a46575d7d09985",
+   "confirmsWithinBars": 0
+  },
+  "hema-trend-levels": {
+   "values": "9dc214746541234662c1ea51c7a57084c19e203be20c292fe6d4d464a24ff1d7",
+   "confirmsWithinBars": 0
+  },
+  "rsi-momentum-divergence": {
+   "values": "b4ca390fbc81f8ac0d00535919e831270428044c616d524731414f50a695116e",
+   "confirmsWithinBars": 0
+  },
+  "fvg-positioning-average": {
+   "values": "c0ed5635ddd04fcc473ca1a78961f575af9271e64d3c7e02bca17967e5d91b5f",
+   "confirmsWithinBars": 0
+  },
+  "momentum-zigzag": {
+   "values": "5ea7665d606f0b0029a05e259c82b800b977ae48e06b2bfa8c5a3814c35a493d",
+   "confirmsWithinBars": 0
+  },
+  "intraday-volume-swings": {
+   "values": "88c94a3ac3fc0112c174234d3f238b6821de9d5f829d115088eedb1c8c52cd88",
+   "confirmsWithinBars": 0
+  },
+  "realtime-volume-bars": {
+   "values": "60a59689af08f321573806fc7de7d9ab56a38f45dd728b736064d4a4148a9536",
+   "confirmsWithinBars": 0
+  },
+  "vwap-mvwap-ema-crossover": {
+   "values": "be0b05738e81a252a17a388210a890316dcae75dc31ecc69c540f412bc21b04a",
+   "confirmsWithinBars": 0
+  },
+  "aroon-oscillator": {
+   "values": "3a6413c318e5a1bf4c1a4d6ce4a288396ebd1a9e93a9f9de0fcebe75178c3243",
+   "confirmsWithinBars": 0
+  },
+  "nvi": {
+   "values": "43913ae168ae826aa3c85c42b8257ea52d1280d20cb6c28d808fcf83e933fa3f",
+   "confirmsWithinBars": 0
+  },
+  "pvi": {
+   "values": "2457da31da61f4929992657cff3114dd57b2a7e9bd2d21b33cba082778c76695",
+   "confirmsWithinBars": 0
+  },
+  "ulcer-index": {
+   "values": "614f2701a925e77024d73afa5d5b2c3d79d23b3849409067f7773fa94d2fd269",
+   "confirmsWithinBars": 0
+  },
+  "volatility-stop": {
+   "values": "42aec5c9deac1dc38f08c1ff5f4b0cc69c868db88839575f4c715b21f75a4596",
+   "confirmsWithinBars": 0
+  },
+  "vwap": {
+   "values": "39441c52c2711e1ff33bba737cf2f529778363941b9055e4cc51d721a5165fd5",
+   "confirmsWithinBars": 0
+  },
+  "up-down-volume": {
+   "values": "a3f8eaf92fc0a213b82d5d647d7800a4830e428a3da6600b638effc3a5d2b3c4",
+   "confirmsWithinBars": 0
+  }
+ }
+}

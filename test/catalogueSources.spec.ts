@@ -124,13 +124,24 @@ describe('the entry — a set of pairs and a placement request', () => {
 });
 
 describe('the policy — counts and thresholds as parameters, not as fixed calibration', () => {
-  it('requires the counts and fills the two calibrated ratios', () => {
-    expect(resolutionPolicy({ lanes: 4, plotsPerLane: 4 })).toEqual({
+  it('requires the lane count and fills the two calibrated ratios', () => {
+    expect(resolutionPolicy({ lanes: 4 })).toEqual({
       lanes: 4,
-      plotsPerLane: 4,
       priceNeighbourhood: CALIBRATED_PRICE_NEIGHBOURHOOD,
       warmUpShare: CALIBRATED_WARM_UP_SHARE,
     });
+  });
+
+  it('carries NO ceiling on lines per lane — the policy cannot cut a study at all', () => {
+    // LINES-02. One number written by the host for every study at once is what truncated 89 of the
+    // 320 offered indicators, so the member is gone rather than defaulted: a default would be the
+    // same cut with a different author. The assertion is on the KEYS, because a member that came
+    // back as optional-and-undefined would satisfy any assertion phrased on a value.
+    expect(Object.keys(resolutionPolicy({ lanes: 4 })).sort()).toEqual([
+      'lanes',
+      'priceNeighbourhood',
+      'warmUpShare',
+    ]);
   });
 
   it('keeps the measured values of today as those defaults', () => {
@@ -138,15 +149,14 @@ describe('the policy — counts and thresholds as parameters, not as fixed calib
     expect(CALIBRATED_WARM_UP_SHARE).toBe(0.5);
   });
 
-  it('lets a consumer override either ratio, and the counts carry no default at all', () => {
-    // A ratio measured against one installed catalogue is a default, not a law. The counts are a
-    // resource the consumer owns, so there is no number this library could pick for them.
-    expect(resolutionPolicy({ lanes: 2, plotsPerLane: 1, priceNeighbourhood: 8 })).toEqual({
+  it('lets a consumer override either ratio, and the count carries no default at all', () => {
+    // A ratio measured against one installed catalogue is a default, not a law. The lane count is a
+    // resource the consumer owns, so there is no number this library could pick for it.
+    expect(resolutionPolicy({ lanes: 2, priceNeighbourhood: 8 })).toEqual({
       lanes: 2,
-      plotsPerLane: 1,
       priceNeighbourhood: 8,
       warmUpShare: CALIBRATED_WARM_UP_SHARE,
     });
-    expect(resolutionPolicy({ lanes: 6, plotsPerLane: 3, warmUpShare: 0.25 }).warmUpShare).toBe(0.25);
+    expect(resolutionPolicy({ lanes: 6, warmUpShare: 0.25 }).warmUpShare).toBe(0.25);
   });
 });

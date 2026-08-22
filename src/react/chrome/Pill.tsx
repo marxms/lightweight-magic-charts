@@ -7,7 +7,7 @@
 import { memo } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
-import type { WorkspaceTheme } from '../theme';
+import { accented, type WorkspaceTheme } from '../theme';
 import { isActive, stateAttributes } from './chromeState';
 import type { ChromeState, PillProps } from './slots';
 
@@ -20,8 +20,7 @@ function pillStyle(theme: WorkspaceTheme, active: boolean, disabled: boolean): C
     border: `1px solid ${active ? theme.accent : theme.border}`,
     fontSize: 11.5,
     fontFamily: theme.fontFamily,
-    background: active ? theme.accentFill : 'transparent',
-    color: active ? theme.accentText : theme.text,
+    ...accented(theme, active),
     textAlign: 'left',
     opacity: disabled ? 0.35 : 1,
   };

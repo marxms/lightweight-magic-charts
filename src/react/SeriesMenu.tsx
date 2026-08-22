@@ -16,11 +16,12 @@ import type { WorkspaceSection } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
 import { useHoverIntent } from './hoverIntent';
-import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
+import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, STACK, accented, type WorkspaceTheme } from './theme';
 
 export interface SeriesCatalogueEntry {
   /** The instance the host built. Handed straight back on assignment, so no lookup table is needed. */
   readonly provider: SeriesProvider;
+  readonly id?: string;
   readonly label: string;
   readonly category: string;
   /** Shown on hover. The host's own words about what this computes. */
@@ -39,6 +40,9 @@ export interface SeriesMenuLabels {
   /** Name of the close button. OPTIONAL for compatibility. See docs/explanation/react.md#the-optional-close-label */
   readonly close?: string;
 }
+
+/** The ONE answer to "which study is this": the stored id, or the label when a catalogue predates it. */
+export const studyIdentity = (entry: SeriesCatalogueEntry): string => entry.id ?? entry.label;
 
 /** The same object the whole contract carries — a second copy would drift on the first edit. */
 export const DEFAULT_SERIES_MENU_LABELS: SeriesMenuLabels = DEFAULT_WORKSPACE_CHROME_LABELS.seriesMenu;
@@ -77,9 +81,22 @@ function chipStyle(theme: WorkspaceTheme, active: boolean): CSSProperties {
     borderRadius: 4,
     border: `1px solid ${active ? theme.accent : theme.border}`,
     fontSize: 11.5,
-    background: active ? theme.accentFill : 'transparent',
-    color: active ? theme.accentText : theme.text,
+    ...accented(theme, active),
     textAlign: 'left',
+  };
+}
+
+function railTabStyle(theme: WorkspaceTheme, active: boolean, lead: CSSProperties): CSSProperties {
+  return {
+    ...lead,
+    width: '100%',
+    textAlign: 'left',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    border: 'none',
+    borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
+    ...accented(theme, active),
+    fontSize: 11.5,
   };
 }
 
@@ -159,7 +176,6 @@ export function SeriesMenu({
 
   /**
    * A rail has ONE tab stop, not one per tab; with a search typed in, it is the first one.
-   * See docs/explanation/react.md#arrows-and-one-tab-stop-on-the-tablist-rail
    */
   const selectedTabIndex = searching ? -1 : tabIds.indexOf(selected ?? '');
   const tabStopIndex = selectedTabIndex === -1 ? 0 : selectedTabIndex;
@@ -168,8 +184,7 @@ export function SeriesMenu({
     <div
       data-testid={testIdPrefix}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        ...STACK,
         background: theme.surface,
         color: theme.text,
         fontFamily: theme.fontFamily,
@@ -177,7 +192,7 @@ export function SeriesMenu({
         maxHeight: 420,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
+      <div style={{ ...CENTER_ROW, gap: 10, padding: 8 }}>
         <strong style={{ fontSize: 11.5 }}>{labels.title}</strong>
         <input
           type="search"
@@ -253,21 +268,12 @@ export function SeriesMenu({
                 onClick={() => pickSection(entry.id)}
                 onMouseEnter={() => hoverSection(entry.id)}
                 onMouseLeave={hover.cancel}
-                style={{
+                style={railTabStyle(theme, active, {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   gap: 6,
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
-                  background: active ? theme.accentFill : 'transparent',
-                  color: active ? theme.accentText : theme.text,
-                  fontSize: 11.5,
-                }}
+                })}
               >
                 <span>{entry.label}</span>
                 {entry.count > 0 ? (
@@ -292,18 +298,7 @@ export function SeriesMenu({
                 onClick={() => pickSection(name)}
                 onMouseEnter={() => hoverSection(name)}
                 onMouseLeave={hover.cancel}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
-                  background: active ? theme.accentFill : 'transparent',
-                  color: active ? theme.accentText : theme.text,
-                  fontSize: 11.5,
-                }}
+                style={railTabStyle(theme, active, { display: 'block' })}
               >
                 {name}
               </button>
@@ -329,7 +324,7 @@ export function SeriesMenu({
           ) : (
             results.map((entry) => {
               const id = String(entry.provider.id);
-              const active = chosen.has(id);
+              const active = chosen.has(studyIdentity(entry));
               return (
                 <button
                   key={id}

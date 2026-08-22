@@ -7,17 +7,17 @@ import type { CSSProperties, DragEvent as ReactDragEvent, ReactElement } from 'r
 
 import type { PaneConfig } from '../../pane/budget';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
+import { CENTER_ROW, STACK } from '../theme';
 import { useWorkspaceSetup, useWorkspaceSetupWriter } from './setupContext';
 
 /** The set element the platform already has, stripped of the chrome it paints by default. */
 const BARE_SET: CSSProperties = { border: 'none', margin: 0, padding: 0 };
 
-const LIST: CSSProperties = { ...BARE_SET, display: 'flex', flexDirection: 'column' };
+const LIST: CSSProperties = { ...BARE_SET, ...STACK };
 
 const ROW: CSSProperties = {
   ...BARE_SET,
-  display: 'flex',
-  alignItems: 'center',
+  ...CENTER_ROW,
   gap: 8,
   cursor: 'grab',
 };

@@ -15,7 +15,7 @@ import type { Bar, Point } from '../src/domain/types';
  * observable.
  */
 
-const POLICY = resolutionPolicy({ lanes: 4, plotsPerLane: 4 });
+const POLICY = resolutionPolicy({ lanes: 4 });
 
 const bar = (time: number, close: number): Bar =>
   ({ time, open: close, high: close, low: close, close }) as unknown as Bar;
@@ -67,6 +67,50 @@ describe('laneOrder — the list sanitised against the RESOURCE', () => {
   });
 });
 
+/**
+ * LANE-02, LANE-03 — the cut a host reads out of values this package already publishes.
+ *
+ * The criterion names this test and it had never been written: seven ids against three lanes,
+ * `views.length` is three, so the cut is `ids.length - views.length`. The gap was behavioural
+ * rather than editorial. A `resolveSources` that deduplicates but never cuts at the lane count —
+ * `laneOrder` itself untouched — passed 1321 tests and the whole e2e, which is the incident
+ * `example/App.tsx` records in its own words, restated: studies the reader chose are never drawn
+ * and the difference reads zero while it happens. Asserting `laneOrder` alone does not reach it,
+ * because the number a host divides by comes out of `views`.
+ */
+describe('LANE-02 — views.length IS the resolved count, so the cut is derivable', () => {
+  const THREE_LANES = resolutionPolicy({ lanes: 3 });
+  const lookupOf = (ids: readonly string[]): SourceLookup => scanLookup(ids.map((id) => source({ id })));
+
+  it('seven ids against three lanes resolve THREE, and the host reads a cut of four', () => {
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    const lookup = lookupOf(ids);
+    const resolution = resolveSources(ids, lookup, BARS, THREE_LANES);
+
+    expect(resolution.views).toHaveLength(3);
+    expect(ids.length - resolution.views.length).toBe(4);
+    // Cut from the END, and the three that fit are UNCHANGED by the four that did not: resolving
+    // them on their own produces the same views, member for member.
+    expect(resolution.views.map((view) => view.id)).toEqual(['a', 'b', 'c']);
+    expect(resolution.views).toEqual(resolveSources(['a', 'b', 'c'], lookup, BARS, THREE_LANES).views);
+    // And the ones that did not fit are absent from everything a lane spends, not merely unlisted.
+    expect(resolution.activePaneIds.size).toBe(3);
+    expect(resolution.activePaneIds.has(lanePaneId(3))).toBe(false);
+    expect(resolution.readings.has(seriesId(laneSeriesId(3, 0)))).toBe(false);
+  });
+
+  it('a repeated id collapses BEFORE the cut, so the difference is not the cut alone', () => {
+    // `ids.length - views.length` counts every entry of the list that draws nothing of its own, and
+    // a duplicate is one of those. Reporting that number as "studies the lanes could not fit" would
+    // be a second wrong count standing beside the one this story exists for.
+    const ids = ['a', 'a', 'b', 'c', 'd'];
+    const resolution = resolveSources(ids, lookupOf(['a', 'b', 'c', 'd']), BARS, THREE_LANES);
+
+    expect(resolution.views.map((view) => view.id)).toEqual(['a', 'b', 'c']);
+    expect(ids.length - resolution.views.length).toBe(2);
+  });
+});
+
 describe('LMC-18 — the resolver takes the LOOKUP, never the catalogue', () => {
   it('the lane comes from the list position, and removing the first PROMOTES the second', () => {
     const lookup = scanLookup([source({ id: 'a' }), source({ id: 'b' })]);
@@ -94,6 +138,66 @@ describe('LMC-18 — the resolver takes the LOOKUP, never the catalogue', () => 
       availability: 'empty',
       drawn: 0,
     });
+  });
+
+  /**
+   * ADAPT-03 — a third-party computation that throws costs THAT source and nothing else.
+   *
+   * The guarantee is two nested catches and it had no test. `series()` is wrapped because a source
+   * can fail while building its plots; each `compute` is wrapped separately because one plot of a
+   * study can fail while its neighbours are fine. With the host now handing this resolver a vendor
+   * catalogue of three hundred entries, "one bad study empties the chart" stops being hypothetical
+   * and becomes the most likely way a release breaks.
+   *
+   * BOTH CLAUSES ARE NEEDED. Deleting the per-plot catch leaves the per-source one green, because a
+   * source whose `series()` succeeds still throws from inside `compute`.
+   */
+  it('a source that throws costs itself and leaves every other one drawn', () => {
+    const exploding = source({
+      id: 'throws-building',
+      series: () => {
+        throw new Error('the vendor computation failed');
+      },
+    });
+    const halfDead = source({
+      id: 'throws-computing',
+      series: () => [
+        {
+          spec: { id: seriesId('dead'), label: 'Dead', shape: 'line', color: '#fff', lineWidth: 1 },
+          provider: {
+            compute: () => {
+              throw new Error('the vendor computation failed');
+            },
+          },
+        } as unknown as PlottedSeries,
+        plot('alive', (i) => i * 2),
+      ],
+    });
+    const lookup = scanLookup([exploding, halfDead, source({ id: 'whole' })]);
+
+    const resolution = resolveSources(
+      ['throws-building', 'throws-computing', 'whole'],
+      lookup,
+      BARS,
+      POLICY,
+    );
+
+    // The one whose `series()` threw is reported, by name, as unavailable — never dropped from the
+    // list, because a study the user chose has to stay visible enough to be turned off again.
+    expect(resolution.views[0]).toMatchObject({
+      id: 'throws-building',
+      label: 'THROWS-BUILDING',
+      availability: 'empty',
+      drawn: 0,
+    });
+    // The one whose plot threw keeps the plots that did not: a dead line occupies neither lane nor
+    // legend, and its neighbour is untouched.
+    expect(resolution.views[1]).toMatchObject({ id: 'throws-computing', drawn: 1 });
+    expect(resolution.labels.get(seriesId(laneSeriesId(1, 0)))).toBe('alive');
+    expect(resolution.readings.get(seriesId(laneSeriesId(1, 0)))?.[3]).toBe(6);
+    // And the study beside them is drawn exactly as it would have been alone.
+    expect(resolution.views[2]).toMatchObject({ id: 'whole', drawn: 1, availability: 'ok' });
+    expect(resolution.readings.get(seriesId(laneSeriesId(2, 0)))?.[3]).toBe(3);
   });
 
   it('with no bars, the LIST is still the list — and nothing is ASSERTED about it', () => {
@@ -163,22 +267,79 @@ describe('LMC-18 — the key is the SERIES identity minted by the lib', () => {
     expect(resolution.activePaneIds.size).toBe(0);
   });
 
-  it('the policy is DATA: another plot ceiling changes the truncation, not the module', () => {
+  /**
+   * LINES-01, LINES-02 — REPLACES the clause that asserted the opposite.
+   *
+   * The test that stood here pinned the truncation: three plots against `plotsPerLane: 2` resolved
+   * `drawn: 2, truncated: 1`. That was the behaviour the spec now forbids, so the assertion is
+   * rewritten rather than relaxed — the number it demands is five where it used to demand two, and
+   * the old shape cannot pass it.
+   */
+  it('resolves EVERY live line of a study wider than the old ceiling of three', () => {
+    const lookup = scanLookup([
+      source({
+        id: 'ichimoku',
+        series: () => [
+          plot('conversion', (i) => i),
+          plot('base', (i) => i + 1),
+          plot('lagging', (i) => i + 2),
+          plot('spanA', (i) => i + 3),
+          plot('spanB', (i) => i + 4),
+        ],
+      }),
+    ]);
+    const resolution = resolveSources(['ichimoku'], lookup, BARS, POLICY);
+
+    expect(resolution.views[0].drawn).toBe(5);
+    // COUNTED IS NOT DRAWN. `drawn` is a number and a number can be right while the line it counts
+    // has no identity to be drawn under, which is the exact shape of the defect being removed: the
+    // panel said three while one was on screen. So every plot is also demanded by identity, in the
+    // readings and in the legend.
+    const fields = [0, 1, 2, 3, 4].map((plot) => seriesId(laneSeriesId(0, plot)));
+    expect(fields.filter((field) => resolution.readings.has(field))).toEqual(fields);
+    expect(fields.map((field) => resolution.labels.get(field))).toEqual([
+      'conversion',
+      'base',
+      'lagging',
+      'spanA',
+      'spanB',
+    ]);
+  });
+
+  it('takes the count from EACH study, so two studies of different widths both resolve whole', () => {
+    // LINES-02. One study resolving fully proves nothing about a per-study count: a ceiling of five
+    // would pass the clause above and cut the eight-plot study below. Two widths in ONE resolution
+    // is what separates "the count comes from the study" from "the ceiling happens to be generous".
+    const lookup = scanLookup([
+      source({ id: 'two', series: () => [plot('t1', (i) => i), plot('t2', (i) => i)] }),
+      source({
+        id: 'eight',
+        series: () => Array.from({ length: 8 }, (_unused, n) => plot(`e${n}`, (i) => i + n)),
+      }),
+    ]);
+    const resolution = resolveSources(['two', 'eight'], lookup, BARS, POLICY);
+
+    expect(resolution.views.map((view) => view.drawn)).toEqual([2, 8]);
+    expect(resolution.readings.has(seriesId(laneSeriesId(1, 7)))).toBe(true);
+    expect(resolution.readings.has(seriesId(laneSeriesId(0, 2)))).toBe(false);
+  });
+
+  it('still refuses a DEAD line, which is the one cut that was never the ceiling', () => {
+    // The ceiling is gone and the dead-line filter is not: a plot that produces no finite value in
+    // this window occupies neither lane nor legend, and `drawn` counts what LIVES. Without this the
+    // deletion would read as "draw everything declared", which is a different and wrong rule — and
+    // measured, 133 of 1048 declared plots are dead in a 240-bar window.
     const lookup = scanLookup([
       source({
         id: 'a',
-        series: () => [plot('p1', () => 1), plot('p2', () => 2), plot('p3', () => 3)],
+        series: () => [plot('live', (i) => i), plot('dead', () => null), plot('alsoLive', (i) => i)],
       }),
     ]);
-    expect(resolveSources(['a'], lookup, BARS, POLICY).views[0]).toMatchObject({
-      drawn: 3,
-      truncated: 0,
-    });
-    const tight = resolutionPolicy({ lanes: 4, plotsPerLane: 2 });
-    expect(resolveSources(['a'], lookup, BARS, tight).views[0]).toMatchObject({
-      drawn: 2,
-      truncated: 1,
-    });
+    const resolution = resolveSources(['a'], lookup, BARS, POLICY);
+
+    expect(resolution.views[0].drawn).toBe(2);
+    expect(resolution.labels.get(seriesId(laneSeriesId(0, 1)))).toBe('alsoLive');
+    expect(resolution.readings.has(seriesId(laneSeriesId(0, 2)))).toBe(false);
   });
 
   it('the guide only comes out when the source has a lane of its own to mark it on', () => {

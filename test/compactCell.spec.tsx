@@ -338,3 +338,71 @@ describe('CompactCell — the theme comes from the mounted chrome, never from a 
     expect(DEFAULT_WORKSPACE_THEME.text).not.toBe(CANARY.text);
   });
 });
+
+/**
+ * The cell's two centred rows, serialised as they were before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. The radio group is the one whose declaration is
+ * nothing but the shared pair and a gap, so a spread that dropped a property would leave it
+ * unlaid-out with every other assertion in this file still green.
+ */
+describe('the centred row inside the cell', () => {
+  it('serialises the cell header exactly as it did before', async () => {
+    const { view } = await mount();
+    const head = view.container.querySelector('[data-compact-cell] > div');
+    expect(head?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; gap: 6px; padding: 3px 8px;' +
+        ' border-bottom: 1px solid rgba(255,255,255,0.14); font-size: 10.5px;',
+    );
+  });
+
+  it('serialises the timeframe group exactly as it did before', async () => {
+    const { view } = await mount();
+    expect(view.container.querySelector('[role="radiogroup"]')?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; gap: 6px;',
+    );
+  });
+});
+
+/**
+ * The cell's own column stack, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. `flex: 1` and the two minimums are what let a cell
+ * shrink inside the grid row, and they have to keep declaring themselves AFTER the direction.
+ */
+describe('the column stack inside the cell', () => {
+  it('serialises the cell root exactly as it did before', async () => {
+    const { view } = await mount();
+    expect(view.container.querySelector('[data-compact-cell]')?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0;' +
+        ' border-left: 1px solid rgba(255,255,255,0.14);' +
+        ' font-family: Inter, system-ui, sans-serif; color: rgb(184, 188, 196);',
+    );
+  });
+});
+
+/**
+ * The timeframe button's pressed pair, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse, in BOTH states: both halves of the pair depend on
+ * the same comparison, so a helper that dropped the flag would serialise the resting button
+ * correctly and paint the chosen one in the resting colours.
+ */
+describe('the pressed pair inside the cell', () => {
+  it('serialises the chosen and the resting timeframe exactly as they did before', async () => {
+    const { view } = await mount();
+    const styleOf = (timeframe: string): string =>
+      view.container
+        .querySelector(`[data-testid="compact-cell-tf-${timeframe}"]`)
+        ?.getAttribute('style') ?? '';
+    const shared = 'padding: 1px 6px; cursor: pointer; border-radius: 3px; font-size: 10px;';
+    expect(styleOf('15m')).toBe(
+      `${shared} border: 1px solid #2962ff;` +
+        ' background: rgba(41, 98, 255, 0.22); color: rgb(255, 255, 255);',
+    );
+    expect(styleOf('1h')).toBe(
+      `${shared} border: 1px solid transparent;` +
+        ' background: transparent; color: rgb(184, 188, 196);',
+    );
+  });
+});

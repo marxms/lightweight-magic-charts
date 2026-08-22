@@ -9,6 +9,7 @@ import type { DrawingBinding, DrawingLayer } from '../../drawing/drawingLayer';
 import { drawingMemoryFor } from '../../drawing/drawingMemory';
 import type { MagnetMode } from '../../drawing/magnet';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
+import { outsideProvider } from '../chrome/labels';
 import { DrawingToolbar } from '../DrawingToolbar';
 import type { DrawingToolbarProps } from '../DrawingToolbar';
 
@@ -155,10 +156,7 @@ export const DrawingRailProvider = memo(function DrawingRailProvider({
 export function useDrawingRail(): DrawingRailValue {
   const value = useContext(DrawingRailContext);
   if (value === null) {
-    // See docs/explanation/react-workspace.md#the-rail-throws-outside-its-provider
-    throw new Error(
-      'useDrawingRail was called outside DrawingRailProvider. Mount it above rail and canvas.',
-    );
+    throw new Error(outsideProvider('useDrawingRail', 'DrawingRailProvider'));
   }
   return value;
 }

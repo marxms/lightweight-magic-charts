@@ -26,6 +26,16 @@ module.exports = {
     '<rootDir>/test/gates/packaging.spec.ts',
   ],
 
+  // THE EXAMPLE IMPORTS THE PACKAGE BY NAME, because that is what a consumer writes and what
+  // `example/serve.mjs` and `scripts/build-example.mjs` both resolve through the `exports` map. A
+  // suite that mounts a host component out of `example/` has to resolve the same specifier, and
+  // the self-reference would send it to `dist/` — an artefact that may be stale or absent while a
+  // developer runs `npm test` alone. `tsconfig.test.json` carries the same mapping for the
+  // compiler, so the two agree.
+  moduleNameMapper: {
+    '^lightweight-magic-charts$': '<rootDir>/src/index.ts',
+  },
+
   preset: 'ts-jest',
   testEnvironment: 'node',
   rootDir: '.',

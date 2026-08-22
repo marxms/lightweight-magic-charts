@@ -114,6 +114,64 @@ nothing local is weaker than CI. `.github/workflows/ci.yml` runs these on every 
 `release.yml` runs them again on the tag, because the run that publishes is the run that most needs
 to have checked.
 
+### The check that answers for the vendor's arithmetic
+
+```sh
+npm run proof   # every offered indicator, and every offered control
+```
+
+`scripts/indicator-proof.mjs` answers **parameterisation** exhaustively and **numeric correctness**
+at a tier, and the difference is the point rather than a caveat.
+
+Exhaustive: every indicator the committed manifest offers has to draw, be deterministic, be pure, be
+bar-length and index-aligned, sit on the scale it declares and break no asserted bound — and **every
+control it offers has to move the drawing**, re-proved on the spot rather than read from a cached
+census. The other half is asserted too: every control the library declares and the manifest holds
+back carries a written reason, because "held back" and "forgotten" look identical otherwise. That is
+320 indicators and 1021 controls, in both directions.
+
+Tiered: 6 indicators are pinned against hand-computed golden vectors and 6 series are cross-checked
+against this repository's own `example/studies.ts` to ~1e-13; 111 hold a family invariant that does
+not depend on the implementation; 203 carry `structural`, which says they draw and are well-behaved
+and says **nothing about their values**. The run prints that tally — `pinned 6 · constrained 111 ·
+structural 203` — so nobody has to infer it, and the manifest carries the tier per indicator. Read
+"every indicator is correctly calculated" nowhere in this: verifying 320 numerically needs an
+independent oracle per family, and that is a feature of its own.
+
+It verifies the manifest; it does not decide what is offered. A second funnel over the same set
+would be a second source of truth about what the product offers, and two of those diverge on the
+first release.
+
+It also re-derives the committed FINGERPRINTS, which are digests of computed VALUES rather than of
+names and shapes — a vendor release that moves one number by one part in a billion turns it red and
+says which indicator. The catalogue itself is generated:
+
+```sh
+node scripts/build-indicator-manifest.mjs           # regenerate
+node scripts/build-indicator-manifest.mjs --check   # derive again, write nothing, fail if stale
+```
+
+The generator REFUSES to write when an id in the committed manifest has vanished from the library
+and neither `example/indicators/renames.json` nor the defect ledger says why. It can see that the id
+is gone; it cannot tell a rename from a removal, and a host's saved workspace can — so silent loss
+only gets through a red build.
+
+**It refuses on the same terms when a NUMBER moved.** Regenerating the fingerprints is the ordinary
+way to take a vendor release, and that is exactly what turns the fingerprint check into a check of
+itself: the digest moves, the file moves with it, and the gate is green over a value nobody read.
+Measured with an inverted-weight `wma`, 2.1% wrong, shipped the way a release arrives — every check
+passed. So a moved digest has to be declared in `example/indicators/value-changes.json`, which is
+append-only, with the id, the digest it moved from, the digest it moved to and the reason. Taking a
+release therefore reads: run `--check`, read the refusal it prints, satisfy yourself about each
+indicator it names, write the declaration, then regenerate.
+
+Its own command and its own CI job, for the same reason `npm run e2e` has one: it loads a 1.05 MB
+third-party library and computes three hundred indicators over 1664 bars. Measured 2026-08-21:
+`indicator-proof: 29/29 passed in 11.3 s`, exit 0. `lightweight-charts-indicators` and `oakscriptjs`
+are devDependencies pinned EXACTLY — a range would let every digest move while the check stayed
+green — and `test/boundary.spec.ts` is what keeps either of them out of `src/`, statically and
+through `import()` alike.
+
 ### The check that runs a browser, and why it is not wired in
 
 ```sh
@@ -201,6 +259,8 @@ a guard whose blind spot is unwritten gets read as covering everything.
    measure `dist/`, and they will refuse rather than report a stale number.
 2. **A green `npm run e2e` when the change can reach the page.** Anything under `example/`, and
    anything in `src/react/`, is that kind of change. The suite is the only thing here that renders.
+   **A green `npm run proof` when the change touches the indicator manifest or the vendor pin.**
+   That gate is the one that answers for somebody else's arithmetic.
 3. **Tests that assert an outcome, not an implementation.** New behaviour arrives with a test that
    would fail without it. Weakening, skipping or deleting a test to get to green is never the fix.
 4. **A ledger that only shrank.** If your change makes a recorded violator comply, take it out of the

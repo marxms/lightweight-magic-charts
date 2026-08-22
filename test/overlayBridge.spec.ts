@@ -155,6 +155,61 @@ describe('overlay bridge — lifecycle', () => {
     expect(redraws).toBe(1);
   });
 
+  /**
+   * EDGE CASE spec.md:194 — two overlays claiming the same z-order keep their order across redraws.
+   *
+   * WHAT THIS REPOSITORY OWNS, AND WHAT IT DELEGATES. The base library sorts pane views by z-order
+   * and its sort is `Array.prototype.sort`, which the language specification requires to be STABLE:
+   * a tie keeps input order. That is the base library's property, not this one's, and it is modelled
+   * below rather than re-implemented. What this repository owns is the two things that make the tie
+   * survive a frame — every primitive answering the SAME layer on every call, and `paneViews()`
+   * handing back the same objects each time. Either of those varying per frame is how a stable sort
+   * still comes out reordered, and neither was asserted anywhere before.
+   *
+   * The 'ahead' overlay is the positive control: without it, a modelled sort that never moved
+   * anything would satisfy the case and prove nothing.
+   */
+  it('keeps two overlays that tie on z-order in attach order across three redraws', () => {
+    const first = new SpyOverlay('behind');
+    const second = new SpyOverlay('behind');
+    const over = new SpyOverlay('ahead');
+    const attached: OverlayPrimitive[] = [];
+    const host: PrimitiveHost<OverlayPrimitive> = {
+      attachPrimitive: (p) => attached.push(p),
+      detachPrimitive: () => undefined,
+    };
+    const labels = new Map<SpyOverlay, string>([[first, 'first'], [second, 'second'], [over, 'over']]);
+
+    for (const overlay of [first, second, over]) {
+      attachOverlay(host, overlay);
+      attached[attached.length - 1].attached(attachment().params);
+    }
+
+    const LAYERS: readonly string[] = ['bottom', 'normal', 'top'];
+    const frames: string[][] = [];
+    const identities = attached.map((primitive) => primitive.paneViews());
+    for (let frame = 0; frame < 3; frame += 1) {
+      // Every primitive still hands back the SAME view objects — the base library caches on them.
+      attached.forEach((primitive, at) => expect(primitive.paneViews()).toBe(identities[at]));
+
+      const painted = [...attached]
+        .sort((a, b) => LAYERS.indexOf(a.paneViews()[0].zOrder()) - LAYERS.indexOf(b.paneViews()[0].zOrder()));
+      painted.forEach((primitive) => primitive.paneViews()[0].renderer()?.draw(fakeBitmapTarget(new RecordingContext())));
+      frames.push(painted.map((primitive) => labels.get([first, second, over][attached.indexOf(primitive)])!));
+    }
+
+    // The tie is REAL: the two 'behind' overlays answer the same layer, so nothing but the sort's
+    // stability decides which of them paints first.
+    expect(attached.slice(0, 2).map((primitive) => primitive.paneViews()[0].zOrder())).toEqual(['bottom', 'bottom']);
+    // And the control moved: 'ahead' sorts after both, on every one of the three frames.
+    expect(frames).toEqual([
+      ['first', 'second', 'over'],
+      ['first', 'second', 'over'],
+      ['first', 'second', 'over'],
+    ]);
+    expect([first.seen, second.seen, over.seen].map((seen) => seen.length)).toEqual([3, 3, 3]);
+  });
+
   it('returns an idempotent detach from attachOverlay, symmetric with subscribe (M5)', () => {
     const attached: OverlayPrimitive[] = [];
     const detached: OverlayPrimitive[] = [];

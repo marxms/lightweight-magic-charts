@@ -47,6 +47,21 @@ export function alignReadings(
   return readings;
 }
 
+/** A point's own colours onto the same grid. `null` = not one point in this series declared one. */
+export function alignColors(
+  points: readonly Point[],
+  positionOf: ReadonlyMap<number, number>,
+): readonly (string | null)[] | null {
+  const colors: (string | null)[] = [];
+  for (const point of points) {
+    const at = positionOf.get(point.time as number);
+    const color = (point as { readonly color?: string }).color;
+    if (at === undefined || color === undefined) continue;
+    colors[at] = color;
+  }
+  return colors.length === 0 ? null : colors;
+}
+
 /** Median, not mean. See docs/explanation/indicator.md#median-not-mean */
 export function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);

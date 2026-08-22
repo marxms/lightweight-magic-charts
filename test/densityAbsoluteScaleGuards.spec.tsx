@@ -82,7 +82,10 @@ describe('an absolute floor survives the seams that used to eat it', () => {
       showDensity: true,
       showProfile: false,
       autoFit: false,
-      coerceIndicators: () => ({}),
+      // AN ARRAY, which is what the contract declares — `(raw, legacy) => readonly string[]`. It
+      // read `({})` and compiled only because the whole policy is cast; the gate then walked the
+      // active list to prune the per-study values, and a plain object is not iterable.
+      coerceIndicators: () => [],
     };
     const restored = coerceWorkspaceSetup(
       { density: { floor: 5000, gamma: 1.5, floorMode: 'absolute' } } as never,

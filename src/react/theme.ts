@@ -3,6 +3,10 @@
  * See docs/explanation/react.md#why-a-token-object-and-not-a-styling-library
  */
 
+export const CENTER_ROW = { display: 'flex', alignItems: 'center' } as const;
+
+export const STACK = { display: 'flex', flexDirection: 'column' } as const;
+
 export interface WorkspaceTheme {
   readonly background: string;
   readonly text: string;
@@ -33,3 +37,8 @@ export const DEFAULT_WORKSPACE_THEME: WorkspaceTheme = {
   legendShadow: '0 1px 4px rgba(0,0,0,0.95)',
   fontFamily: 'Inter, system-ui, sans-serif',
 };
+
+export const accented = (theme: WorkspaceTheme, on: boolean) => ({
+  background: on ? theme.accentFill : 'transparent',
+  color: on ? theme.accentText : theme.text,
+});

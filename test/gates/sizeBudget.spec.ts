@@ -122,6 +122,128 @@ const SYMBOLS_AT_CUTOVER = 13;
  * the crosshair follows the magnet, so the pointer and the anchor stop disagreeing. Net of 90 B
  * this feature's own modules gave back, measured one candidate at a time — the deltas are in the
  * budget's entry note. `PROVISIONAL_ENTRY_LIMIT` is untouched and the entry sits 21 B under it.
+ * RE-PINNED DOWN 2026-08-20, entry 104973 -> 104654 (-319 B) and ChartWorkspace 95702 -> 95383
+ * (-319 B): the four "was called outside" diagnostics became one factory. Each of the four contexts
+ * carried the whole sentence plus its own tail arguing why a filled default is refused; the tails
+ * are one document section now and the sentence is a template read four times. Both rows move by
+ * the same number because all four doors are reachable from the composed root. Measured as ONE
+ * candidate on a zero-slack row, so the limit descends with the measurement.
+ * RE-PINNED DOWN 2026-08-20, entry 104654 -> 104489 (-165 B) and ChartWorkspace 95383 -> 95218
+ * (-165 B): the rail's two tab kinds became one style factory. Nine properties were declared twice
+ * and only the leading box differs. Its own candidate in its own commit — one per re-pin is what
+ * makes a delta attributable. Estimated -159 B, measured -165 B; the measurement is written down.
+ * RE-PINNED 2026-08-20, entry 104489 -> 104511 (+22 B) and ChartWorkspace 95218 -> 95240 (+22 B):
+ * `studyIdentity(entry) = entry.id ?? entry.label` becomes the one answer to which study a chip is,
+ * repairing a live defect in 0.2.1 where the menu pressed on the provider's id and the composition
+ * stored the label. Spent from the 484 B the two factories above gave back, so nothing was raised
+ * that had not first been paid for. Estimated +42 B; measured +22, because the optional `id` member
+ * the estimate charged for is erased by the compiler.
+ * RE-PINNED 2026-08-21, entry 104919 -> 104992 (+73 B), and `ChartWorkspace` does NOT move: the
+ * entry publishes `studyIdentity`, the `StudySettings` type and the two setup hooks, and
+ * `setupContext` was already inside the composed root's graph — what the entry pays for is the
+ * re-export surface alone. Estimated +53 B, measured +73. The provisional ceiling is untouched and
+ * the entry now sits 2 B under it, which is written down because it is the smallest margin this
+ * ledger has ever recorded: the next growth in `src/` has to be paid for by a measured shrinkage
+ * first, not by raising anything.
+ * RE-PINNED 2026-08-21, entry 104887 -> 104919 (+32 B) and ChartWorkspace 95616 -> 95648 (+32 B):
+ * `resolve` gained an optional third parameter and the memo the matching dependency. Measured in a
+ * mounted workspace before it shipped: `MEMO afterPick=4 afterIdleRerender=4`, and after a write
+ * `REDRAW calls=5 lastSettings={"ma":{"period":50}}` — so the dependency does not cost a
+ * recomputation per render, because the map is a new object per COERCION and not per render.
+ * Estimated +32 B, measured +32. The provisional ceiling is untouched, 75 B above.
+ * RE-PINNED 2026-08-21, entry 104658 -> 104887 (+229 B) and ChartWorkspace 95387 -> 95616
+ * (+229 B): the tab holds per-study parameter values it never reads. The value is typed `unknown`,
+ * which is the seam written where the compiler enforces it rather than where a comment asks for it,
+ * and the coercion prunes the map by OWN property against the active list. The first draft used
+ * `in`: measured, `onlyActive({}, ['toString'])` answered `{toString: <function>}` — the package
+ * fabricating a value the host never wrote. Estimated +254 B, measured +229. Both rows move by the
+ * same number because the coercion is reachable from the composed root and from nowhere else, and
+ * `PROVISIONAL_ENTRY_LIMIT` is untouched with the entry 107 B under it.
+ * RE-PINNED 2026-08-20, entry 104511 -> 104658 (+147 B) and ChartWorkspace 95240 -> 95387 (+147 B):
+ * a pick whose identity is already held is refused through the notice channel instead of vanishing
+ * into `laneOrder`'s deduplication. The label member is optional with a default, and the contract's
+ * member count moves 85 -> 86 in the same commit. Estimated +175 B, measured +147. Still spent from
+ * the 484 B the two factories gave back: the entry sits 315 B below where this feature found it.
+ * RE-PINNED DOWN 2026-08-21, entry 104992 -> 104712 (-280 B) and ChartWorkspace 95648 -> 95364
+ * (-284 B): the two properties every centred row opens with became one shared value. Eleven
+ * declarations across nine files repeated them, and each site now spreads the value at the POSITION
+ * the pair already held — React writes inline styles in insertion order, so the serialised
+ * attribute is what has to stay equal, not the set of properties. All twelve affected elements are
+ * pinned as text, captured BEFORE the collapse. Its own candidate in its own commit. Estimated
+ * -283 B, measured -280 B; the measurement is written down. The two rows disagree by four bytes and
+ * are recorded as measured: they are taken over different graphs.
+ * RE-PINNED DOWN 2026-08-21, entry 104712 -> 104564 (-148 B) and ChartWorkspace 95364 -> 95219
+ * (-145 B): the column stack became one shared value, spread in FRONT of whatever each of the six
+ * declarations followed it with. The `Column` primitive is what makes the position a correctness
+ * question: its declaration ends with the caller's own `...style`, so a value spread last would
+ * overrule every caller. Its own candidate in its own commit. Estimated -145 B, measured -148 B on
+ * the entry and -145 B on the composed root.
+ * RE-PINNED DOWN 2026-08-21, entry 104564 -> 104367 (-197 B) and ChartWorkspace 95219 -> 95022
+ * (-197 B): the scope machine's three appliers each opened with the same five-line preamble and
+ * now call one `deferred(state, frame)`. `openScope` measures 4300 -> 4103. Nothing moves in
+ * behaviour — the three copies were literally identical — and the doors that had never been
+ * asserted are asserted now: the suite reached the preamble through `append` alone and the buffer
+ * cap through no frame kind at all. Its own candidate in its own commit. Estimated -197 B and
+ * `openScope` 4300 -> 4103; both measured exactly.
+ * RE-PINNED DOWN 2026-08-21, entry 104367 -> 104092 (-275 B) and ChartWorkspace 95022 -> 94748
+ * (-274 B): the pressed pair became one `accented(theme, on)`. Six declarations carried the same
+ * two lines and both halves read the same flag, so pinning them in ONE state would say nothing —
+ * every affected element is pinned pressed AND resting, with the colours written out as jsdom
+ * serialises them rather than read back from the theme. Its own candidate in its own commit. The
+ * design named five sites and estimated -203 B; the pair is at SIX and measures -275 B.
+ * RE-PINNED DOWN 2026-08-21, entry 104092 -> 103876 (-216 B) and ChartWorkspace 94748 -> 94640
+ * (-108 B): the line ceiling left the package. `plotsPerLane`, `ResolvedSourceView.truncated`, the
+ * label and the branch that read it are gone, and `drawn` is every live line. The member was
+ * removed for LYING and not for being dead: measured on 0.2.1 the Ichimoku draws ONE line while
+ * the panel reads three of five. Estimated -212 B, measured -216 B.
+ * RE-PINNED 2026-08-21, entry 103876 -> 103921 (+45 B) and ChartWorkspace 94640 -> 94685 (+45 B):
+ * the reader that decides where a drawn value comes from left `ChartWorkspace.tsx` for
+ * `react/workspace/studyReaders.ts`, and the file measures 347 -> 345 of the 350 code lines
+ * `fileSize` allows. Spent from this feature's OWN bank — the four shrinkages and the line-ceiling
+ * deletion took the entry from 104992 to 103876 first — so nothing was raised that had not been
+ * paid for, and `PROVISIONAL_ENTRY_LIMIT` is untouched with the entry 1073 B under it. The design
+ * predicted +75 B for a PAIR of closures; only one of the two exists yet, and it measures +45.
+ * RE-PINNED 2026-08-21, entry 103921 -> 103951 (+30 B) and ChartWorkspace 94685 -> 94715 (+30 B):
+ * an overlay may name the series whose price scale it reads. The member is optional and type-only;
+ * the bytes are the one expression that resolves it against the created series, and the variant
+ * with an explicit `undefined` ternary measured +54 and was refused. `ChartSurface` moves the same
+ * 30 B to 23815 of its 23840. The alternative — the package owning the band primitive — measured
+ * +986 B, and it would have brought the vendor's drawing vocabulary into `src/` with it.
+ * RE-PINNED 2026-08-21, entry 103951 -> 104100 (+149 B) and ChartWorkspace 94715 -> 94801 (+86 B):
+ * the host's own overlay reaching the pane of the study it annotates. +63 B publishes the three id
+ * minters — without them a host names a drawn line by re-deriving `ind1p1`, which is a second place
+ * for the two to disagree — and +86 B carries `WorkspaceStudies.overlays` through `CanvasSurface`
+ * and merges it with this package's own two. `ChartSurface` does not move: the merge is one region
+ * above it.
+ * RE-PINNED 2026-08-21, entry 104100 -> 104287 (+187 B), ChartWorkspace 94801 -> 94987 and
+ * ChartSurface 23840 -> 23946: the marker door stops being a no-op. `SurfaceData.seriesMarkers`
+ * and the effect that applies it PER SERIES cost +141; the `WorkspaceStudies.markers` channel and
+ * the composition feeding it cost +46, and they cannot land in a later commit — `socketParity`'s
+ * baseline is empty and shrink-only, so a member of `SurfaceData` may not exist for one commit
+ * without the socket that fills it. Measured on the REAL engine in a browser: 17,274 and 9,974
+ * marker pixels where there were 0 and 0, and taking the adapter out puts both back to 0.
+ * RE-PINNED 2026-08-21, entry 104287 -> 104450 (+163 B), ChartWorkspace 94987 -> 95150 and
+ * ChartSurface 23946 -> 24067: a bar the study colours is coloured. `SurfaceData.barColors` rides
+ * the payload the candles were already written with, and the `WorkspaceStudies.barColors` channel
+ * shares the commit for the same `socketParity` reason as the markers. `barcolor()` is GLOBAL in
+ * PineScript, which is why it is ONE array and not a map per study: 23 of the 52 emitters are drawn
+ * in a lane of their own and still repaint the price. Read off the bitmap on the real engine:
+ * 1,865 candle pixels in the study's own colour where there were 0.
+ * RE-PINNED 2026-08-22, entry 104450 -> 104821 (+371 B), ChartWorkspace 95150 -> 95292 and
+ * ChartSurface 24067 -> 24138: the colour a point carries reaches its segment. The NINTH channel,
+ * and measured the largest — 147 of the 320 offered rows emit 54,009 coloured plot points, against
+ * 108 rows for the fills, and the adapter discarded all of them in silence. `Point.color?` costs
+ * +1 B and stays OPTIONAL, which is what keeps the previous feature's zero-host-breakage promise
+ * and the doc examples green; the rest is the parallel channel `alignColors` -> `colors` ->
+ * `SeriesColorReader` -> the fifth argument of `plottedPoints`. The design measured +397 and the
+ * integration review +390: 371 is what the tree built, because a line whose points carry no colour
+ * — 173 of the 320 — archives NOTHING rather than an array of nulls.
+ * RE-PINNED 2026-08-22, entry 104821 -> 104853 (+32 B) and ChartWorkspace 95292 -> 95324: the
+ * reading closures are memoised on the resolve they read. Measured by DELETION on a mounted
+ * workspace with a counting engine: built inline, adding one horizontal price line rewrites every
+ * drawn series — 111 payloads to 148, and a second line adds the same again. A host that memoises
+ * its own prop groups is already saved by `React.memo` on the composition; what this closes is the
+ * re-render the composition does to itself, over a series count this feature took from 43 to 505.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
@@ -164,9 +286,21 @@ const SYMBOLS_AT_CUTOVER = 13;
  * declares ten top-level props and `propCount` does not move; the bytes are the field's two hops,
  * through `CanvasSurface` and into the hook. This closes the phase: entry 104994 -> 106294 in all,
  * 9335 B under the ceiling the phase raised once.
+ * RE-PINNED 2026-08-22 ON THE MERGE, entry 106562 -> 106439 (-123 B) and ChartWorkspace
+ * 96390 -> 96012 (-378 B): `feat/indicator-library-adoption` meets master, and the pin is what the
+ * probe measured on the merged tree rather than either side's number. The two lines part from a
+ * common ancestor at entry 104973 / ChartWorkspace 95702 and arrive at 104853 / 95324 and
+ * 106562 / 96390; their independent deltas sum to 106442 on the entry and to exactly 96012 on the
+ * composed root. The entry measures three bytes UNDER that sum because both lines edited
+ * `useOverlayFields` and the merged hook carries one argument list, not two — which is the reason
+ * the number here is taken with `npm run build && node scripts/size-gate.mjs` and never
+ * reconciled. `ChartSurface` keeps 24138, this branch's value: master's row never left the
+ * ancestor's 23840. `PROVISIONAL_ENTRY_LIMIT` stays at master's 115629 — the absolute-density-scale
+ * phase raised it once under AD-012 and this branch never lifted the ceiling at all — so the entry
+ * lands 9190 B under it.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 106562,
+  '*': 106439,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -178,8 +312,8 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   PaneStack: 2714,
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
-  ChartSurface: 23840,
-  ChartWorkspace: 96390,
+  ChartSurface: 24138,
+  ChartWorkspace: 96012,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

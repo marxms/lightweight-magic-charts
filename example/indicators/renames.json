@@ -1,0 +1,4 @@
+{
+ "why": "APPEND-ONLY, WRITTEN BY A HUMAN, VERIFIED BY THE BUILD. `scripts/build-indicator-manifest.mjs` can see that an id in the committed manifest is gone from the library. It CANNOT see whether the vendor renamed it or removed it, and those two have opposite consequences for a host's saved workspaces: a rename can be migrated through the host's own `coerceIndicators`, a removal cannot. So the generator REFUSES to write until somebody writes which, here or in the defect ledger. Silent loss only gets through a red build. Nothing is ever deleted from this list — an old rename is how a workspace saved two versions ago still resolves.",
+ "renames": []
+}

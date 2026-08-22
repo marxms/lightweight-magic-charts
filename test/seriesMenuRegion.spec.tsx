@@ -37,7 +37,6 @@ function viewOf(id: string, lane: number): ResolvedSourceView {
     label: LOOKUP[id] ?? null,
     overlay: false,
     drawn: 2,
-    truncated: 0,
     availability: 'ok',
     warmUpBars: 0,
     windowBars: 0,
@@ -162,13 +161,22 @@ describe('the studies menu region', () => {
     expect(chosen()).toEqual(['Alpha', 'Beta', 'Gamma']);
   });
 
+  /**
+   * LINES-01 — the "N of M lines" note is GONE, and the two that remain are unchanged.
+   *
+   * The note this used to assert read "4 of 7 lines" beside a study whose lines the package had
+   * cut. Measured on the shipped 0.2.1, it also LIED: the Ichimoku drew one line on screen while
+   * the panel reported three of five, because the note counted what the resolution kept and was
+   * blind to the over-price slot that dropped four more. A sentence that is wrong about the chart
+   * is worse than no sentence, and with nothing being cut there is nothing left for it to say.
+   */
   it('reports what a source did not draw instead of leaving it looking broken', () => {
     render(
       <NotesHarness
         views={[
           viewOf('alpha', 0),
           { ...viewOf('beta', 1), availability: 'warmup', warmUpBars: 724, windowBars: 800 },
-          { ...viewOf('gamma', 2), drawn: 4, truncated: 3 },
+          { ...viewOf('gamma', 2), drawn: 7 },
         ]}
       />,
     );
@@ -176,7 +184,9 @@ describe('the studies menu region', () => {
     // A healthy source says nothing: a note on everything is a note nobody reads.
     expect(screen.queryByText('no data in this window')).toBeNull();
     expect(screen.getByText('warms up after 724 of 800 bars')).toBeInTheDocument();
-    expect(screen.getByText('4 of 7 lines')).toBeInTheDocument();
+    // And a seven-line study says nothing either, because seven is what it drew.
+    expect(screen.queryByText(/of 7 lines/)).toBeNull();
+    expect(screen.getByTestId('workspace-active-gamma').textContent).toBe('Gamma▲▼✕');
   });
 });
 
@@ -285,5 +295,35 @@ describe('the pointer leaving the menu', () => {
     expect(overlay()).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(overlay()).toBeNull();
+  });
+});
+
+/**
+ * The panel's two centred rows, serialised as they were before the shared value.
+ *
+ * Both strings were captured from the tree BEFORE the collapse. The chip is the interesting one:
+ * it overrides `gap` where the fieldset takes the declaration's own, so a shared value spread after
+ * the override would silently restore 4px on a chip that asked for 2.
+ */
+describe('the centred row inside the studies panel', () => {
+  it('serialises the panel fieldset exactly as it did before', () => {
+    render(<Harness start={['alpha']} />);
+    fireEvent.click(trigger());
+    const fieldset = screen.getByTestId('workspace-active-alpha').parentElement;
+    expect(fieldset?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 0px;' +
+        ' padding: 4px 8px; background: rgb(11, 14, 19);' +
+        ' border: 1px solid rgba(255,255,255,0.14); color: rgb(184, 188, 196);' +
+        ' font-family: Inter, system-ui, sans-serif; font-size: 11px;',
+    );
+  });
+
+  it('serialises an active chip exactly as it did before, override and all', () => {
+    render(<Harness start={['alpha']} />);
+    fireEvent.click(trigger());
+    expect(screen.getByTestId('workspace-active-alpha').getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 2px;' +
+        ' border: 1px solid rgba(255,255,255,0.14); border-radius: 4px;',
+    );
   });
 });

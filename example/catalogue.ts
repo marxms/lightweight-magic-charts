@@ -13,7 +13,7 @@ import { DEMO_STUDY_IDS } from './studies';
  * minimum and had no way to learn the rest existed. Defaults on a REFERENCE page are the feature
  * list; off, they are a feature list of nothing.
  */
-export const DEMO_CATALOGUE: WorkspaceSetupPolicy = {
+const DEMO_CATALOGUE: WorkspaceSetupPolicy = {
   catalogue: [
     { id: 'price', defaultVisible: true, heightPx: 320, title: 'Price action' },
     { id: 'volume', defaultVisible: true, heightPx: 110, title: 'Traded volume' },
@@ -33,3 +33,31 @@ export const DEMO_CATALOGUE: WorkspaceSetupPolicy = {
   coerceIndicators: (raw) =>
     Array.isArray(raw) ? raw.filter((id): id is string => DEMO_STUDY_IDS.includes(id as string)) : [],
 };
+
+/**
+ * The same policy, widened by whatever the third-party catalogue turned out to offer.
+ *
+ * IT IS A FUNCTION BECAUSE THE ANSWER ARRIVES LATE. `usePersistedTabs` coerces the stored payload
+ * ONCE, in a `useState` initialiser, so a policy handed over after the mount would never be asked.
+ * That is why `main.tsx` fetches the catalogue before it renders: a visitor who saved a third-party
+ * study would otherwise come back to a workspace that dropped it, silently, as an id nothing
+ * offered.
+ *
+ * `coerceStudySettings` is the SIBLING the seam declares: reading a parameter VALUE names the
+ * host's business, so the host reads it — and it is absent, not empty, when there is no catalogue
+ * to read against.
+ */
+export function demoSetupPolicy(
+  offered: readonly string[],
+  coerceStudySettings?: WorkspaceSetupPolicy['coerceStudySettings'],
+): WorkspaceSetupPolicy {
+  const known = new Set<string>([...DEMO_STUDY_IDS, ...offered]);
+  return {
+    ...DEMO_CATALOGUE,
+    coerceIndicators: (raw) =>
+      Array.isArray(raw)
+        ? raw.filter((id): id is string => typeof id === 'string' && known.has(id))
+        : [],
+    ...(coerceStudySettings === undefined ? {} : { coerceStudySettings }),
+  };
+}

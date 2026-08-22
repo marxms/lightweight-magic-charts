@@ -29,7 +29,7 @@ export const marker: Overlay = {
 ## Exports
 
 - **`DetachOverlay`** · type · `type DetachOverlay = () => void`
-- **`Overlay`** · type · `interface Overlay { zOrder: 'behind' | 'ahead'; attached: (host: OverlayHost) => void; detached: () => void; draw: (target: RenderTarget, projection: Projection) => void }`
+- **`Overlay`** · type · `interface Overlay { zOrder: 'behind' | 'ahead'; anchor?: string | undefined; attached: (host: OverlayHost) => void; detached: () => void; draw: (target: RenderTarget, projection: Projection) => void }`
 - **`OverlayHost`** · type · `interface OverlayHost { requestRedraw: () => void; projection: Projection }`
 - **`OverlayHostApi`** · type · `interface OverlayHostApi { attachOverlay: (overlay: Overlay) => DetachOverlay }`
 - **`Projection`** · type · `interface Projection { priceToY: (price: number) => number | null; timeToX: (time: UtcSeconds) => number | null; barSpacing: number }`

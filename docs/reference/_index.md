@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **300 symbols** — 108 values and 192 types — across **52 modules**.
+The public entry exports **308 symbols** — 114 values and 194 types — across **54 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -28,6 +28,7 @@ whole and on its own, so nothing is stitched in behind it.
 
 | Module | Exports | What it holds |
 | --- | --- | --- |
+| [`catalogue/lanes`](catalogue/lanes.md) | 3 (3 value) | naming the line a study is drawn on |
 | [`catalogue/relabel`](catalogue/relabel.md) | 3 (1 value) | renaming a pane and its series without rebuilding either |
 | [`catalogue/sources`](catalogue/sources.md) | 7 (1 value) | what may be plotted, and how much room the plotting gets |
 
@@ -108,14 +109,15 @@ whole and on its own, so nothing is stitched in behind it.
 | [`react/DrawingToolbar`](react/DrawingToolbar.md) | 5 (2 value) | the drawing rail: tools, count and the two destructive actions |
 | [`react/drawingToolBuckets`](react/drawingToolBuckets.md) | 2 (0 value) | grouping a long tool list into a browsable panel |
 | [`react/hoverIntent`](react/hoverIntent.md) | 6 (4 value) | opening on hover without opening on a passing pointer |
-| [`react/SeriesMenu`](react/SeriesMenu.md) | 5 (2 value) | the picker for what may be plotted |
+| [`react/SeriesMenu`](react/SeriesMenu.md) | 6 (3 value) | the picker for what may be plotted |
 | [`react/surface/ChartSurface`](react/surface/ChartSurface.md) | 10 (2 value) | the chart itself: panes, series, alerts, drawings and overlays |
-| [`react/surface/useSeriesData`](react/surface/useSeriesData.md) | 1 (0 value) | where a series gets its numbers |
+| [`react/surface/useSeriesData`](react/surface/useSeriesData.md) | 2 (0 value) | where a series gets its numbers |
 | [`react/theme`](react/theme.md) | 2 (1 value) | twelve colour and type tokens, and nothing else |
 | [`react/TimeframeChips`](react/TimeframeChips.md) | 2 (1 value) | the interval row |
 | [`react/workspace/ChartWorkspace`](react/workspace/ChartWorkspace.md) | 7 (1 value) | the drop-in, and the shape of everything you hand it |
 | [`react/workspace/DrawingRail`](react/workspace/DrawingRail.md) | 1 (0 value) | the words a drawing rail says |
 | [`react/workspace/PatternChipsSection`](react/workspace/PatternChipsSection.md) | 1 (0 value) | candle patterns, chosen by the reader and named by the host |
+| [`react/workspace/setupContext`](react/workspace/setupContext.md) | 2 (2 value) | the active tab’s setup, read one field at a time and written as a patch |
 | [`react/workspace/usePersistedTabs`](react/workspace/usePersistedTabs.md) | 1 (0 value) | where a tab set is between visits |
 | [`react/WorkspaceLegend`](react/WorkspaceLegend.md) | 2 (1 value) | the legend, rendered from the model |
 | [`react/WorkspaceTabsBar`](react/WorkspaceTabsBar.md) | 6 (3 value) | the tab strip, with rename, duplicate, export and import |
@@ -132,5 +134,5 @@ whole and on its own, so nothing is stitched in behind it.
 | Module | Exports | What it holds |
 | --- | --- | --- |
 | [`tabs/codec`](tabs/codec.md) | 4 (3 value) | reading and writing a stored tab set |
-| [`tabs/setup`](tabs/setup.md) | 7 (4 value) | what one tab holds, and how untrusted input becomes one |
+| [`tabs/setup`](tabs/setup.md) | 8 (4 value) | what one tab holds, and how untrusted input becomes one |
 | [`tabs/workspaceTabs`](tabs/workspaceTabs.md) | 12 (7 value) | the tab reducer, and the limits it enforces |

@@ -11,8 +11,8 @@ import { DEFAULT_PRICE_ALERT_STYLE } from '../../alerts/priceAlerts';
 import type { PriceAlert } from '../../alerts/priceAlerts';
 import type { Bar, PaneSpec, PriceScaleConvention } from '../../domain/types';
 import type { DrawingBinding } from '../../drawing/drawingLayer';
+import type { Overlay } from '../../extension/plugins';
 import { drawingScopeKey } from '../../drawing/drawingMemory';
-import { readingWithTip } from '../../indicator/liveTip';
 import type { ResolvedSourceView, SourceResolution } from '../../indicator/resolution';
 import type { StackApplication } from '../../layout/application';
 import { PRICE_PANE_ID } from '../../layout/computeLayout';
@@ -22,12 +22,14 @@ import type { ChartEngine, SeriesMarkerPoint, SeriesShape } from '../../port/cha
 import type { LiveTip } from '../../port/frames';
 import type { MarketDataPort } from '../../port/ports';
 import { coerceWorkspaceSetup, defaultWorkspaceSetup, movedIndicator } from '../../tabs/setup';
-import type { WorkspaceSetup, WorkspaceSetupPolicy } from '../../tabs/setup';
+import type { StudySettings, WorkspaceSetup, WorkspaceSetupPolicy } from '../../tabs/setup';
 import { MAX_WORKSPACE_TABS, reduceTabs } from '../../tabs/workspaceTabs';
 import type { TabsAction, TabsState } from '../../tabs/workspaceTabs';
 import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeContext';
 import type { WorkspaceChromeProviderProps, WorkspaceSection } from '../chrome/ChromeContext';
-import { laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
+import { duplicateStudyNotice, laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
+import { studyIdentity } from '../SeriesMenu';
+import { CENTER_ROW, STACK } from '../theme';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 import type { PaneView, SeriesReader } from '../surface/ChartSurface';
 import { CanvasRow } from './CanvasRow';
@@ -46,6 +48,7 @@ import type { WorkspaceLanes } from './paneViews';
 import { PrimaryActions } from './PrimaryActions';
 import { SeriesMenuRegion } from './SeriesMenuRegion';
 import { StatusFooter } from './StatusFooter';
+import { studyColorReader, studyReader } from './studyReaders';
 import { StylePickerRegion, styleChoicesOf } from './StylePickerRegion';
 import { SymbolTrigger } from './SymbolTrigger';
 import { TabsRegion, workspaceTabPanelAria } from './TabsRegion';
@@ -118,10 +121,16 @@ export interface WorkspaceStudies {
   /** Resolved by the HOST once, for a composition that holds the list somewhere else. */
   readonly views?: readonly ResolvedSourceView[];
   /** Resolved by the HOST on demand. See docs/explanation/react-workspace.md#why-resolve-is-a-function */
-  readonly resolve?: (ids: readonly string[], bars: readonly Bar[]) => SourceResolution;
+  readonly resolve?: (ids: readonly string[], bars: readonly Bar[], settings?: Readonly<Record<string, StudySettings>>) => SourceResolution;
   readonly capacity?: number;
   /** How the pre-created lanes are drawn. Absent, no lane exists and a study has nowhere to go. */
   readonly lanes?: WorkspaceLanes;
+  /** Drawn beside the package's own. See docs/explanation/react-workspace.md#the-host-draws-what-the-package-will-not-name */
+  readonly overlays?: readonly Overlay[];
+  /** Marks on the drawn lines, by `seriesStyleKey`, minted from what the resolve produced. */
+  readonly markers?: (resolution: SourceResolution) => ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
+  /** One colour per bar for the CANDLES, minted from the same resolve. `null` keeps the convention. */
+  readonly barColors?: (resolution: SourceResolution) => readonly (string | null)[];
 }
 
 export interface ChartWorkspaceProps {
@@ -145,8 +154,6 @@ export interface ChartWorkspaceProps {
 const NONE: readonly never[] = [];
 const NO_GROUP: Readonly<Record<string, never>> = {};
 const NO_TOOLS: DrawingVocabulary = { tools: NONE };
-/** Nothing computed. A host drawing only candles never has to say so. */
-const NO_READINGS: SeriesReader = () => NONE;
 const noop = (): void => undefined;
 const DEFAULT_STUDY_CAPACITY = 6;
 /** Western default; a host reading red-is-up hands over its own. */
@@ -154,7 +161,7 @@ const DEFAULT_CONVENTION: PriceScaleConvention = {
   upColor: '#26a69a', downColor: '#ef5350', encodeDirectionBy: ['color', 'position'],
 };
 
-const COLUMN: CSSProperties = { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 };
+const COLUMN: CSSProperties = { ...STACK, flex: 1, minHeight: 0 };
 /**
  * The overlay anchor: the studies menu positions against THIS box, never against the viewport.
  * See docs/explanation/react-workspace.md#the-shell-is-a-stripped-fieldset
@@ -163,9 +170,7 @@ const SHELL: CSSProperties = {
   ...COLUMN, flex: 'none', position: 'relative', outline: 'none',
   border: 'none', margin: 0, padding: 0, minInlineSize: 0,
 };
-const HEADER: CSSProperties = {
-  display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, padding: '0 4px 4px',
-};
+const HEADER: CSSProperties = { ...CENTER_ROW, flexWrap: 'wrap', gap: 4, padding: '0 4px 4px' };
 
 /** Editing keys are never hijacked from a field somebody is typing in. */
 function isTextEntry(target: EventTarget | null): boolean {
@@ -203,8 +208,8 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
   const timeframe = setup.timeframe ?? catalogue.servedTimeframes[0] ?? '';
   const capacity = studies.capacity ?? DEFAULT_STUDY_CAPACITY;
   const resolved = useMemo(
-    () => studies.resolve?.(setup.indicators, bars),
-    [studies, setup.indicators, bars],
+    () => studies.resolve?.(setup.indicators, bars, setup.studySettings),
+    [studies, setup.indicators, bars, setup.studySettings],
   );
   const chosen = resolved?.views ?? studies.views ?? NONE;
   const views: readonly PaneView[] = useMemo(
@@ -212,9 +217,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
       lanes: studies.lanes, labels: resolved?.labels, laneTitle: labels.laneTitle }),
     [specs, setup.panes, chosen, capacity, studies.lanes, resolved, labels],
   );
-  // See docs/explanation/react-workspace.md#the-tip-fills-the-bar-in-progress
-  const read: SeriesReader = (pane, series) =>
-    readingWithTip(series.id, resolved?.readings.get(series.id) ?? (data.read ?? NO_READINGS)(pane, series), data.tip);
+  const readers = useMemo(() => ({ read: studyReader(resolved, data.read, data.tip), readColors: studyColorReader(resolved) }), [resolved, data.read, data.tip]);
   const write = (patch: Partial<WorkspaceSetup>): void =>
     act({ kind: 'update-active', setup: { ...setup, ...patch } });
   const footerId = `${testIdPrefix}-state`;
@@ -272,10 +275,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
       <div {...aria} role="tabpanel" style={COLUMN}>
         <div style={HEADER}>
           <SymbolTrigger symbol={data.symbol} onSymbolRequest={data.onSymbolRequest ?? noop} />
-          <IntervalRegion
-            options={catalogue.servedTimeframes}
-            onRequest={data.onTimeframeRequest}
-          />
+          <IntervalRegion options={catalogue.servedTimeframes} onRequest={data.onTimeframeRequest} />
           <GridControls
             grid={{
               maxCells: catalogue.maxGridCells,
@@ -296,8 +296,11 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
               onMove: (id, step) => write({ indicators: movedIndicator(setup.indicators, id, step) }),
             }}
             onSelect={(entry) => {
+              const held = studyIdentity(entry);
+              const duplicate = labels.notices.duplicateStudy ?? duplicateStudyNotice;
+              if (setup.indicators.includes(held)) return notice.report(duplicate(held));
               if (setup.indicators.length >= capacity) return notice.report(labels.notices.studyLimit(capacity));
-              write({ indicators: [...setup.indicators, entry.label] });
+              write({ indicators: [...setup.indicators, held] });
             }}
           />
           <StylePickerRegion
@@ -325,12 +328,12 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                 engine={data.engine}
                 convention={convention}
                 data={{
-                  panes: views, read, priceCaption: data.symbol,
+                  panes: views, ...readers, priceCaption: data.symbol,
                   pricePane: specs.find((spec) => String(spec.id) === PRICE_PANE_ID),
                   seriesStyles: setup.seriesStyles as Readonly<Record<string, SeriesShape>>,
                   autoFit: setup.autoFit, datasetId: `${data.symbol}·${timeframe}`,
                   futureBars: data.futureBars,
-                  priceMarkers: data.marks?.(bars, active),
+                  priceMarkers: data.marks?.(bars, active), seriesMarkers: resolved === undefined ? undefined : studies.markers?.(resolved), barColors: resolved === undefined ? undefined : studies.barColors?.(resolved),
                 }}
                 layout={{ heightPx: surfacePx }}
                 a11y={{ label: labels.canvas(data.symbol), describedBy: footerId }}
@@ -343,10 +346,9 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                   scope: data.symbol === '' ? null : { ...scope, resolution: timeframe },
                   port: data.port, barCount: data.barCount ?? 0,
                 }}
-                fields={{ tuning: setup.density, density: data.density,
-                  scale: data.densityScale,
+                fields={{ tuning: setup.density, density: data.density, scale: data.densityScale,
                   showDensity: setup.showDensity, showProfile: setup.showProfile }}
-                snapThresholdPx={of.drawing?.snapThresholdPx}
+                snapThresholdPx={of.drawing?.snapThresholdPx} overlays={studies.overlays}
                 onLane={(state) => {
                   setLane(state);
                   notice.report(laneNotice(labels.notices, state.bars.length, state.outcome, data.symbol));

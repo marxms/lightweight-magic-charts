@@ -299,7 +299,6 @@ const COUNTED: readonly (readonly [string, (labels: WorkspaceChromeLabels, count
   ['state', (labels, count) => labels.state('BTC-USD', '1h', count)],
   ['compactCell.status', (labels, count) => labels.compactCell.status(count, 0)],
   ['studies.warmUp', (labels, count) => labels.studies.warmUp(0, count)],
-  ['studies.truncated', (labels, count) => labels.studies.truncated(0, count)],
 ];
 
 /**
@@ -328,8 +327,6 @@ describe('DOC-24 to DOC-29 — the contract formats by `Intl`, and stops concate
     expect(en.compactCell.status(2, 0)).toBe('2 bars · +0.00%');
     expect(en.studies.warmUp(3, 1)).toBe('warms up after 3 of 1 bar');
     expect(en.studies.warmUp(3, 2)).toBe('warms up after 3 of 2 bars');
-    expect(en.studies.truncated(1, 1)).toBe('1 of 1 line');
-    expect(en.studies.truncated(1, 2)).toBe('1 of 2 lines');
     expect(concatenating(en)).toEqual([]);
   });
 

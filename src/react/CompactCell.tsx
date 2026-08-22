@@ -26,6 +26,7 @@ import type { ChartEngine, SeriesHandle, WorkspaceChartHandle } from '../port/ch
 import { useChromeTheme } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
+import { CENTER_ROW, STACK, accented } from './theme';
 
 export interface CompactCellLabels {
   /** Names the cell's timeframe group. Repeated per cell, so the title has to be in the name. */
@@ -283,8 +284,7 @@ export function CompactCell({
       data-testid={testIdPrefix}
       data-compact-cell=""
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        ...STACK,
         flex: 1,
         minHeight: 0,
         minWidth: 0,
@@ -295,8 +295,7 @@ export function CompactCell({
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...CENTER_ROW,
           gap: 6,
           padding: '3px 8px',
           borderBottom: `1px solid ${theme.border}`,
@@ -313,7 +312,7 @@ export function CompactCell({
           aria-label={labels.timeframeGroup(title)}
           aria-orientation="horizontal"
           onKeyDown={onRailKeyDown}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          style={{ ...CENTER_ROW, gap: 6 }}
         >
           {timeframes.map((timeframe, index) => (
             // biome-ignore lint/a11y/useSemanticElements: focus ring survives only on a real button
@@ -332,8 +331,7 @@ export function CompactCell({
                 borderRadius: 3,
                 fontSize: 10,
                 border: `1px solid ${timeframe === scope.resolution ? theme.accent : 'transparent'}`,
-                background: timeframe === scope.resolution ? theme.accentFill : 'transparent',
-                color: timeframe === scope.resolution ? theme.accentText : theme.text,
+                ...accented(theme, timeframe === scope.resolution),
               }}
             >
               {timeframe}

@@ -179,7 +179,10 @@ const BASELINE: Readonly<Record<string, number>> = {
   'overlays/troughProfile.ts': 2,
   'port/frames.ts': 5,
   'port/ports.ts': 4,
-  'port/scopeMachine.ts': 21,
+  // 21 -> 20 on 2026-08-21: the three appliers' shared preamble became one helper, and the four
+  // comment lines above the copies became one. The ratchet demands the write-down, and it is
+  // what stops the number climbing back.
+  'port/scopeMachine.ts': 20,
   'port/seedTransaction.ts': 9,
   'react/CompactCell.tsx': 7,
   'test/boundary.spec.ts': 6,

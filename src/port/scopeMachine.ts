@@ -84,6 +84,19 @@ function toReset(state: ScopeState, cause: ResetCause): ScopeState {
   return { ...state, phase: 'reset', resetCause: cause, buffered: [] };
 }
 
+/**
+ * The two phases in which a frame is NOT applied — the preamble all three appliers opened with.
+ * I12 buffers in `seeding` up to the cap above; `reset` refuses and COUNTS; `null` means apply it. See docs/explanation/port.md#reset-is-terminal-until-a-refetch
+ */
+function deferred(state: ScopeState, frame: Frame): ScopeState | null {
+  if (state.phase === 'seeding') {
+    if (state.buffered.length >= MAX_BUFFERED_FRAMES) return toReset(state, 'gap');
+    return { ...state, buffered: [...state.buffered, frame] };
+  }
+  if (state.phase === 'reset') return { ...state, discarded: state.discarded + 1 };
+  return null;
+}
+
 /** I10. A different generation invalidates the cursor and lands in `reset`, not `seeding`. See docs/explanation/port.md#i10-a-generation-change-lands-in-reset */
 function rebase(state: ScopeState, gen: number): ScopeState {
   return {
@@ -163,14 +176,8 @@ function applySnapshot(
 }
 
 function applyAppend(state: ScopeState, frame: Extract<Frame, { kind: 'append' }>): ScopeState {
-  // I12 — nothing is applied before the seam is verified. Buffer, in arrival order.
-  if (state.phase === 'seeding') {
-    if (state.buffered.length >= MAX_BUFFERED_FRAMES) return toReset(state, 'gap');
-    return { ...state, buffered: [...state.buffered, frame] };
-  }
-
-  // RESET is terminal until a refetch: refuse and COUNT. See docs/explanation/port.md#reset-is-terminal-until-a-refetch
-  if (state.phase === 'reset') return { ...state, discarded: state.discarded + 1 };
+  const held = deferred(state, frame);
+  if (held !== null) return held;
 
   // I3 — a non-contiguous sequence is a RESET, never a partial application that hides the hole.
   if (frame.seq !== state.baseline + 1) return toReset(state, 'gap');
@@ -191,12 +198,8 @@ function applyAppend(state: ScopeState, frame: Extract<Frame, { kind: 'append' }
 }
 
 function applyOpen(state: ScopeState, frame: Extract<Frame, { kind: 'open' }>): ScopeState {
-  if (state.phase === 'seeding') {
-    if (state.buffered.length >= MAX_BUFFERED_FRAMES) return toReset(state, 'gap');
-    return { ...state, buffered: [...state.buffered, frame] };
-  }
-  // Same reason as `applyAppend`: a scope awaiting a refetch draws nothing.
-  if (state.phase === 'reset') return { ...state, discarded: state.discarded + 1 };
+  const held = deferred(state, frame);
+  if (held !== null) return held;
   const bars = upsertBar(state.bars, frame.bar);
   // I5 — an open bar NEVER advances the baseline: no seq, last-writer-wins, so the cursor stands.
   if (bars === null) return state;
@@ -204,12 +207,8 @@ function applyOpen(state: ScopeState, frame: Extract<Frame, { kind: 'open' }>): 
 }
 
 function applyMember(state: ScopeState, frame: Extract<Frame, { kind: 'member' }>): ScopeState {
-  // I12, for the shape it exists to serve. See docs/explanation/port.md#applymember-was-the-only-applier-without-a-phase-guard
-  if (state.phase === 'seeding') {
-    if (state.buffered.length >= MAX_BUFFERED_FRAMES) return toReset(state, 'gap');
-    return { ...state, buffered: [...state.buffered, frame] };
-  }
-  if (state.phase === 'reset') return { ...state, discarded: state.discarded + 1 };
+  const held = deferred(state, frame);
+  if (held !== null) return held;
   if (state.baseline > 0 && frame.seq <= state.baseline) return state;
   const members = new Set(state.members);
   if (frame.op === 'upsert') members.add(frame.key);

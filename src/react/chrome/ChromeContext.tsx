@@ -13,7 +13,7 @@ import { Notice } from './Notice';
 import { Pill } from './Pill';
 import { Toggle } from './Toggle';
 import { Tooltip } from './Tooltip';
-import { resolveWorkspaceLabels } from './labels';
+import { outsideProvider, resolveWorkspaceLabels } from './labels';
 import type { WorkspaceChromeLabels, WorkspaceLabelOverrides } from './labels';
 import type { WorkspaceComponents } from './slots';
 
@@ -136,7 +136,6 @@ export const WorkspaceChromeProvider = memo(function WorkspaceChromeProvider({
     Notice: noticeSlot,
     labels,
     // SECTIONS BY SHAPE, NOT BY ARRAY IDENTITY.
-    // See docs/explanation/react-chrome.md#chromecontext-sections-carry-live-counts
     sections: sectionShape(sections),
   });
 
@@ -163,10 +162,7 @@ export const WorkspaceChromeProvider = memo(function WorkspaceChromeProvider({
 export function useWorkspaceChrome(): WorkspaceChromeValue {
   const value = useContext(WorkspaceChromeContext);
   if (value === null) {
-    throw new Error(
-      'useWorkspaceChrome was called outside WorkspaceChromeProvider. Mount the provider above ' +
-        'the chrome: a filled default would hide the wrong mount until the screen looks strange.',
-    );
+    throw new Error(outsideProvider('useWorkspaceChrome', 'WorkspaceChromeProvider'));
   }
   return value;
 }

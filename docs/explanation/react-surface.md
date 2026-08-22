@@ -662,6 +662,40 @@ series.
 
 Pattern marks ride the candle series. An absent prop means the feature is unused, never a clear.
 
+### A bar the study colours
+
+`barColors` is one colour per bar, positionally, and it recolours the CANDLES. That is what
+PineScript's `barcolor()` does: it is global to the chart, not local to the study's own line, and 23
+of the 52 offered indicators that emit it are drawn in a lane of their own while still recolouring
+the price. `CandlestickData` in `lightweight-charts` already carries `color`, `borderColor` and
+`wickColor` per item, so the colour rides the payload the candles were already written with.
+
+`null` means "this bar keeps the convention" and never "paint it nothing", so the array can be
+sparse without the host having to repeat the up and down colours it never chose. The whitespace tail
+never receives a colour, because the map only walks the real bars.
+
+ONE ARRAY, NOT A MAP PER STUDY. With six studies chosen, two of them can colour the same bar, and
+which one wins is the host's vocabulary rather than this package's. Taking one array says so.
+
+### A study marks its own series
+
+`seriesMarkers` is keyed by `seriesStyleKey`, so a study's arrows and dots land on the study's own
+series rather than on the candles. That is a correction, not a preference: the vendor's own reference
+implementation pins every mark to the price pane, so an oscillator's signal lands on a scale it was
+never measured against.
+
+The effect depends on the MAP and not on the bars. Measured on this catalogue, the worst frame
+carries about 7,400 marks across six chosen studies; a dependency on the window would resend every
+one of them on every tick, where a dependency on the map resends them only when they change.
+
+The door is optional on the port, and MARK-02 makes that a behaviour rather than an oversight: an
+engine that does not implement `setMarkers` draws the study's lines and offers no marks. The
+measured hazard is the opposite one — an engine that appears to implement it. `ISeriesApi` in
+`lightweight-charts@5` has no such member (it lives on `ISeriesMarkersPluginApi`), so a host that
+returns the raw series has a door that swallows every call in silence. A test double that implements
+what the real object lacks turns that silence green, which is how the 0.2.1 pattern marks shipped
+without drawing.
+
 ---
 
 ## react/surface/useSurfaceGeometry.ts

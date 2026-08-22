@@ -45,7 +45,7 @@ export const firstClose: number = bar.close;
 - **`PaneId`** · type · `type PaneId = string & { readonly __brand: 'PaneId' }`
 - **`PaneSpec`** · type · `interface PaneSpec { id: PaneId; title: string; format: ValueFormat; series: readonly SeriesSpec[]; targetHeightPx?: number | undefined; referenceLine?: number | undefined; defaultVisible: boolean }`
 - **`PaneState`** · type · `type PaneState = | { readonly kind: 'visible'; readonly heightPx: number } | { readonly kind: 'collapsed' }`
-- **`Point`** · type · `type Point = | { readonly time: UtcSeconds; readonly value: number } | { readonly time: UtcSeconds }`
+- **`Point`** · type · `type Point = | { readonly time: UtcSeconds; readonly value: number; readonly color?: string } | { readonly time: UtcSeconds }`
 - **`PortResult`** · type · `type PortResult<T> = | { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: 'aborted' | 'transport' | 'contract'; readonly detail: string; }`
 - **`PriceScaleConvention`** · type · `interface PriceScaleConvention { upColor: string; downColor: string; encodeDirectionBy: readonly DirectionChannel[] }`
 - **`sameScope`** · value · `(a: Scope, b: Scope) => boolean`

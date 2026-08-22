@@ -203,3 +203,21 @@ describe('the compact grid', () => {
     expect(column.style.maxWidth).toBe('');
   });
 });
+
+/**
+ * The grid column's declaration, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. `width: 100%` rather than `flex` is a defect this
+ * column already paid for once — a basis of zero shrank it to 0 px — so the property has to survive
+ * the collapse, and it is only visible after the direction.
+ */
+describe('the column stack inside the grid', () => {
+  it('serialises the grid column exactly as it did before', async () => {
+    const subscribed: string[] = [];
+    render(<Harness port={recordingPort(subscribed)} />);
+    await settle();
+    expect(screen.getByTestId('workspace-grid').getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; width: 100%; min-width: 0; height: 480px;',
+    );
+  });
+});

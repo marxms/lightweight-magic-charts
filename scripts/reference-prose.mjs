@@ -42,6 +42,19 @@ declare const lastPrice: number;
 export const observed: AlertObservation = observePrice([level], lastPrice);`,
   },
 
+  'catalogue/lanes': {
+    title: 'naming the line a study is drawn on',
+    summary: `A lane's slots are minted before anything is picked, so the identity of a drawn line is
+a FUNCTION of its position, not a name anybody stored. These three mint it. A host that wants to
+annotate a drawn line — anchor an overlay to it, read it back out of a resolution — asks for the id
+rather than re-deriving the spelling, which is a second place for the two to disagree.`,
+    example: `import { lanePaneId, laneSeriesId, priceOverlaySeriesId } from 'lightweight-magic-charts';
+
+export const pane: string = lanePaneId(0);
+export const inLane: string = laneSeriesId(0, 2);
+export const overPrice: string = priceOverlaySeriesId(0, 2);`,
+  },
+
   'catalogue/relabel': {
     title: 'renaming a pane and its series without rebuilding either',
     summary: `Titles are display, identifiers are not. \`relabelled\` returns a copy of a pane with new
@@ -57,11 +70,11 @@ export const renamed = relabelled(pane, new Map([['close', 'Fechamento']]), 'Pre
   'catalogue/sources': {
     title: 'what may be plotted, and how much room the plotting gets',
     summary: `A \`PlottableSource\` is one authored thing a reader can pick: an id, a label, where it
-wants to be drawn, and a function returning its series. \`resolutionPolicy\` fills in the limits —
-how many lanes exist and how many plots fit in one — from the two numbers a host actually knows.`,
+wants to be drawn, and a function returning its series. \`resolutionPolicy\` fills in the one limit
+the host owns — how many lanes exist — and calibrates the two ratios it does not.`,
     example: `import { resolutionPolicy, type ResolutionPolicy } from 'lightweight-magic-charts';
 
-export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3, plotsPerLane: 4 });`,
+export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3 });`,
   },
 
   'domain/format': {
@@ -579,6 +592,28 @@ library carries no pattern name of its own — naming a pattern names your busin
 declare const choices: readonly CandlePatternChoice[];
 
 export const first: CandlePatternChoice | undefined = choices[0];`,
+  },
+
+  'react/workspace/setupContext': {
+    title: 'the active tab\u2019s setup, read one field at a time and written as a patch',
+    summary: `The two doors a host section body has onto the setup of the tab that is showing.
+\`useWorkspaceSetup\` takes a selector and re-renders its caller only when THAT field moves;
+\`useWorkspaceSetupWriter\` returns a writer that takes a PATCH, never the whole setup. Both throw
+when called outside \`ChartWorkspace\`, which mounts the provider above every region — including the
+section bodies a host brings.`,
+    example: `import {
+  useWorkspaceSetup,
+  useWorkspaceSetupWriter,
+  type StudySettings,
+} from 'lightweight-magic-charts';
+
+export function periodOf(id: string): number {
+  const held = useWorkspaceSetup((setup) => setup.studySettings);
+  const write = useWorkspaceSetupWriter();
+  const value: StudySettings = held?.[id];
+  write({ studySettings: { ...held, [id]: { period: 20 } } });
+  return typeof value === 'object' && value !== null ? Object.keys(value).length : 0;
+}`,
   },
 
   'react/workspace/usePersistedTabs': {

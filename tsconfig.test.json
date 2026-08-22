@@ -3,7 +3,10 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "paths": {
+      "lightweight-magic-charts": ["./src/index.ts"]
+    }
   },
-  "include": ["src/**/*", "test/**/*"]
+  "include": ["src/**/*", "test/**/*", "example/**/*"]
 }

@@ -15,7 +15,6 @@ export interface LaneDraftOptions<TBinding> {
   /** A label of last resort. See docs/explanation/catalogue.md#the-fallback-title */
   readonly title: string;
   readonly format: ValueFormat;
-  /** How many lines the lane can draw. Above it a study is truncated, and the consumer says so. */
   readonly plots: number;
   /** Cycled by position. No default. See docs/explanation/catalogue.md#the-palette-does-not-rise */
   readonly colors: readonly string[];

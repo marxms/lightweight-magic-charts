@@ -21,7 +21,7 @@ import { ChartWorkspace } from '../src/react/workspace/ChartWorkspace';
 import type { ChartWorkspaceProps } from '../src/react/workspace/ChartWorkspace';
 import { useWorkspaceChrome } from '../src/react/chrome/ChromeContext';
 import { newAlertLevel } from '../src/react/workspace/PrimaryActions';
-import { useWorkspaceSetup } from '../src/react/workspace/setupContext';
+import { useWorkspaceSetup, useWorkspaceSetupWriter } from '../src/react/workspace/setupContext';
 import { clearDrawingMemory } from '../src/drawing/drawingMemory';
 import type { DrawingBinding, DrawingLayer, DrawingSnapshot } from '../src/drawing/drawingLayer';
 import type { Bar, PaneSpec, Scope } from '../src/domain/types';
@@ -32,6 +32,7 @@ import { resolveSources } from '../src/indicator/resolution';
 import { DEFAULT_DENSITY_RAMP } from '../src/overlays/densityField';
 import type { DensityScale, DensitySlice } from '../src/overlays/densityField';
 import type { LiveTip } from '../src/port/frames';
+import { seriesStyleKey } from '../src/react/surface/ChartSurface';
 import type { SeriesReader } from '../src/react/surface/ChartSurface';
 import type {
   BitmapTarget,
@@ -42,7 +43,7 @@ import type {
 } from '../src/port/chartApi';
 import type { FrameSink, HistoryRequest, HistoryResult, MarketDataPort, Unsubscribe } from '../src/port/ports';
 import type { OverlayPrimitive } from '../src/render/overlayBridge';
-import type { WorkspaceSetupPolicy } from '../src/tabs/setup';
+import type { StudySettings, WorkspaceSetupPolicy } from '../src/tabs/setup';
 import { MAX_WORKSPACE_TABS } from '../src/tabs/workspaceTabs';
 import type { WorkspaceStore } from '../src/tabs/workspaceTabs';
 import { RecordingContext, alphaOf } from './renderFakes';
@@ -130,8 +131,16 @@ const noLedger = (): EngineLedger => ({
   drawn: [],
 });
 
-/** Everything the surface reaches for on the chart, and nothing it does not. */
-function makeEngine(ledger: EngineLedger = noLedger()): ChartEngine {
+/**
+ * Everything the surface reaches for on the chart, and nothing it does not.
+ *
+ * `markerDoor` is a CHOICE here rather than a given. Measured on the installed
+ * `lightweight-charts@5`, `ISeriesApi` has no `setMarkers` — it lives on
+ * `ISeriesMarkersPluginApi` — so a host that returns the raw series has a door that swallows every
+ * call. A double that implements what the real object lacks is how the 0.2.1 pattern marks came to
+ * ship without drawing, so the closed door is a case here and the real one is proven in the e2e.
+ */
+function makeEngine(ledger: EngineLedger = noLedger(), markerDoor = true): ChartEngine {
   return () => {
     let paneCount = 1;
     return {
@@ -159,7 +168,9 @@ function makeEngine(ledger: EngineLedger = noLedger()): ChartEngine {
           coordinateToPrice: () => null,
           attachPrimitive: (primitive: unknown) => ledger.attached.push(primitive as OverlayPrimitive),
           detachPrimitive: () => undefined,
-          setMarkers: (marks: unknown) => ledger.markers.push(marks as readonly SeriesMarkerPoint[]),
+          ...(markerDoor
+            ? { setMarkers: (marks: unknown) => ledger.markers.push(marks as readonly SeriesMarkerPoint[]) }
+            : {}),
         }) as unknown as SeriesHandle,
       applyOptions: () => undefined,
       timeScale: () => ({ fitContent: () => undefined }),
@@ -364,9 +375,9 @@ describe('the pane list, named by the catalogue', () => {
 
 describe('what the root owns because no region may', () => {
   it('owns the error channel, and it is written from six places', () => {
-    // SIX since the tab store landed: a stored layout that cannot be read is the sixth writer, and
-    // it has to be a writer rather than a throw — a hand-edited payload cannot cost a white screen.
-    expect(noticeWriters(rootSource())).toBe(6);
+    // SEVEN since a pick that repeats an identity became a refusal with a reason: `laneOrder`
+    // deduplicates by exact string, so the second entry never activated and nothing said why.
+    expect(noticeWriters(rootSource())).toBe(7);
   });
 
   it('shows the notice a region cannot show for itself, and clears it on dismiss', () => {
@@ -856,6 +867,29 @@ describe('the five sockets the composition declared and never fed', () => {
     ]);
   });
 
+  it('MARK-02 — an engine WITHOUT the door draws every line and offers no marks', async () => {
+    const ledger = noLedger();
+    const props = minimalProps(fakePort());
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{
+          ...props.data,
+          // The host that returns the raw `ISeriesApi`, which is what every host writing this
+          // adapter had until now. The optional call is swallowed, and NOTHING may depend on it.
+          engine: makeEngine(ledger, false),
+          marks: (bars) => [{ time: bars[0]?.time ?? 0 } as unknown as SeriesMarkerPoint],
+        }}
+      />,
+    );
+    await settle();
+
+    expect(ledger.markers).toEqual([]);
+    // And the drawing survived it: the candles were written and the legend reads a close.
+    const writes = ledger.drawn as ReadonlyArray<ReadonlyArray<Record<string, unknown>>>;
+    expect(writes.some((write) => write.some((point) => 'close' in point))).toBe(true);
+  });
+
   it('hands the host only real bars while the base library also gets the future room', async () => {
     const ledger = noLedger();
     const props = minimalProps(fakePort());
@@ -1019,7 +1053,7 @@ const STUDIES: NonNullable<ChartWorkspaceProps['studies']> = {
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 };
 
 /** A pane whose one series is named the way a live tip names its readings. */
@@ -1071,6 +1105,36 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
     expect(screen.queryByTestId('workspace-legend-ind2')).toBeNull();
   });
 
+  it('MARK-01 — a study\u2019s marks reach the study\u2019s own series, named by the resolve', async () => {
+    const ledger = noLedger();
+    const props = minimalProps(fakePort());
+    const MARK = { time: 1000, position: 'aboveBar', shape: 'circle', color: '#00ff00' } as SeriesMarkerPoint;
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{ ...props.data, engine: makeEngine(ledger) }}
+        studies={{
+          ...STUDIES,
+          // A function OF THE RESOLUTION: the host names the series the resolve landed on rather
+          // than one it guessed at, which is the disagreement `studyIdentity` already cost once.
+          markers: (resolution) =>
+            new Map(resolution.views.map((view) => [seriesStyleKey(view.paneId, `${view.paneId}p1`), [MARK]])),
+        }}
+      />,
+    );
+    await settle();
+
+    // Nothing chosen: the resolution has no view, so the map names nothing and no mark is handed on.
+    expect(ledger.markers).toEqual([]);
+
+    openStudies();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-alpha'));
+
+    // Chosen: the study landed in lane one, and its marks went to `ind1p1` — never to the candles.
+    await waitFor(() => expect(ledger.markers).toEqual([[MARK]]));
+  });
+
   it('fills the bar in progress from the live tip, and leaves it unsaid without one', async () => {
     const props = minimalProps(fakePort());
     const withTip = {
@@ -1090,6 +1154,53 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
     render(<ChartWorkspace {...withTip} data={{ ...withTip.data, tip: tipOf({ rsi: 77 }) }} />);
     await settle();
     expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI 77');
+  });
+
+  /**
+   * The reader the surface takes, asserted through a MOUNTED composition after it left the file.
+   *
+   * `studyReader` decides three things in one expression and the composition is the only place all
+   * three meet: a resolved reading WINS over whatever the host reads, the host's reader fills a
+   * series the resolution never resolved, and a series neither of them answers for says nothing.
+   * A unit test of the function would prove the function; this proves the wiring, which is the half
+   * that moves when a closure leaves a file.
+   */
+  it('takes the resolved reading first, the host’s next, and asserts nothing for neither', async () => {
+    const props = minimalProps(fakePort());
+    // The host reads a DIFFERENT number for the same series the study resolves, so "resolved wins"
+    // is a value comparison and not a presence check.
+    const hostSaysNine: SeriesReader = () => [9, 9];
+    render(
+      <ChartWorkspace
+        {...props}
+        catalogue={WITH_MOMENTUM}
+        panes={[TIPPED_PANE]}
+        studies={STUDIES}
+        data={{ ...props.data, read: hostSaysNine }}
+      />,
+    );
+    await settle();
+
+    openStudies();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-alpha'));
+
+    // RESOLVED WINS: the lane draws the study's own close, not the host's 9.
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent(`Alpha ${BARS[1].close}`),
+    );
+    // THE HOST FILLS THE REST: the momentum pane is not a study, so its value is the host's.
+    expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI 9');
+  });
+
+  it('says nothing for a series no reader answers for, rather than carrying a value across', async () => {
+    // The third branch, on its own mount: with no host reader and no resolution, the legend has to
+    // read the em dash. A default that fell back to some other series' value would be the chart
+    // asserting a measurement nobody took.
+    const props = minimalProps(fakePort());
+    render(<ChartWorkspace {...props} catalogue={WITH_MOMENTUM} panes={[TIPPED_PANE]} />);
+    await settle();
+    expect(screen.getByTestId('workspace-legend-momentum')).toHaveTextContent('RSI —');
   });
 
   it('keeps the tip OUT of every live region, because it changes on every tick', async () => {
@@ -1115,10 +1226,256 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
   });
 });
 
+/**
+ * THREE DIFFERENT STRINGS ON PURPOSE — the stored id, the displayed label, and the provider's own
+ * id. Every existing fixture lets two of the three coincide, which is precisely why the defect
+ * survived: `chrome.spec.tsx` mounts `SeriesMenu` alone with provider ids for `selected`, so the
+ * menu agrees with itself over a value the composition never stores.
+ */
+const IDENTIFIED_LOOKUP: SourceLookup = (id) =>
+  id !== 'study.moving-average'
+    ? undefined
+    : {
+        id,
+        label: 'Moving average',
+        placement: 'own-pane',
+        series: () => [
+          {
+            spec: { id: seriesId('ma-plot'), label: 'Moving average', shape: 'line', color: '#fff' },
+            provider: {
+              id: seriesId('ma-plot'),
+              compute: (bars: readonly Bar[]) => bars.map((bar) => ({ time: bar.time, value: bar.close })),
+            },
+          },
+        ],
+      };
+
+const identifiedStudies = (label: string): NonNullable<ChartWorkspaceProps['studies']> => ({
+  catalogue: [
+    {
+      provider: { id: seriesId('ma-provider'), compute: () => [] },
+      id: 'study.moving-average',
+      label,
+      category: 'Trend',
+    },
+  ],
+  capacity: 2,
+  lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
+  resolve: (ids, bars) =>
+    resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
+});
+
+/** The catalogue chip for the entry above, by the test id it has always had: the PROVIDER's id. */
+const catalogueChip = (): HTMLElement => screen.getByTestId('workspace-catalogue-entry-ma-provider');
+
+function openCatalogue(): void {
+  openStudies();
+  fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+}
+
+describe('what identifies a study, which is not the text on screen', () => {
+  it('lights the chip of the study just picked, with id, label and provider id all different', async () => {
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={identifiedStudies('Moving average')} />);
+    await settle();
+    openCatalogue();
+
+    // Nothing is chosen yet, so the clause below is not passing over an already-pressed chip.
+    expect(catalogueChip()).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+
+    // And what was STORED is the id, not the label: the resolved study is listed under it.
+    expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
+  });
+
+  /**
+   * IDENT-02 IS A CONJUNCTION, so both halves are asserted here: the study stays selected AND it
+   * keeps its parameter values. The second half needs a value to exist before the translation, so
+   * this mounts the host's own form and the real `WorkspaceStore` rather than the bare catalogue.
+   *
+   * What makes the value clause discriminate is that it reads the id and the map's key TOGETHER. A
+   * build whose identity went back to being the label still hands the host back the value it wrote —
+   * the key is the host's, and the host never changed it — so an assertion on `settings` alone would
+   * pass over the defect. What cannot survive is the pair agreeing after the label moved.
+   */
+  it('keeps the study selected AND its values when the LABEL changes and the id does not', async () => {
+    const calls: ResolveCall[] = [];
+    const held = memoryStore();
+    const props = minimalProps(fakePort());
+    const tabs = { store: held.store };
+    const { rerender } = render(
+      <ChartWorkspace {...props} studies={recordingStudies(calls, 'Moving average')} chrome={HOST_CHROME} tabs={tabs} />,
+    );
+    await settle();
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+    await settle();
+
+    // A value is typed BEFORE the translation, through the host's form and the published writer —
+    // so the clause below is not reading a map that was empty on both sides.
+    openHostForm();
+    expect(screen.getByTestId('host-period')).toHaveTextContent('unset');
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+    expect(calls[calls.length - 1].settings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // The product is translated between two renders. The stored identity did not move.
+    rerender(
+      <ChartWorkspace {...props} studies={recordingStudies(calls, 'Média móvel')} chrome={HOST_CHROME} tabs={tabs} />,
+    );
+    await settle();
+
+    // The form is still open and still reading its own value out of the setup, under the new label.
+    expect(screen.getByTestId('host-period')).toHaveTextContent('50');
+
+    // IT KEPT ITS VALUES — asserted first, so this is the clause that reports when it stops holding.
+    // The list and the map agree on ONE string after the label moved.
+    const last = calls[calls.length - 1];
+    expect(last.ids).toEqual([STUDY_ID]);
+    expect(last.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    // And so does what left the machine: the same identity, the same value, through the real store.
+    const written = JSON.parse(held.written[held.written.length - 1]) as {
+      tabs: readonly { setup: { indicators: readonly string[]; studySettings?: unknown } }[];
+    };
+    expect(written.tabs[0].setup.indicators).toEqual([STUDY_ID]);
+    expect(written.tabs[0].setup.studySettings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // AND IT STAYED SELECTED. The chips are one rail tab away from the form, so the catalogue is
+    // opened again to read them.
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+    expect(screen.getByText('Média móvel')).toBeInTheDocument();
+    expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('workspace-active-study.moving-average')).toBeInTheDocument();
+  });
+
+  it('falls back to the label for a catalogue entry that carries no id', async () => {
+    // The other direction, and the compatibility half of the rule: a catalogue built before the id
+    // existed still resolves and still lights, because the label stands in for the identity.
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={STUDIES} />);
+    await settle();
+    openCatalogue();
+
+    const chip = screen.getByTestId('workspace-catalogue-entry-alpha');
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(chip);
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-catalogue-entry-alpha')).toHaveAttribute('aria-pressed', 'true'),
+    );
+    expect(screen.getByTestId('workspace-active-Alpha')).toBeInTheDocument();
+  });
+});
+
+/** Resolves whatever id it is handed, so a control case can put TWO studies on the chart. */
+const ANY_LOOKUP: SourceLookup = (id) => ({
+  id,
+  label: id,
+  placement: 'own-pane',
+  series: () => [
+    {
+      spec: { id: seriesId(id), label: id, shape: 'line', color: '#fff' },
+      provider: {
+        id: seriesId(id),
+        compute: (bars: readonly Bar[]) => bars.map((bar) => ({ time: bar.time, value: bar.close })),
+      },
+    },
+  ],
+});
+
+/** Two entries, two labels, two provider ids — and, when `twin` is true, ONE identity between them. */
+const pairedStudies = (twin: boolean): NonNullable<ChartWorkspaceProps['studies']> => ({
+  catalogue: [
+    {
+      provider: { id: seriesId('first-provider'), compute: () => [] },
+      id: 'study.moving-average',
+      label: 'Moving average',
+      category: 'Trend',
+    },
+    {
+      provider: { id: seriesId('second-provider'), compute: () => [] },
+      id: twin ? 'study.moving-average' : 'study.momentum',
+      label: 'Moving average, longer',
+      category: 'Trend',
+    },
+  ],
+  capacity: 2,
+  lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
+  resolve: (ids, bars) =>
+    resolveSources(ids, ANY_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
+});
+
+const activeStudies = (): HTMLElement[] => screen.getAllByTestId(/^workspace-active-/);
+
+describe('two entries that resolve to one identity', () => {
+  it('reports the second through the notice channel instead of dropping it in silence', async () => {
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={pairedStudies(true)} />);
+    await settle();
+    openCatalogue();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    // Nothing has been refused yet, so the clause below is not reading a notice left over.
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    // `laneOrder` deduplicates by exact string, so the second entry would never have activated —
+    // the user picks, nothing happens, and nothing says why.
+    expect(screen.getByRole('alert')).toHaveTextContent('study.moving-average');
+    expect(activeStudies()).toHaveLength(1);
+  });
+
+  it('lets two entries with DIFFERENT identities both land, and says nothing', async () => {
+    // The other direction. Without it, a handler that refused every second pick would pass above.
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={pairedStudies(false)} />);
+    await settle();
+    openCatalogue();
+
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    await waitFor(() => expect(activeStudies()).toHaveLength(2));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('names the study in a sentence the HOST can replace, and defaults when it does not', async () => {
+    // The member is OPTIONAL on its group: a host that typed the whole of `notices` by hand before
+    // this existed must still compile, so the package cannot require it. The default is what the
+    // clause above reads; this one proves the host's own words reach the same channel.
+    render(
+      <ChartWorkspace
+        {...minimalProps(fakePort())}
+        studies={pairedStudies(true)}
+        chrome={{ labels: { notices: { duplicateStudy: (name) => `já: ${name}` } } }}
+      />,
+    );
+    await settle();
+    openCatalogue();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-first-provider'));
+    await waitFor(() => expect(activeStudies()).toHaveLength(1));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-second-provider'));
+
+    // non-english-fixture: host words in another language — English here would prove nothing
+    expect(screen.getByRole('alert')).toHaveTextContent('já: study.moving-average');
+  });
+});
+
 describe('the published surface of the composition', () => {
-  it('publishes exactly one composed component out of the workspace layer', () => {
+  it('publishes one composed component out of the workspace layer, and the two setup doors', () => {
+    // The equality still covers EVERY value export of the layer, so a region leaving it fails here
+    // exactly as before. What changed is the contents, not the strength: `useWorkspaceSetup` and
+    // `useWorkspaceSetupWriter` are hooks, not components, and they are the only way a host's own
+    // section body can read and write the setup of the tab that is showing. AD-017 refused
+    // `useDrawingRail` because it would freeze ten members of `DrawingRailValue` to hand a host one
+    // boolean; these two freeze nothing new, because `WorkspaceSetup` is already published.
     const indexText = readFileSync(join(LIB_ROOT, 'src', 'index.ts'), 'utf8');
-    expect(composedExports(indexText)).toEqual(['ChartWorkspace']);
+    expect(composedExports(indexText)).toEqual([
+      'ChartWorkspace',
+      'useWorkspaceSetup',
+      'useWorkspaceSetupWriter',
+    ]);
   });
 
   it('fails the same count when a second component leaves the layer', () => {
@@ -1191,7 +1548,7 @@ const THREE_STUDIES: NonNullable<ChartWorkspaceProps['studies']> = {
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, THREE_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, THREE_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 };
 
 /** Two panes, one series each, DECLARED WITH DIFFERENT SHAPES — or the picker separates nothing. */
@@ -1366,6 +1723,341 @@ describe('the wiring between the root and the regions, where the regions alone c
     render(<ChartWorkspace {...minimalProps(fakePort())} layout={{ heightPx: 342 }} />);
     await settle();
     expect(screen.getByTestId('workspace-root').style.height).toBe('342px');
+  });
+});
+
+/**
+ * ADAPT-06 — editing a parameter value redraws the study.
+ *
+ * WITHOUT THIS THE WHOLE FEATURE DOES NOTHING. `studySettings` was neither an argument of `resolve`
+ * nor a dependency of the memo that calls it, so writing a value produced a NEW `setup` object whose
+ * `indicators` was the SAME array reference — `useMemo` saw nothing move, kept the previous
+ * resolution, and the chart went on drawing the old numbers. No error, no warning, no red test: the
+ * exact failure mode this repository has recorded five times.
+ *
+ * WHY IT IS MOUNTED AND NOT PROBED. A probe of the hook would assert that a function was called with
+ * an argument. What has to hold is that a host writing through the PUBLISHED writer, from inside a
+ * `WorkspaceSection.Body`, reaches `resolve` — which crosses the setup store, the tab reducer, the
+ * persisted store and the memo. Every one of those is a place the value can be dropped, and only a
+ * mount crosses all of them.
+ *
+ * EACH CLAUSE KILLS A DIFFERENT DELETION, and all three were measured by making the deletion:
+ *   - drop `setup.studySettings` from the memo DEPENDENCY list -> the first clause to die is
+ *     `expect(calls.length).toBeGreaterThan(afterPick)`, because the write produces a new `setup`
+ *     whose `indicators` is the same reference and the memo therefore recomputes nothing.
+ *   - drop the third ARGUMENT and keep the dependency -> `calls.length` rises, so the clause above
+ *     stays green, and the one that dies is `expect(...settings).toEqual({period: 50})`.
+ *   - drop the memo ENTIRELY -> both clauses above stay green and the IDLE clause dies, which is
+ *     why it is asserted in the same test: without it, resolving on every render would pass.
+ */
+
+interface ResolveCall {
+  readonly ids: readonly string[];
+  readonly barCount: number;
+  readonly settings: Readonly<Record<string, StudySettings>> | undefined;
+}
+
+const STUDY_ID = 'study.moving-average';
+
+/**
+ * A host whose `resolve` still takes TWO parameters, which is every host that exists today.
+ *
+ * The assertion is the compiler's: `tsconfig.test.json` extends the package's own `strict` config,
+ * so if the widening were breaking this file would not compile and the suite would not run. It is
+ * mounted below as well, because "compiles" and "still draws" are two claims.
+ */
+const twoParameterResolve: NonNullable<ChartWorkspaceProps['studies']>['resolve'] = (ids, bars) =>
+  resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
+
+const recordingStudies = (
+  calls: ResolveCall[],
+  label = 'Moving average',
+): NonNullable<ChartWorkspaceProps['studies']> => ({
+  ...identifiedStudies(label),
+  resolve: (ids, bars, settings) => {
+    calls.push({ ids, barCount: bars.length, settings });
+    return resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
+  },
+});
+
+/**
+ * The host's form, at MODULE scope — the shape `example/studyForm.tsx` will take.
+ *
+ * It reads through `useWorkspaceSetup` one field at a time and writes through
+ * `useWorkspaceSetupWriter`, which is the only door a section body has. Nothing here names an
+ * indicator to the package: the key and the value are both the host's.
+ */
+function HostStudyForm(): ReactElement {
+  const write = useWorkspaceSetupWriter();
+  const held = useWorkspaceSetup((setup) => setup.studySettings?.[STUDY_ID]) as
+    | { readonly period?: number }
+    | undefined;
+  return (
+    <>
+      <button type="button" onClick={() => write({ studySettings: { [STUDY_ID]: { period: 50 } } })}>
+        Set the period to 50
+      </button>
+      <span data-testid="host-period">{held?.period ?? 'unset'}</span>
+    </>
+  );
+}
+
+/** Write-once, so the chrome layer's churn warning stays silent. */
+const HOST_CHROME: ChartWorkspaceProps['chrome'] = {
+  sections: [{ id: 'host-form', label: 'Inputs', count: 1, Body: HostStudyForm }],
+};
+
+const openHostForm = (): void => {
+  fireEvent.click(screen.getByTestId('workspace-catalogue-section-host-form'));
+};
+
+describe('editing a parameter value redraws the study', () => {
+  it('reaches resolve with the value, and leaves an idle re-render alone', async () => {
+    const calls: ResolveCall[] = [];
+    const studies = recordingStudies(calls);
+    const held = memoryStore();
+    const props = minimalProps(fakePort());
+    const tabs = { store: held.store };
+
+    const { rerender } = render(
+      <ChartWorkspace {...props} studies={studies} chrome={HOST_CHROME} tabs={tabs}>
+        <span data-testid="tick">1</span>
+      </ChartWorkspace>,
+    );
+    await settle();
+
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+    await settle();
+
+    // The study is on the chart and NO value has been written yet, so the clauses below are not
+    // reading a map that was there from the start.
+    const afterPick = calls.length;
+    expect(afterPick).toBeGreaterThan(0);
+    expect(calls[afterPick - 1].ids).toEqual([STUDY_ID]);
+    expect(calls[afterPick - 1].settings).toBeUndefined();
+    expect(calls[afterPick - 1].barCount).toBe(BARS.length);
+
+    // AN IDLE RE-RENDER: the composition re-renders — `tick` proves it — and nothing the memo
+    // depends on moved, so the host is not asked to resolve again.
+    rerender(
+      <ChartWorkspace {...props} studies={studies} chrome={HOST_CHROME} tabs={tabs}>
+        <span data-testid="tick">2</span>
+      </ChartWorkspace>,
+    );
+    await settle();
+    expect(screen.getByTestId('tick')).toHaveTextContent('2');
+    expect(calls).toHaveLength(afterPick);
+
+    // THE WRITE, through the host's own form and the published writer.
+    openHostForm();
+    expect(screen.getByTestId('host-period')).toHaveTextContent('unset');
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+
+    // It rose, and what it carries is the value the host wrote.
+    expect(calls.length).toBeGreaterThan(afterPick);
+    expect(calls[calls.length - 1].settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    expect(calls[calls.length - 1].ids).toEqual([STUDY_ID]);
+    expect(screen.getByTestId('host-period')).toHaveTextContent('50');
+
+    // The study did not leave the list and did not change identity: a redraw, never a remount. The
+    // chip itself is one rail tab away now, so the ACTIVE list is what is read — it is the same
+    // identity, rendered above the section body that just wrote to it.
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
+    expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent('Moving average');
+
+    // And it reached the REAL store, which is what surviving the tab means.
+    const written = JSON.parse(held.written[held.written.length - 1]) as {
+      tabs: readonly { setup: { studySettings?: unknown } }[];
+    };
+    expect(written.tabs[0].setup.studySettings).toEqual({ [STUDY_ID]: { period: 50 } });
+  });
+
+  it('still draws for a host whose resolve takes the TWO parameters it always took', async () => {
+    const studies: NonNullable<ChartWorkspaceProps['studies']> = {
+      ...identifiedStudies('Moving average'),
+      resolve: twoParameterResolve,
+    };
+    render(<ChartWorkspace {...minimalProps(fakePort())} studies={studies} />);
+    await settle();
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+
+    await waitFor(() =>
+      expect(screen.getByTestId('workspace-legend-ind1')).toHaveTextContent('Moving average'),
+    );
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
+  });
+});
+
+/**
+ * A PORT WHOSE HISTORY HAS NOT ARRIVED, and a handle that decides when it does.
+ *
+ * `useCandleLane` seeds history and live as one transaction, so a `fetchBars` that has not settled
+ * is the workspace's genuine loading state: `lane` is still `null` and `bars` is the hoisted empty.
+ * A test that simply passed zero bars would assert against a window that had ALREADY arrived and was
+ * empty — a different thing, and the one the resolution suite already covers.
+ */
+function pendingPort(bars: readonly Bar[]): { readonly port: MarketDataPort; readonly arrive: () => void } {
+  let release: () => void = () => undefined;
+  const arrived = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return {
+    port: {
+      describe: () => [],
+      subscribe: (_scope: Scope, _sink: FrameSink): Unsubscribe => () => undefined,
+      fetchBars: async (): Promise<HistoryResult> => {
+        await arrived;
+        return { bars, exhausted: true };
+      },
+    },
+    arrive: () => release(),
+  };
+}
+
+/**
+ * A study with a WARM-UP, which is what makes "gaps rather than an error" observable at all: the
+ * first bar of whatever window it is handed carries no `value`, exactly as a mean's does. With a
+ * provider that reads every bar, a window that never arrived and a full one look the same.
+ */
+const WARMING_LOOKUP: SourceLookup = (id) =>
+  id !== STUDY_ID
+    ? undefined
+    : {
+        id,
+        label: 'Moving average',
+        placement: 'own-pane',
+        series: () => [
+          {
+            spec: { id: seriesId('ma-plot'), label: 'Moving average', shape: 'line', color: '#fff' },
+            provider: {
+              id: seriesId('ma-plot'),
+              compute: (bars: readonly Bar[]) =>
+                bars.map((bar, at) => (at === 0 ? { time: bar.time } : { time: bar.time, value: bar.close })),
+            },
+          },
+        ],
+      };
+
+describe('a value edited while the history is still loading', () => {
+  it('recomputes against the bars present, and draws gaps rather than throwing', async () => {
+    const calls: ResolveCall[] = [];
+    const { port, arrive } = pendingPort(BARS);
+    const studies: NonNullable<ChartWorkspaceProps['studies']> = {
+      ...identifiedStudies('Moving average'),
+      resolve: (ids, bars, settings) => {
+        calls.push({ ids, barCount: bars.length, settings });
+        return resolveSources(ids, WARMING_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
+      },
+    };
+    const ledger = noLedger();
+    const props = minimalProps(port);
+
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{ ...props.data, engine: makeEngine(ledger) }}
+        studies={studies}
+        chrome={HOST_CHROME}
+      />,
+    );
+    await settle();
+
+    // THE PRECONDITION, asserted rather than assumed: the window has not arrived.
+    openCatalogue();
+    fireEvent.click(catalogueChip());
+    await waitFor(() => expect(catalogueChip()).toHaveAttribute('aria-pressed', 'true'));
+    await settle();
+    const whileLoading = calls[calls.length - 1];
+    expect(whileLoading.ids).toEqual([STUDY_ID]);
+    expect(whileLoading.barCount).toBe(0);
+
+    // What the composition is saying about the empty window BEFORE the edit. The edit may not add
+    // to it: "the window has not arrived" is not a diagnosis of the value that was typed.
+    const saidWhileEmpty = screen.queryByRole('alert')?.textContent ?? null;
+    expect(saidWhileEmpty).toContain('No bars');
+
+    // THE EDIT, made before a single bar exists.
+    openHostForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Set the period to 50' }));
+    await settle();
+
+    // It recomputed against WHATEVER BARS ARE PRESENT — none — carrying the value that was typed,
+    // and the study is still on the chart rather than an error in place of one.
+    const stillLoading = calls[calls.length - 1];
+    expect(stillLoading.barCount).toBe(0);
+    expect(stillLoading.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+    expect(screen.getByTestId(`workspace-active-${STUDY_ID}`)).toBeInTheDocument();
+    // NOT ONE WORD MORE than was already being said. The edit produced no diagnosis of its own —
+    // an error raised here would be the failure this edge case exists to forbid.
+    expect(screen.queryByRole('alert')?.textContent ?? null).toBe(saidWhileEmpty);
+
+    // And nothing was DRAWN for it against the empty window — no reading, and no zero standing in
+    // for one. A study computed over no bars says nothing rather than saying nought.
+    const writes = ledger.drawn as ReadonlyArray<ReadonlyArray<Record<string, unknown>>>;
+    const carriesReading = (write: ReadonlyArray<Record<string, unknown>>): boolean =>
+      write.some((point) => 'value' in point);
+    expect(writes.filter(carriesReading)).toEqual([]);
+    const beforeArrival = writes.length;
+
+    // THEN THE WINDOW ARRIVES. The value typed against nothing is still the value applied.
+    arrive();
+    await settle();
+    const seeded = calls[calls.length - 1];
+    expect(seeded.barCount).toBe(BARS.length);
+    expect(seeded.settings).toEqual({ [STUDY_ID]: { period: 50 } });
+
+    // AND THE WARM-UP IS A GAP. Two bars in, ONE reading out: the bar the study cannot answer for
+    // draws no point at all, which is how a line carries a hole, and the bar it can answer for
+    // carries its own number. A point at 1000 would be this edge case's failure dressed as data.
+    const study = writes.slice(beforeArrival).filter(carriesReading).at(-1);
+    expect(study).toBeDefined();
+    expect(study).toEqual([{ time: 2000, value: BARS[1].close }]);
+  });
+});
+
+/**
+ * The composition's own centred row, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. This is the header strip that carries the symbol,
+ * the interval, the grid controls and the primary actions; `flex-wrap` is what keeps it from
+ * clipping them, and it has to stay declared after the pair and before the padding.
+ */
+describe('the centred row inside the composed root', () => {
+  it('serialises the header strip exactly as it did before', () => {
+    const view = render(<ChartWorkspace {...minimalProps(fakePort())} />);
+    const header = view.container.querySelector('[role="tabpanel"] > div');
+    expect(header?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 0px 4px 4px;',
+    );
+  });
+});
+
+/**
+ * The composition's two column stacks, serialised as they were before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. The shell spreads the panel's own declaration and
+ * then overrides `flex`, so the two strings have to differ in exactly that property and nowhere
+ * else — a shared value spread after the override would put `flex: 1` back on the shell and the
+ * whole workspace would start stretching inside its host.
+ *
+ * DECLARED BLIND SPOT: `border: none` on the shell. It is in the declaration and in neither pin,
+ * because jsdom does not serialise it — the same blind spot `seriesMenuRailStyle.spec.tsx` measured
+ * and wrote down.
+ */
+describe('the column stack inside the composed root', () => {
+  it('serialises the shell and the tab panel exactly as they did before', () => {
+    const view = render(<ChartWorkspace {...minimalProps(fakePort())} />);
+    expect(view.container.firstElementChild?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; position: relative;' +
+        ' outline: none; margin: 0px; padding: 0px; min-inline-size: 0; height: 480px;',
+    );
+    expect(view.container.querySelector('[role="tabpanel"]')?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 1; min-height: 0;',
+    );
   });
 });
 
