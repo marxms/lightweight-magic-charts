@@ -9,7 +9,7 @@ import { demoEngine } from './engine';
 // chunk. `main.tsx` fetches the module itself and hands the whole namespace over.
 import type * as Indicators from './indicators';
 import type { IndicatorLibrary } from './indicators';
-import { DEMO_PANES, STUDY_CAPACITY } from './panes';
+import { STUDY_CAPACITY, demoPanes } from './panes';
 import { DEMO_DENSITY, demoPort, demoRead } from './port';
 import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
 import { STUDY_PARAM_SECTIONS } from './studyForm';
@@ -52,6 +52,14 @@ export function App({ indicators }: AppProps): ReactElement {
   const asked = useRef(false);
 
   const rows = indicators?.MANIFEST_ROWS ?? [];
+  /**
+   * THE RESOURCE IS AS WIDE AS THE CATALOGUE SAYS, and it is one decision in two places: the price
+   * pane's slots and a lane's lines are the same declaration seen from either side of `overlay`.
+   * Without the catalogue the fallback is what THIS host can compute — one over-price line, three
+   * in a lane — because there is no third-party study to be wider for.
+   */
+  const widths = indicators?.MANIFEST_WIDTHS ?? { overPrice: 1, ownPane: 3 };
+  const panes = useMemo(() => demoPanes(widths), [widths.overPrice, widths.ownPane]);
   const offered = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const catalogue = useMemo(
     () => demoSetupPolicy([...offered], indicators?.coerceStudySettingsFor()),
@@ -89,17 +97,17 @@ export function App({ indicators }: AppProps): ReactElement {
       capacity: STUDY_CAPACITY,
       // Without lanes there is nowhere for an own-pane study to go, and picking one would look
       // like nothing happening.
-      lanes: { plots: 3, colors: ['#f5a623', '#4c9aff', '#c792ea'], heightPx: 120 },
+      lanes: { plots: widths.ownPane, colors: ['#f5a623', '#4c9aff', '#c792ea'], heightPx: 120 },
     }),
     // `library` is a dependency because the arithmetic arriving has to invalidate the memo the
     // composition holds — otherwise the study stays a name with no line under it.
-    [entries, indicators, library, offered, rows],
+    [entries, indicators, library, offered, rows, widths.ownPane],
   );
 
   return (
     <ChartWorkspace
       catalogue={catalogue}
-      panes={DEMO_PANES}
+      panes={panes}
       data={{
         port: demoPort,
         engine: demoEngine,

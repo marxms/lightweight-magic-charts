@@ -9,8 +9,10 @@
  * So this file is the other half of the catalogue: the catalogue says a lane MAY exist, this says
  * what goes in it.
  */
-import type { PaneSpec } from 'lightweight-magic-charts';
+import type { PaneSpec, SeriesSpec } from 'lightweight-magic-charts';
 import { paneId, seriesId } from 'lightweight-magic-charts';
+
+import type { ManifestWidths } from './studyValues';
 
 /** How many studies the workspace accepts. Kept beside the slots it sizes. */
 export const STUDY_CAPACITY = 6;
@@ -18,34 +20,42 @@ export const STUDY_CAPACITY = 6;
 /** The palette cycles by position, exactly as the lanes' does, so two overlays never share a hue. */
 const OVERLAY_COLORS = ['#4c9aff', '#c792ea', '#26c6da', '#f5a623', '#66bb6a', '#ef5350'];
 
-const OVERLAY_SLOTS = Array.from({ length: STUDY_CAPACITY }, (_unused, lane) => ({
-  id: seriesId(`ovl${lane + 1}p1`),
-  label: 'Study',
-  shape: 'line' as const,
-  color: OVERLAY_COLORS[lane % OVERLAY_COLORS.length],
-  lineWidth: 2 as const,
-}));
+/**
+ * THE OVERLAY SLOTS, DECLARED BY THE HOST — one per line the catalogue says a study can draw.
+ *
+ * A study whose scale sits near the price resolves as an OVERLAY, and its readings are filed under
+ * `ovl<lane>p<plot>`. Nothing in the library adds a series to the price pane, so a slot that is not
+ * declared here has a reading and no line to draw it on. Resolving a line and drawing one are
+ * different events, and this file is where the second one is paid for.
+ *
+ * THE WIDTH COMES FROM THE MANIFEST, which derives it from the rows it writes. It used to be ONE —
+ * `ovl<lane>p1` and nothing further — so the Ichimoku Cloud filed five readings, reported three and
+ * drew a single line. The number is DECLARED, never observed: `auto-support` brings 24 of its 56
+ * plots alive over 240 bars and 40 over 1024, so a width sized by what a window showed would drop
+ * the rest the moment the window grew.
+ *
+ * The label is empty, exactly as `laneDraft` builds a lane's: an unoccupied slot with a name is a
+ * legend chip that identifies nothing, and there are 336 of them.
+ */
+const overlaySlots = (width: number): readonly SeriesSpec[] =>
+  Array.from({ length: STUDY_CAPACITY }, (_unused, lane) =>
+    Array.from({ length: width }, (_ignored, plot) => ({
+      id: seriesId(`ovl${lane + 1}p${plot + 1}`),
+      label: '',
+      shape: 'line' as const,
+      color: OVERLAY_COLORS[plot % OVERLAY_COLORS.length],
+      lineWidth: 2 as const,
+    })),
+  ).flat();
 
-export const DEMO_PANES: readonly PaneSpec[] = [
+export const demoPanes = (widths: ManifestWidths): readonly PaneSpec[] => [
   {
     id: paneId('price'),
     title: 'Price action',
     // The price pane declares no target height: it receives the residual.
     format: { kind: 'price', minMove: 0.01 },
     defaultVisible: true,
-    /**
-     * THE OVERLAY SLOTS, DECLARED BY THE HOST — one per study the workspace will accept.
-     *
-     * A study whose scale sits near the price resolves as an OVERLAY, and its readings are filed
-     * under `ovl<lane>p<plot>`. Nothing in the library adds a series to the price pane, so a slot
-     * that is not declared here has a reading and no line to draw it on.
-     *
-     * THE COUNT IS THE STUDY CAPACITY, not a smaller number that looked like enough. With two slots
-     * and a capacity of six, picking a third study over the price resolved it, filed its readings,
-     * and drew nothing — the panel said 3/6 and the chart showed two. Every cap in this example is
-     * the same cap: `App.tsx` exports `STUDY_CAPACITY`, and this list is that long.
-     */
-    series: OVERLAY_SLOTS,
+    series: overlaySlots(widths.overPrice),
   },
   {
     id: paneId('volume'),

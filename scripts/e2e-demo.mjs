@@ -117,10 +117,27 @@ async function pickStudy(page, category, entryId) {
   await page.waitForTimeout(200);
 }
 
-/** How many mute (em-dash) readings sit in a legend line's text — the CONTROL a study picks against. */
-async function dashCount(page, testId) {
-  const text = await page.locator(`[data-testid="${testId}"]`).textContent();
-  return (text.match(/—/g) ?? []).length;
+/**
+ * READINGS THAT ARE ACTUALLY DRAWN on a legend line, counted one span at a time.
+ *
+ * The instrument used to be the opposite — count the em dashes and watch the number fall — and that
+ * only worked while every unoccupied over-price slot carried a placeholder label. The host now mints
+ * one slot per line the catalogue declares, 336 of them, labelled `''` exactly as `laneDraft` labels
+ * a lane's; an unoccupied one is filtered out of the legend entirely, so there is no dash left to
+ * lose. Counting what arrived is the stronger question anyway: a line that draws is a span with a
+ * number in it, and a study that resolved five lines and drew one is the defect this feature is for.
+ *
+ * A LABELLED entry is not counted: `O 147.48` and `+0.01%` belong to the price series and to the
+ * change, and neither moves when a study is picked.
+ */
+async function drawnReadingCount(page, testId) {
+  return page.evaluate((id) => {
+    const line = document.querySelector(`[data-testid="${id}"]`);
+    if (line === null) return 0;
+    return Array.from(line.querySelectorAll('span')).filter((span) =>
+      /^[+-]?[\d,]+(\.\d+)?$/.test((span.textContent ?? '').trim()),
+    ).length;
+  }, testId);
 }
 
 /** A cheap, deterministic checksum of every canvas the surface currently draws. Identical inputs and
@@ -358,13 +375,13 @@ async function sceneStudiesCatalogue(browser, base) {
 
   // OVER-PRICE PLACEMENT: baseline captured on THIS page, before the pick — the control the rule
   // asks for, rather than a hard-coded slot count.
-  const baselineDashes = await dashCount(page, 'workspace-legend-price');
+  const baselineDrawn = await drawnReadingCount(page, 'workspace-legend-price');
   await pickStudy(page, 'Over-the-price', 'ma-fast');
-  const afterOverPrice = await dashCount(page, 'workspace-legend-price');
+  const afterOverPrice = await drawnReadingCount(page, 'workspace-legend-price');
   check(
     'catalogue.over-price-study-reads-numeric',
-    afterOverPrice === baselineDashes - 1,
-    `price legend mute readings: ${baselineDashes} -> ${afterOverPrice} after picking "Average, 20 bars"`,
+    afterOverPrice === baselineDrawn + 1,
+    `price legend drawn readings: ${baselineDrawn} -> ${afterOverPrice} after picking "Average, 20 bars", which declares one line`,
   );
 
   reportConsole('catalogue.console-clean', console_);
@@ -381,7 +398,7 @@ async function sceneManyStudiesAllPlot(browser, base) {
   const { page, console_ } = await freshPage(browser, base);
 
   await openStudies(page);
-  const baselineDashes = await dashCount(page, 'workspace-legend-price');
+  const baselineDrawn = await drawnReadingCount(page, 'workspace-legend-price');
 
   // Own-lane picks FIRST: a lane's index is the pick's LIST POSITION (see `resolveSources` /
   // `laneOrder`), not a count of own-lane picks alone, so picking lane studies first lands them
@@ -402,12 +419,14 @@ async function sceneManyStudiesAllPlot(browser, base) {
   );
   check('many-studies.panel-shows-all-chosen', activeChips === picks.length, `${activeChips}/${picks.length} chosen chips in the panel`);
 
+  // Each over-price pick here declares exactly ONE line, so the drawn count rises by the number of
+  // picks. A study with five would raise it by five, which is the whole point of the widened slots.
   const overPricePicks = picks.filter(([, , lane]) => lane === null).length;
-  const afterDashes = await dashCount(page, 'workspace-legend-price');
+  const afterDrawn = await drawnReadingCount(page, 'workspace-legend-price');
   check(
     'many-studies.all-over-price-picks-plot',
-    afterDashes === baselineDashes - overPricePicks,
-    `price legend mute readings: ${baselineDashes} -> ${afterDashes} (expected -${overPricePicks})`,
+    afterDrawn === baselineDrawn + overPricePicks,
+    `price legend drawn readings: ${baselineDrawn} -> ${afterDrawn} (expected +${overPricePicks})`,
   );
 
   const lanePicks = picks.filter(([, , lane]) => lane !== null);

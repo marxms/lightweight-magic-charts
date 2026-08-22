@@ -56,6 +56,11 @@
    "measurement": "\"Channel High\" < \"Channel Low\" on 1644/1644 indices (100.0%), both fixtures"
   }
  ],
+ "widths": {
+  "overPrice": 56,
+  "ownPane": 14,
+  "why": "THE HOST'S DRAWING RESOURCE, DERIVED FROM THE ROWS BELOW rather than typed beside them. Nothing in the library adds a series to the price pane and a lane is built once at mount, so these two numbers are what the host must create before a study can be drawn into them — and a hand-written one is how a five-plot Ichimoku came to draw one line. DECLARED, never observed: `auto-support` brings 24 of its 56 plots alive at 240 bars and 40 at 1024, so sizing by what a window showed would drop the rest in silence."
+ },
  "indicators": [
   {
    "id": "sma",

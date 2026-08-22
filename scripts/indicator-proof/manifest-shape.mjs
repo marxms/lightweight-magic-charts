@@ -43,6 +43,24 @@ export const EXCLUSION_MEASUREMENTS = (defects) =>
     .sort((a, b) => (a.id < b.id ? -1 : 1));
 
 /**
+ * HOW WIDE THE HOST'S DRAWING RESOURCE HAS TO BE, DERIVED FROM THE ROWS THE GENERATOR WRITES.
+ *
+ * Nothing in the library adds a series to the price pane, and a lane's slots are created once at
+ * mount, so the two widths are the host's to declare and a hand-typed number is the defect: with one
+ * over-price slot per lane, a five-plot Ichimoku resolved five lines, filed five readings and drew
+ * ONE. Derived from `plotIds` — the rows written under it — the number cannot fall behind the
+ * catalogue it sizes, and it is DECLARED rather than observed because `alive` is a function of the
+ * window: `auto-support` is 24 of 56 at 240 bars and 40 of 56 at 1024.
+ */
+export const widthsOf = (indicators) => {
+  const widest = (placement) =>
+    indicators
+      .filter((row) => row.placement === placement)
+      .reduce((most, row) => Math.max(most, row.plotIds.length), 0);
+  return { overPrice: widest('over-price'), ownPane: widest('own-pane') };
+};
+
+/**
  * The vendor pin, read out of `package.json` and REFUSED unless it is exact.
  *
  * Same doctrine `size-budget.json` applies to esbuild: a reference that moves on its own turns a

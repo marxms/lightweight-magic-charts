@@ -277,13 +277,29 @@ bank, which stands at -1071 B.
 - Skill: NONE
 
 **Done when**:
-- [ ] The manifest carries the two widths, each derived from the rows written under it rather than typed by hand
-- [ ] The host mints one over-price slot per declared line, and its lane width from the declared own-pane width — measured, it mints ONE today, which is why a five-line study drew one line
-- [ ] A resolved line that has no series id to be drawn into turns a test red, because the package resolving a line is not the same as the chart drawing it
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e && npm run proof`
+- [x] The manifest carries the two widths, each derived from the rows written under it rather than typed by hand
+- [x] The host mints one over-price slot per declared line, and its lane width from the declared own-pane width — measured, it mints ONE today, which is why a five-line study drew one line
+- [x] A resolved line that has no series id to be drawn into turns a test red, because the package resolving a line is not the same as the chart drawing it
+- [x] Gate check passes: `npm run build && npm test && npm run e2e && npm run proof`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — the manifest derives `widths: { overPrice: 56, ownPane: 14 }` from the rows it
+writes, and `demoPanes(widths)` mints 6 x 56 over-price slots against the ONE per lane it minted
+before. Measured on the page: Ichimoku's legend went from a single nameless reading to
+`149.98 · 153.67 · 149.69 · 134.61` with the Lagging Span mute, which is five resolved lines in five
+slots. Entry unchanged at **103921** — the whole task is host-side.
+
+**Two deviations, both measured.** The slots carry `label: ''`, as `laneDraft` labels a lane's: with
+`'Study'` on 336 of them the price legend renders 341 chips on one `nowrap` line. That filters the
+mute placeholders out of the legend, so the two e2e checks that counted em dashes FALLING now count
+drawn readings RISING — the stronger instrument, and the one the reviewed design asked for. It also
+leaves a drawn over-price line showing a bare number: naming it needs `workspacePricePane`, measured
+at +151 B, which is no task in this file.
+
+**And the committed manifest does not load under jest** — `esModuleInterop` is off, so the adapter's
+default import of a `.json` resolves to `undefined` and `MANIFEST_ROWS` is empty there. Pre-existing,
+and why `test/hostSlots.spec.ts` reads the artefact off disk the way the gates do.
 
 ---
 

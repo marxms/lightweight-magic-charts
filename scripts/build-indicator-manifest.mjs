@@ -72,6 +72,7 @@ import {
   digestOf,
   settleWithinBars,
   vendorPin,
+  widthsOf,
 } from './indicator-proof/manifest-shape.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -368,6 +369,10 @@ const manifest = {
     structural: 'it draws, is deterministic, is pure, is aligned and sits on the scale it declares — nothing is claimed about the values',
   },
   exclusions: EXCLUSION_MEASUREMENTS(DEFECTS),
+  widths: {
+    ...widthsOf(indicators),
+    why: 'THE HOST\'S DRAWING RESOURCE, DERIVED FROM THE ROWS BELOW rather than typed beside them. Nothing in the library adds a series to the price pane and a lane is built once at mount, so these two numbers are what the host must create before a study can be drawn into them — and a hand-written one is how a five-plot Ichimoku came to draw one line. DECLARED, never observed: `auto-support` brings 24 of its 56 plots alive at 240 bars and 40 at 1024, so sizing by what a window showed would drop the rest in silence.',
+  },
   indicators,
 };
 

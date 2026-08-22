@@ -207,9 +207,9 @@ in the manifest and nothing failed on it.
 | FILL-04 | P1: The cloud that is the indicator | - | Pending |
 | FILL-05 | P1: The cloud that is the indicator | - | Pending |
 | FILL-06 | P1: The cloud that is the indicator | - | Pending |
-| LINES-01 | P1: A study's line count is the study's | T5 | Done |
+| LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
-| LINES-03 | P1: A study's line count is the study's | - | Pending |
+| LINES-03 | P1: A study's line count is the study's | T7 | Partial |
 | LINES-04 | P1: A study's line count is the study's | T5, T14 | Partial |
 | POINT-01 | P1: The colour a point carries | - | Pending |
 | POINT-02 | P1: The colour a point carries | - | Pending |
@@ -224,7 +224,11 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 22 total, 3 mapped to tasks, 19 unmapped
+**Coverage:** 22 total, 4 mapped to tasks, 18 unmapped
+
+LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
+drawn into, and asserts the correspondence with the narrow width planted as a positive control, but
+the count READ OFF THE SCREEN for a five-line study is T17.
 
 LINES-04 is PARTIAL by measurement, not by omission: T5 removed the only place inside the package
 where a study's lines could be cut, so the clause has no producer left there. The single point that

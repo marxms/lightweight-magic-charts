@@ -47,6 +47,20 @@ export interface ManifestRow {
   readonly guide?: number;
 }
 
+/**
+ * The drawing resource the rows above need, DERIVED by the generator from the rows it wrote.
+ *
+ * Nothing in the library adds a series to the price pane and a lane is created once at mount, so
+ * these two are the host's to declare before anything can be drawn into them. Hand-written, the
+ * over-price one said 1 and a five-plot Ichimoku drew one line.
+ */
+export interface ManifestWidths {
+  /** Slots to mint on the price pane, per study the workspace accepts. */
+  readonly overPrice: number;
+  /** Lines per lane, for a study that resolved to a lane of its own. */
+  readonly ownPane: number;
+}
+
 export const EMPTY_VALUES: StudyValues = Object.freeze({});
 
 /** A plain object and nothing else: an array, a `Date`, a `null`, a boxed primitive are not one. */
