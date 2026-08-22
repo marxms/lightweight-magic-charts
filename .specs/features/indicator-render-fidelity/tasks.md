@@ -675,13 +675,42 @@ green.
 - Skill: NONE
 
 **Done when**:
-- [ ] The comparison is against LIVE plots, not declared — measured at 915 live of 1048, with 133 dead across 32 rows
-- [ ] Three plantings turn it red: a dropped channel, an object-shaped channel, and a width narrower than the rows beneath it
-- [ ] Stubbing any one clause leaves a different clause red, verified by deletion
-- [ ] Gate check passes: `npm run build && npm test && npm run proof`
+- [x] The comparison is against LIVE plots, not declared — measured at 915 live of 1048, with 133 dead across 32 rows
+- [x] Three plantings turn it red: a dropped channel, an object-shaped channel, and a width narrower than the rows beneath it
+- [x] Stubbing any one clause leaves a different clause red, verified by deletion
+- [x] Gate check passes: `npm run build && npm test && npm run proof`
 
 **Tests**: integration
 **Gate**: proof
+**Status**: DONE — proof **29/29 -> 33/33**, `npm test` 1446 unchanged, entry unchanged at **104821**.
+Stage 12 is four checks: the declaration comparison, the nothing-draws clause, the live-line count,
+and the three-way discrimination.
+
+**The live/declared numbers are re-measured and the design's do not reproduce, because they were
+taken on a different artefact.** The design measured **915 live of 1048 across 320 rows at 240
+bars**; on the 310-row manifest T15 wrote, over the proof's own 1,024-bar fixture, it is **949 live
+of 1,026 declared — 77 dead across 23 rows**. The conclusion is the same and stronger: judging the
+drawing by the DECLARED count would be red on 23 rows for ever. `auto-support` reproduces the
+review's warning exactly — 40 of 56 at 1,024 bars against 24 of 56 at 240 — which is why the
+resource is sized by the declared number and the drawing judged by the live one. Both numbers are
+in the assertion, with the window.
+
+**Three plantings, three clauses, one comparison.** `driftOf` has ONE definition and two callers —
+the 310-row sweep and the plantings — because a planting walking its own copy of the comparison is
+a second declaration of one fact, and the day one copy is corrected the other keeps printing PASS.
+- a fill the result carries and the row does not declare → caught by the DECLARATION clause alone
+- an object-shaped `plotCandles` → caught by the NOTHING-DRAWS clause alone, and under
+  `Array.isArray` by neither
+- the real catalogue judged against a resource one line short → refuses 1 row, the widest first
+
+**Verified by deletion, three times, each leaving a different direction red:**
+- blinding `channelsOf` to an unknown channel → `object-shaped→red false`, the other two still true
+- `refusalsOf` refusing nothing for width → `narrow-width→red false`, the other two still true
+- silencing the declaration comparison → `dropped-channel→red false`, the other two still true
+
+Each stub left the discrimination check red — a different check from the sweep clause that was
+stubbed — so no one clause is carrying the other two, which is the failure shape this repository
+has recorded twice.
 
 ---
 

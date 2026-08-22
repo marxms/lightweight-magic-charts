@@ -209,22 +209,22 @@ in the manifest and nothing failed on it.
 | FILL-06 | P1: The cloud that is the indicator | - | Pending |
 | LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
-| LINES-03 | P1: A study's line count is the study's | T7 | Partial |
+| LINES-03 | P1: A study's line count is the study's | T7, T16 | Partial |
 | LINES-04 | P1: A study's line count is the study's | T5, T15 | Done |
 | POINT-01 | P1: The colour a point carries | T13 | Done |
 | POINT-02 | P1: The colour a point carries | T13 | Done |
 | POINT-03 | P1: The colour a point carries | T13 | Done |
-| PROOF-01 | P1: A silent drop cannot pass again | - | Pending |
-| PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
-| PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
-| PROOF-04 | P1: A silent drop cannot pass again | - | Pending |
+| PROOF-01 | P1: A silent drop cannot pass again | T15, T16 | Done |
+| PROOF-02 | P1: A silent drop cannot pass again | T15, T16 | Done |
+| PROOF-03 | P1: A silent drop cannot pass again | T15, T16 | Done |
+| PROOF-04 | P1: A silent drop cannot pass again | T15, T16 | Done |
 | MARK-01 | P2: The marks reach the bars | T11 | Done |
 | MARK-02 | P2: The marks reach the bars | T11 | Done |
 | BAR-01 | P2: A bar the indicator colours | T12 | Done |
 | BAR-02 | P2: A bar the indicator colours | T12 | Done |
 | REST-01 | P3: The remaining channels | T14 | Done |
 
-**Coverage:** 22 total, 16 mapped to tasks, 6 unmapped
+**Coverage:** 22 total, 20 mapped to tasks, 2 unmapped
 
 LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but

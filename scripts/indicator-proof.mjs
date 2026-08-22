@@ -70,7 +70,7 @@ import * as counter from './indicator-proof/counter-impl.mjs';
 import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
-import { EXCLUSION_MEASUREMENTS, digestOf, settleWithinBars, vendorPin } from './indicator-proof/manifest-shape.mjs';
+import { EXCLUSION_MEASUREMENTS, channelsOf, digestOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
 import { valueLedgerFaults } from './indicator-proof/value-ledger.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -972,6 +972,144 @@ check(
         && JSON.stringify(dropped) === '{}'
         && JSON.stringify(preFeature) === '{}',
       'null, undefined, 7, "x", true, [1,2] and a Date all narrow to no values; a key reachable only through the prototype chain yields none; 0 against min 1 and 900 against max 500 are REFUSED rather than rewritten to the bound, and the neighbouring value in the same study survives; 1.5 against an int and a translated word against an enum are refused; a study no longer in the list is dropped, and a payload written before this feature loads with no values and no throw',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// STAGE 12 — THE CHANNELS, AND THE COUNT OF LINES.
+//
+// WHAT LET 199 AMPUTATED INDICATORS PASS 320/320. Every stage above verifies vendor -> domain: the
+// numbers are right, the points are timed by their own bar, the controls move the drawing. Not one
+// of them asks whether what the vendor EMITS is what the chart DRAWS, and the manifest recorded
+// every drop honestly while nothing failed on it. This stage is the other half of the chain.
+//
+// AND THE COMPARISON IS ENUMERATED FROM THE RESULT, never from a list of channel names — because a
+// list of names is precisely how the biggest channel of all went uncounted. `channelsOf` walks
+// `Object.keys(result)` and counts an object payload like an array one; a name nobody wrote down is
+// therefore still seen, and a `plotCandles` is no longer invisible for being the wrong shape.
+//
+// VERIFIED BY DELETION, three times, and each stub left a DIFFERENT direction red while the other
+// two stayed live: blinding `channelsOf` to an unknown channel turned only the object-shaped
+// direction red; refusing nothing for width turned only the narrow-width direction red; and
+// silencing the declaration comparison turned only the dropped-channel direction red. Three
+// plantings against three clauses, so no one of them is carrying the other two.
+//
+// THE LINE COUNT IS JUDGED AGAINST WHAT IS LIVE, NOT AGAINST WHAT IS DECLARED, and the difference
+// is not small: measured over this fixture, 949 plots of the 1,026 declared carry a finite value,
+// so 77 are dead across 23 of the 310 rows and a proof written against the declared count would be
+// red on 23 rows for ever. The declared number sizes the RESOURCE — `auto-support` brings 40 of its
+// 56 alive at 1,024 bars and 24 at 240, so a window-sized resource would drop the rest in silence —
+// and the live number judges the DRAWING. Both numbers are needed and they are not the same number.
+// ---------------------------------------------------------------------------------------------
+
+{
+  const drift = [];
+  const undrawn = [];
+  const noRoom = [];
+  const differing = [];
+  let declaredPlots = 0;
+  let livePlots = 0;
+  const declaredWidths = CATALOGUE.widths;
+
+  /**
+   * ONE definition, two callers: the sweep below and the plantings under it. A planting that walked
+   * its own copy of this comparison would be a second declaration of one fact, and the day somebody
+   * corrects one copy the other goes on printing PASS about a rule nobody applies any more.
+   */
+  const driftOf = (result, row) => {
+    const seen = channelsOf(result);
+    const declared = row.channels ?? {};
+    const missed = [];
+    for (const [channel, count] of Object.entries(seen.counts)) {
+      if (declared[channel] !== count) missed.push(`${row.id}: emits ${count} ${channel} and the manifest declares ${declared[channel] ?? 'none'}`);
+    }
+    for (const channel of Object.keys(declared)) {
+      if (seen.counts[channel] === undefined) missed.push(`${row.id}: the manifest declares ${channel} and the result carries none`);
+    }
+    return { missed, unknown: seen.unknown.map((channel) => `${row.id}: ${channel}`) };
+  };
+
+  for (const row of MANIFEST) {
+    const entry = byId.get(row.id);
+    if (entry === undefined) continue;
+    let result;
+    try { result = entry.calculate(BARS_A, entry.defaultInputs); } catch { continue; }
+
+    const compared = driftOf(result, row);
+    drift.push(...compared.missed);
+    undrawn.push(...compared.unknown);
+
+    const live = row.plotIds.filter((key) =>
+      (result.plots?.[key] ?? []).some((point) => isNum(point?.value)),
+    ).length;
+    declaredPlots += row.plotIds.length;
+    livePlots += live;
+    if (live !== row.plotIds.length) differing.push(`${row.id} ${live}/${row.plotIds.length}`);
+    const room = row.placement === 'over-price' ? declaredWidths.overPrice : declaredWidths.ownPane;
+    if (live > room) noRoom.push(`${row.id}: ${live} live lines against a declared ${row.placement} width of ${room}`);
+  }
+
+  check(
+    'channels.every-member-the-result-carries-is-what-the-manifest-declares',
+    drift.length === 0,
+    drift.length === 0
+      ? `${MANIFEST.length} offered rows, every top-level member of every result enumerated from the result itself and compared against the row that offers it — the seven drawn channels, counted, with an object payload counted like an array one`
+      : `${drift.length} divergence(s): ${drift.slice(0, 6).join(' · ')}`,
+  );
+
+  check(
+    'channels.no-offered-row-emits-a-channel-nothing-draws',
+    undrawn.length === 0,
+    undrawn.length === 0
+      ? 'not one offered row carries a top-level member the host has nowhere to paint — the generator refuses to write such a row, and this is the other side of that refusal read off the committed artefact'
+      : `${undrawn.length} offered row(s) emit a channel nothing draws: ${undrawn.slice(0, 8).join(' · ')}`,
+  );
+
+  check(
+    'lines.every-live-plot-has-a-slot-in-the-declared-resource',
+    noRoom.length === 0 && differing.length > 0,
+    noRoom.length === 0
+      ? `${livePlots} live plots of ${declaredPlots} declared over ${BARS_A.length} bars — ${declaredPlots - livePlots} dead across ${differing.length} rows, worst ${differing[0]} — and every live one fits the resource the manifest declares (over-price ${declaredWidths.overPrice}, own-pane ${declaredWidths.ownPane}). The two numbers are DIFFERENT numbers: judging the drawing by the declared count would be red on ${differing.length} rows for ever, and sizing the resource by the live count would drop what a longer window brings alive`
+      : `${noRoom.length} row(s) resolve more live lines than the declared resource holds: ${noRoom.slice(0, 6).join(' · ')}`,
+  );
+
+  /* ---- THE THREE PLANTINGS, one per clause -------------------------------------------------- *
+   * Each of the three clauses above gets a synthetic case that is red ONLY under it, so the set it
+   * judges is demonstrably non-empty and stubbing any one of the three leaves the other two red on
+   * their own planting. A single planting would leave two clauses passing over nothing, which is
+   * the failure shape this repository has now recorded twice.                                    */
+  {
+    // 1. A DROPPED CHANNEL: the result carries a fill and the row that offers it declares none.
+    const droppedFill = driftOf({ plots: { plot0: [] }, fills: [{ plot1: 'a', plot2: 'b' }] }, { id: 'planted' });
+    // 2. AN OBJECT-SHAPED CHANNEL: `Array.isArray` answers false, which is how ten offered rows
+    //    emitted a `plotCandles` or a `tables` and the manifest declared they emitted nothing.
+    const objectShaped = driftOf({ plots: { plot0: [] }, plotCandles: { candle0: [1, 2, 3] } }, { id: 'planted' });
+    // 3. A WIDTH NARROWER THAN THE ROWS WRITTEN UNDER IT: the real catalogue judged against a
+    //    resource one line short of what it declares — the exact defect the host shipped, where a
+    //    five-plot Ichimoku met one over-price slot and drew a single line.
+    const narrowed = refusalsOf(MANIFEST, {
+      overPrice: declaredWidths.overPrice - 1,
+      ownPane: declaredWidths.ownPane,
+    });
+    // And the same three inputs told the truth: the honest direction of every clause.
+    const honestChannel = driftOf({ plots: { plot0: [] }, fills: [{ plot1: 'a' }] }, { id: 'planted', channels: { fills: 1 } });
+    const honestWidth = refusalsOf(MANIFEST, widthsOf(MANIFEST));
+
+    const verdicts = [
+      droppedFill.missed.length === 1 && droppedFill.missed[0].includes('fills') && droppedFill.unknown.length === 0,
+      objectShaped.unknown.length === 1 && objectShaped.unknown[0].includes('plotCandles') && objectShaped.missed.length === 0,
+      narrowed.length > 0 && narrowed.every((refusal) => refusal.reason === 'wider than the resource declared for it'),
+      honestChannel.missed.length === 0 && honestChannel.unknown.length === 0,
+      honestWidth.length === 0,
+    ];
+
+    check(
+      'channels.the-comparison-discriminates-in-three-independent-directions',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? `a fill the result carries and the row does not declare is caught by the declaration clause ALONE; an object-shaped channel is caught by the nothing-draws clause ALONE, and under \`Array.isArray\` it was caught by neither; a resource one line short of what the catalogue declares refuses ${narrowed.length} row(s), the widest first. Three plantings, three different clauses — so stubbing any one of them leaves another red, and none of the three is passing over an empty set`
+        : `dropped-channel→red ${verdicts[0]}, object-shaped→red ${verdicts[1]}, narrow-width→red ${verdicts[2]}, honest-channel→green ${verdicts[3]}, honest-width→green ${verdicts[4]}`,
     );
   }
 }
