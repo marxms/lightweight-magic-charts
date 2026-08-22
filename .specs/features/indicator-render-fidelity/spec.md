@@ -218,13 +218,13 @@ in the manifest and nothing failed on it.
 | PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-04 | P1: A silent drop cannot pass again | - | Pending |
-| MARK-01 | P2: The marks reach the bars | - | Pending |
-| MARK-02 | P2: The marks reach the bars | - | Pending |
+| MARK-01 | P2: The marks reach the bars | T11 | Done |
+| MARK-02 | P2: The marks reach the bars | T11 | Done |
 | BAR-01 | P2: A bar the indicator colours | - | Pending |
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 22 total, 8 mapped to tasks, 14 unmapped
+**Coverage:** 22 total, 10 mapped to tasks, 12 unmapped
 
 LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but

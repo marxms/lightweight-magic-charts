@@ -207,13 +207,20 @@ const SYMBOLS_AT_CUTOVER = 13;
  * for the two to disagree — and +86 B carries `WorkspaceStudies.overlays` through `CanvasSurface`
  * and merges it with this package's own two. `ChartSurface` does not move: the merge is one region
  * above it.
+ * RE-PINNED 2026-08-21, entry 104100 -> 104287 (+187 B), ChartWorkspace 94801 -> 94987 and
+ * ChartSurface 23840 -> 23946: the marker door stops being a no-op. `SurfaceData.seriesMarkers`
+ * and the effect that applies it PER SERIES cost +141; the `WorkspaceStudies.markers` channel and
+ * the composition feeding it cost +46, and they cannot land in a later commit — `socketParity`'s
+ * baseline is empty and shrink-only, so a member of `SurfaceData` may not exist for one commit
+ * without the socket that fills it. Measured on the REAL engine in a browser: 17,274 and 9,974
+ * marker pixels where there were 0 and 0, and taking the adapter out puts both back to 0.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104100,
+  '*': 104287,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -225,8 +232,8 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   PaneStack: 2714,
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
-  ChartSurface: 23840,
-  ChartWorkspace: 94801,
+  ChartSurface: 23946,
+  ChartWorkspace: 94987,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

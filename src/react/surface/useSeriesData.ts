@@ -34,6 +34,8 @@ export interface SeriesDataInput {
   readonly downColor: string;
   readonly seriesStyles?: Readonly<Record<string, SeriesShape>>;
   readonly priceMarkers?: readonly SeriesMarkerPoint[];
+  /** Marks on a COMPUTED series, by `seriesStyleKey`. See docs/explanation/react-surface.md#a-study-marks-its-own-series */
+  readonly seriesMarkers?: ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
   /** The dataset's IDENTITY: changed = dataset replaced, and the scale is redone once. */
   readonly datasetId?: string;
   readonly autoFit?: boolean;
@@ -58,6 +60,7 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     downColor,
     seriesStyles,
     priceMarkers,
+    seriesMarkers,
     datasetId,
     autoFit,
     futureBars,
@@ -167,6 +170,11 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     if (priceMarkers === undefined) return;
     handles?.candle?.setMarkers?.(priceMarkers);
   }, [handles, priceMarkers]);
+
+  useEffect(() => {
+    if (seriesMarkers === undefined) return;
+    for (const [key, marks] of seriesMarkers) handles?.series.get(key)?.setMarkers?.(marks);
+  }, [handles, seriesMarkers]);
 
   return readingsByPane;
 }

@@ -430,14 +430,31 @@ against **0 and 0** before the pick. The five lines are under it.
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] The real engine attaches the marker plugin, so the optional call reaches something — measured, today it is swallowed and the published 0.2.1's pattern markers do not draw
-- [ ] The repo's fake no longer implements a member the real object lacks, which is why nobody saw this
-- [ ] The `socketParity` ledger moves in the same commit
-- [ ] Marks are counted on a mounted composition, never through a probe of the port
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] The real engine attaches the marker plugin, so the optional call reaches something — measured, today it is swallowed and the published 0.2.1's pattern markers do not draw
+- [x] The repo's fake no longer implements a member the real object lacks, which is why nobody saw this
+- [x] The `socketParity` ledger moves in the same commit
+- [x] Marks are counted on a mounted composition, never through a probe of the port
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — measured **+187 B** (entry 104100 -> 104287): the design's +141 for
+`SurfaceData.seriesMarkers` plus the review's +46 for the channel that feeds it. `ChartWorkspace`
+94801 -> 94987, `ChartSurface` 23840 -> **23946**, which is a raise of a band-C row and the second
+this row has ever taken. `ChartWorkspace.tsx` 347 -> **348** of 350, the `seriesMarkers` key folded
+onto the `priceMarkers` line to keep the two remaining.
+
+**The no-op is confirmed and closed, and the sensor was made to discriminate before it was trusted.**
+On the real engine, in a browser, `realtime-volume-bars` paints **17,274 and 9,974 marker pixels**
+against **0 and 0** before the pick — and taking `withMarkers` back out of `example/engine.ts` puts
+both back to **0** and turns `marks.reach-the-bars` red. e2e 76 -> **79**.
+
+**The fakes stopped implementing what the real object lacks.** `markerDoor` is now a CHOICE in both
+engine doubles and defaults to open only where a test is about marks; a new case in each suite mounts
+an engine WITHOUT the door and asserts MARK-02 — the lines still draw and no mark is offered.
+
+`socketParity` never went red, because the socket and its channel share this commit. The gate's
+baseline is empty and shrink-only, so they could not have been split.
 
 ---
 

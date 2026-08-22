@@ -662,6 +662,25 @@ series.
 
 Pattern marks ride the candle series. An absent prop means the feature is unused, never a clear.
 
+### A study marks its own series
+
+`seriesMarkers` is keyed by `seriesStyleKey`, so a study's arrows and dots land on the study's own
+series rather than on the candles. That is a correction, not a preference: the vendor's own reference
+implementation pins every mark to the price pane, so an oscillator's signal lands on a scale it was
+never measured against.
+
+The effect depends on the MAP and not on the bars. Measured on this catalogue, the worst frame
+carries about 7,400 marks across six chosen studies; a dependency on the window would resend every
+one of them on every tick, where a dependency on the map resends them only when they change.
+
+The door is optional on the port, and MARK-02 makes that a behaviour rather than an oversight: an
+engine that does not implement `setMarkers` draws the study's lines and offers no marks. The
+measured hazard is the opposite one — an engine that appears to implement it. `ISeriesApi` in
+`lightweight-charts@5` has no such member (it lives on `ISeriesMarkersPluginApi`), so a host that
+returns the raw series has a door that swallows every call in silence. A test double that implements
+what the real object lacks turns that silence green, which is how the 0.2.1 pattern marks shipped
+without drawing.
+
 ---
 
 ## react/surface/useSurfaceGeometry.ts

@@ -68,6 +68,7 @@ import type * as Indicators from './indicators';
 import type { IndicatorLibrary } from './indicators';
 import { STUDY_CAPACITY, demoPanes } from './panes';
 import { DEMO_DENSITY, demoPort, demoRead } from './port';
+import { markChannel } from './studyMarks';
 import { DEMO_STUDY_CATALOGUE, demoLookup } from './studies';
 import { STUDY_PARAM_SECTIONS } from './studyForm';
 
@@ -122,6 +123,7 @@ export function App({ indicators }: AppProps): ReactElement {
    * render would detach and re-attach every fill — and an overlay carries its own data.
    */
   const bands = useMemo(() => bandChannel(STUDY_CAPACITY), []);
+  const marks = useMemo(() => markChannel(), []);
   const offered = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const catalogue = useMemo(
     () => demoSetupPolicy([...offered], indicators?.coerceStudySettingsFor()),
@@ -148,7 +150,10 @@ export function App({ indicators }: AppProps): ReactElement {
             asked.current = false;
           });
         }
-        const vendor = indicators?.sourceLookupFor(library, settings, rows, bands.record);
+        const vendor = indicators?.sourceLookupFor(library, settings, rows, (pass) => {
+          bands.record(pass);
+          marks.record(pass);
+        });
         const resolution = resolveSources(
           ids,
           (id) => demoLookup(id) ?? vendor?.(id),
@@ -161,6 +166,7 @@ export function App({ indicators }: AppProps): ReactElement {
         return resolution;
       },
       overlays: bands.overlays,
+      markers: marks.map,
       capacity: STUDY_CAPACITY,
       // Without lanes there is nowhere for an own-pane study to go, and picking one would look
       // like nothing happening.
@@ -168,7 +174,7 @@ export function App({ indicators }: AppProps): ReactElement {
     }),
     // `library` is a dependency because the arithmetic arriving has to invalidate the memo the
     // composition holds — otherwise the study stays a name with no line under it.
-    [bands, entries, indicators, library, offered, rows, widths.ownPane],
+    [bands, entries, indicators, library, marks, offered, rows, widths.ownPane],
   );
 
   return (

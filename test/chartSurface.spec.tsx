@@ -38,6 +38,7 @@ import type { Overlay } from '../src/extension/plugins';
 import type { DrawingBinding, DrawingLayerEvents, DrawingSurfaceHost } from '../src/drawing/drawingLayer';
 import {
   ChartSurface,
+  seriesStyleKey,
   type PaneView,
   type SeriesReader,
   type SurfaceData,
@@ -110,7 +111,17 @@ interface Recording {
   readonly dragPriceAxis: (scaleId?: string) => void;
 }
 
-function fakeEngine(): Recording {
+/**
+ * THE DOOR IS BUILT BY THE ADAPTER, NEVER BY THE DOUBLE — measured, and it is why nobody saw the
+ * defect. `ISeriesApi` in the installed `lightweight-charts@5` has no `setMarkers` at all; the
+ * member lives on `ISeriesMarkersPluginApi`, which `createSeriesMarkers` returns. A double that
+ * implements what the real object lacks turns a silent no-op green, and the pattern marks the
+ * published 0.2.1 offers shipped without drawing.
+ *
+ * So the default here is an engine WITHOUT the door, which is what a host that returns the raw
+ * series has, and `markerDoor` is what an adapter adds.
+ */
+function fakeEngine({ markerDoor = true }: { readonly markerDoor?: boolean } = {}): Recording {
   const series: SeriesRecord[] = [];
   const teardown: string[] = [];
   const fits = { count: 0 };
@@ -169,9 +180,13 @@ function fakeEngine(): Recording {
           applyOptions: (next) => {
             record.applied.push(next);
           },
-          setMarkers: (markers) => {
-            record.markerCalls.push(markers);
-          },
+          ...(markerDoor
+            ? {
+                setMarkers: (markers: readonly SeriesMarkerPoint[]) => {
+                  record.markerCalls.push(markers);
+                },
+              }
+            : {}),
           priceScale: () => ({
             applyOptions: (next) => {
               if (next.autoScale !== undefined) scale.autoScale = next.autoScale;
@@ -329,11 +344,15 @@ const view = (spec: PaneSpec, visible = true, lastUsedAt = 1): PaneView => ({
  * here would be a second declaration of it; `Partial<SurfaceData>` cannot diverge. The convention is
  * left out because it is a top-level prop, and it is the only top-level one any case swaps.
  */
-type SurfaceOver = Partial<SurfaceData> & { readonly convention?: PriceScaleConvention };
+type SurfaceOver = Partial<SurfaceData> & {
+  readonly convention?: PriceScaleConvention;
+  /** `false` mounts an engine that never implements the optional marker door — MARK-02. */
+  readonly markerDoor?: boolean;
+};
 
 function mount(over: SurfaceOver = {}): Recording {
-  const recording = fakeEngine();
-  const { convention, ...data } = over;
+  const recording = fakeEngine({ markerDoor: over.markerDoor ?? true });
+  const { convention, markerDoor: _door, ...data } = over;
   render(
     <ChartSurface
       engine={recording.engine}
@@ -712,6 +731,30 @@ describe('B8 — pattern marks on the price series', () => {
     const without = mount();
     const untouched = without.series.find((record) => record.shape === 'candlestick');
     expect(untouched?.markerCalls).toEqual([]);
+  });
+
+  it('MARK-02 — an engine WITHOUT the door still draws every line, and offers no marks', () => {
+    // The measured hazard is the reverse of this one: `ISeriesApi` in the installed base library has
+    // no `setMarkers`, so a host returning the raw series has a door that swallows every call. This
+    // engine models that host, and what has to survive it is the DRAWING.
+    const closed = mount({ priceMarkers: MARKS, markerDoor: false });
+    const candles = closed.series.find((record) => record.shape === 'candlestick');
+
+    expect(candles?.markerCalls).toEqual([]);
+    expect(candles?.data.length).toBeGreaterThan(0);
+    expect(legend('rate')).toHaveTextContent('Settled rate');
+  });
+
+  it('puts a study\u2019s marks on the study\u2019s OWN series, not on the candles', () => {
+    const key = seriesStyleKey('bounded', 'a');
+    const recording = mount({ seriesMarkers: new Map([[key, MARKS]]) });
+
+    // `#ffb74d` is the `bounded` pane's only line. The candles are a different record entirely, and
+    // pinning every mark to them is exactly what the vendor's own reference implementation does.
+    const study = recording.series.find((record) => record.options.color === '#ffb74d');
+    const candles = recording.series.find((record) => record.shape === 'candlestick');
+    expect(study?.markerCalls.at(-1)).toEqual(MARKS);
+    expect(candles?.markerCalls).toEqual([]);
   });
 });
 

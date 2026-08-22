@@ -125,6 +125,8 @@ export interface WorkspaceStudies {
   readonly lanes?: WorkspaceLanes;
   /** Drawn beside the package's own. See docs/explanation/react-workspace.md#the-host-draws-what-the-package-will-not-name */
   readonly overlays?: readonly Overlay[];
+  /** Marks on the drawn lines, by `seriesStyleKey`, minted from what the resolve produced. */
+  readonly markers?: (resolution: SourceResolution) => ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
 }
 
 export interface ChartWorkspaceProps {
@@ -327,7 +329,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                   seriesStyles: setup.seriesStyles as Readonly<Record<string, SeriesShape>>,
                   autoFit: setup.autoFit, datasetId: `${data.symbol}·${timeframe}`,
                   futureBars: data.futureBars,
-                  priceMarkers: data.marks?.(bars, active),
+                  priceMarkers: data.marks?.(bars, active), seriesMarkers: resolved === undefined ? undefined : studies.markers?.(resolved),
                 }}
                 layout={{ heightPx: surfacePx }}
                 a11y={{ label: labels.canvas(data.symbol), describedBy: footerId }}

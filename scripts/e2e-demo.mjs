@@ -1358,6 +1358,45 @@ async function sceneCloudIsShaded(browser, base) {
   await page.close();
 }
 
+// ---------------------------------------------------------------------------------------------
+// Scene 17 — THE MARKS. 77 offered indicators emit them, and until this feature none of them drew:
+// `ISeriesApi` in the installed base library has no `setMarkers` at all — the member lives on
+// `ISeriesMarkersPluginApi` — so the optional call was swallowed and nothing was red. The published
+// 0.2.1's candlestick pattern marks are the same no-op. Counted here on the REAL engine and off the
+// real bitmap, because a repository fake that implements what the base library lacks is exactly how
+// this survived.
+// ---------------------------------------------------------------------------------------------
+const MARK_UP = [0, 255, 0]; // realtime-volume-bars paints its own #00FF00 and #FF0000
+const MARK_DOWN = [255, 0, 0];
+
+async function sceneMarksReachTheBars(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const beforeUp = await hueCount(page, surface, MARK_UP, 2);
+  const beforeDown = await hueCount(page, surface, MARK_DOWN, 2);
+  check(
+    'marks.none-before-the-pick',
+    beforeUp === 0 && beforeDown === 0,
+    `marker pixels before picking anything: up ${beforeUp}, down ${beforeDown}`,
+  );
+
+  await openStudies(page);
+  await pickStudy(page, 'Volume', 'realtime-volume-bars');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const up = await hueCount(page, surface, MARK_UP, 2);
+  const down = await hueCount(page, surface, MARK_DOWN, 2);
+  check(
+    'marks.reach-the-bars',
+    up > 0 && down > 0,
+    `marker pixels after picking "Realtime Volume Bars": up ${up}, down ${down} — the manifest says it emits one per bar`,
+  );
+
+  reportConsole('marks.console-clean', console_);
+  await page.close();
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -1392,6 +1431,7 @@ try {
   await sceneCatalogueFailureStillMounts(browser, base);
   await sceneEditedInputRedraws(browser, base);
   await sceneCloudIsShaded(browser, base);
+  await sceneMarksReachTheBars(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

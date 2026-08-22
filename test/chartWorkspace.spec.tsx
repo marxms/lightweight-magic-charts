@@ -31,6 +31,7 @@ import type { SourceLookup } from '../src/catalogue/sources';
 import { resolveSources } from '../src/indicator/resolution';
 import type { DensitySlice } from '../src/overlays/densityField';
 import type { LiveTip } from '../src/port/frames';
+import { seriesStyleKey } from '../src/react/surface/ChartSurface';
 import type { SeriesReader } from '../src/react/surface/ChartSurface';
 import type {
   BitmapTarget,
@@ -129,8 +130,16 @@ const noLedger = (): EngineLedger => ({
   drawn: [],
 });
 
-/** Everything the surface reaches for on the chart, and nothing it does not. */
-function makeEngine(ledger: EngineLedger = noLedger()): ChartEngine {
+/**
+ * Everything the surface reaches for on the chart, and nothing it does not.
+ *
+ * `markerDoor` is a CHOICE here rather than a given. Measured on the installed
+ * `lightweight-charts@5`, `ISeriesApi` has no `setMarkers` — it lives on
+ * `ISeriesMarkersPluginApi` — so a host that returns the raw series has a door that swallows every
+ * call. A double that implements what the real object lacks is how the 0.2.1 pattern marks came to
+ * ship without drawing, so the closed door is a case here and the real one is proven in the e2e.
+ */
+function makeEngine(ledger: EngineLedger = noLedger(), markerDoor = true): ChartEngine {
   return () => {
     let paneCount = 1;
     return {
@@ -158,7 +167,9 @@ function makeEngine(ledger: EngineLedger = noLedger()): ChartEngine {
           coordinateToPrice: () => null,
           attachPrimitive: (primitive: unknown) => ledger.attached.push(primitive as OverlayPrimitive),
           detachPrimitive: () => undefined,
-          setMarkers: (marks: unknown) => ledger.markers.push(marks as readonly SeriesMarkerPoint[]),
+          ...(markerDoor
+            ? { setMarkers: (marks: unknown) => ledger.markers.push(marks as readonly SeriesMarkerPoint[]) }
+            : {}),
         }) as unknown as SeriesHandle,
       applyOptions: () => undefined,
       timeScale: () => ({ fitContent: () => undefined }),
@@ -846,6 +857,29 @@ describe('the five sockets the composition declared and never fed', () => {
     ]);
   });
 
+  it('MARK-02 — an engine WITHOUT the door draws every line and offers no marks', async () => {
+    const ledger = noLedger();
+    const props = minimalProps(fakePort());
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{
+          ...props.data,
+          // The host that returns the raw `ISeriesApi`, which is what every host writing this
+          // adapter had until now. The optional call is swallowed, and NOTHING may depend on it.
+          engine: makeEngine(ledger, false),
+          marks: (bars) => [{ time: bars[0]?.time ?? 0 } as unknown as SeriesMarkerPoint],
+        }}
+      />,
+    );
+    await settle();
+
+    expect(ledger.markers).toEqual([]);
+    // And the drawing survived it: the candles were written and the legend reads a close.
+    const writes = ledger.drawn as ReadonlyArray<ReadonlyArray<Record<string, unknown>>>;
+    expect(writes.some((write) => write.some((point) => 'close' in point))).toBe(true);
+  });
+
   it('hands the host only real bars while the base library also gets the future room', async () => {
     const ledger = noLedger();
     const props = minimalProps(fakePort());
@@ -1059,6 +1093,36 @@ describe('the lanes a study is drawn in, and the tip that fills the bar in progr
     );
     // And only the lane the study landed in: the second is still idle.
     expect(screen.queryByTestId('workspace-legend-ind2')).toBeNull();
+  });
+
+  it('MARK-01 — a study\u2019s marks reach the study\u2019s own series, named by the resolve', async () => {
+    const ledger = noLedger();
+    const props = minimalProps(fakePort());
+    const MARK = { time: 1000, position: 'aboveBar', shape: 'circle', color: '#00ff00' } as SeriesMarkerPoint;
+    render(
+      <ChartWorkspace
+        {...props}
+        data={{ ...props.data, engine: makeEngine(ledger) }}
+        studies={{
+          ...STUDIES,
+          // A function OF THE RESOLUTION: the host names the series the resolve landed on rather
+          // than one it guessed at, which is the disagreement `studyIdentity` already cost once.
+          markers: (resolution) =>
+            new Map(resolution.views.map((view) => [seriesStyleKey(view.paneId, `${view.paneId}p1`), [MARK]])),
+        }}
+      />,
+    );
+    await settle();
+
+    // Nothing chosen: the resolution has no view, so the map names nothing and no mark is handed on.
+    expect(ledger.markers).toEqual([]);
+
+    openStudies();
+    fireEvent.click(screen.getByTestId('workspace-catalogue-category-Trend'));
+    fireEvent.click(screen.getByTestId('workspace-catalogue-entry-alpha'));
+
+    // Chosen: the study landed in lane one, and its marks went to `ind1p1` — never to the candles.
+    await waitFor(() => expect(ledger.markers).toEqual([[MARK]]));
   });
 
   it('fills the bar in progress from the live tip, and leaves it unsaid without one', async () => {
