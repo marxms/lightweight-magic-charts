@@ -312,6 +312,7 @@ export { WorkspaceLegend } from './react/WorkspaceLegend';
 export type {
   ChartSurfaceProps,
   PaneView,
+  SeriesColorReader,
   SeriesReader,
   SurfaceAlerts,
   SurfaceAppearance,

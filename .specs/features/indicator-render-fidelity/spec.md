@@ -211,9 +211,9 @@ in the manifest and nothing failed on it.
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
 | LINES-03 | P1: A study's line count is the study's | T7 | Partial |
 | LINES-04 | P1: A study's line count is the study's | T5, T14 | Partial |
-| POINT-01 | P1: The colour a point carries | - | Pending |
-| POINT-02 | P1: The colour a point carries | - | Pending |
-| POINT-03 | P1: The colour a point carries | - | Pending |
+| POINT-01 | P1: The colour a point carries | T13 | Done |
+| POINT-02 | P1: The colour a point carries | T13 | Done |
+| POINT-03 | P1: The colour a point carries | T13 | Done |
 | PROOF-01 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
@@ -224,7 +224,7 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | T12 | Done |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 22 total, 12 mapped to tasks, 10 unmapped
+**Coverage:** 22 total, 15 mapped to tasks, 7 unmapped
 
 LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but

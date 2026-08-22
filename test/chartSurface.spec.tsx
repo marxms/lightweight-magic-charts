@@ -40,6 +40,7 @@ import {
   ChartSurface,
   seriesStyleKey,
   type PaneView,
+  type SeriesColorReader,
   type SeriesReader,
   type SurfaceData,
 } from '../src/react/surface/ChartSurface';
@@ -796,6 +797,44 @@ describe('BAR-01/02 — a bar the study colours is coloured', () => {
     expect(points[0]).toMatchObject({ value: 55.4 });
     // And the candles still carry the colour, so the two channels are independent rather than one.
     expect(candlePayload(recording)[1]).toMatchObject({ color: '#9c27b0' });
+  });
+});
+
+describe('POINT-01/03 \u2014 the colour a point carries reaches its drawn segment', () => {
+  const drawnPoints = (recording: Recording, color: string): ReadonlyArray<Record<string, unknown>> =>
+    (recording.series.find((record) => record.options.color === color)?.data ??
+      []) as unknown as ReadonlyArray<Record<string, unknown>>;
+
+  it('paints each drawn segment in the colour its own bar declared', () => {
+    // Read off the payload the surface WROTE, at the two indices the reader says differ \u2014 the
+    // spec's own independent test. The `a` series has a reading on each of the two bars.
+    const readColors: SeriesColorReader = (_pane, spec) =>
+      String(spec.id) === 'a' ? ['#ff0000', '#0000ff'] : [];
+    const written = drawnPoints(mount({ readColors }), '#ffb74d');
+
+    expect(written[0]).toMatchObject({ value: 55.4, color: '#ff0000' });
+    expect(written[1]).toMatchObject({ value: 71.2, color: '#0000ff' });
+    expect(written[0].color).not.toBe(written[1].color);
+  });
+
+  it('POINT-03 \u2014 a bar with no colour of its own is left to the series\u2019 declared colour', () => {
+    const readColors: SeriesColorReader = (_pane, spec) =>
+      String(spec.id) === 'a' ? ['#ff0000', null] : [];
+    const written = drawnPoints(mount({ readColors }), '#ffb74d');
+
+    expect(written[0]).toMatchObject({ color: '#ff0000' });
+    // CONTROL POSITIVE: `null` is "the series decides", never "paint it nothing". A build that
+    // wrote the value through would hand the base library a colour of `null` for that segment.
+    expect(written[1].color).toBeUndefined();
+    expect(written[1]).toMatchObject({ value: 71.2 });
+  });
+
+  it('leaves every segment to its series when the host declares no colour reader at all', () => {
+    // The member is OPTIONAL, and the absent case is the one every existing host is in.
+    const written = drawnPoints(mount(), '#ffb74d');
+
+    expect(written.every((point) => point.color === undefined)).toBe(true);
+    expect(written.map((point) => point.value)).toEqual([55.4, 71.2]);
   });
 });
 

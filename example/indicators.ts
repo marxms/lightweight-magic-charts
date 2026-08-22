@@ -90,6 +90,8 @@ export const MANIFEST_WIDTHS: ManifestWidths = widthsOf(manifestJson);
 export interface VendorPoint {
   readonly time: number;
   readonly value: number | null;
+  /** The colour THIS point declares. 147 of the 320 offered rows emit one. */
+  readonly color?: string;
 }
 
 export interface VendorResult {
@@ -167,9 +169,10 @@ export function toPoints(
   series: readonly VendorPoint[] | undefined,
 ): readonly Point[] {
   return grid.map((bar, index) => {
-    const value = series === undefined ? undefined : series[index]?.value;
+    const point = series === undefined ? undefined : series[index];
+    const value = point?.value;
     return typeof value === 'number' && Number.isFinite(value)
-      ? { time: utcSeconds(bar.time), value }
+      ? { time: utcSeconds(bar.time), value, ...(point?.color === undefined ? {} : { color: point.color }) }
       : { time: utcSeconds(bar.time) };
   });
 }

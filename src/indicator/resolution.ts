@@ -8,6 +8,7 @@ import type { Bar, SeriesId } from '../domain/types';
 import { lanePaneId, laneSeriesId, priceOverlaySeriesId } from '../catalogue/lanes';
 import type { PlottedSeries, ResolutionPolicy, SourceLookup } from '../catalogue/sources';
 import {
+  alignColors,
   alignReadings,
   availabilityOf,
   barPositions,
@@ -46,10 +47,13 @@ export interface SourceResolution {
   readonly readings: ReadonlyMap<SeriesId, readonly Reading[]>;
   /** Series identity -> the plot's title, so the legend names the SOURCE and not the lane. */
   readonly labels: ReadonlyMap<SeriesId, string>;
+  /** Series identity -> the colour each bar declares. Absent = every bar takes the series' own. */
+  readonly colors?: ReadonlyMap<SeriesId, readonly (string | null)[]>;
   /** Lanes with something to draw. A source drawn over the price lights no lane at all. */
   readonly activePaneIds: ReadonlySet<string>;
 }
 
+const NO_POINTS: readonly never[] = [];
 const EMPTY_READINGS: ReadonlyMap<SeriesId, readonly Reading[]> = new Map();
 const EMPTY_LABELS: ReadonlyMap<SeriesId, string> = new Map();
 const EMPTY_PANES: ReadonlySet<string> = new Set();
@@ -102,6 +106,7 @@ export function resolveSources(
   const positionOf = barPositions(bars);
   const readings = new Map<SeriesId, readonly Reading[]>();
   const labels = new Map<SeriesId, string>();
+  const colors = new Map<SeriesId, readonly (string | null)[]>();
   const activePaneIds = new Set<string>();
   /** The price level of this window, against which a declared overlay's scale is measured. */
   const priceMid = median(bars.map((bar) => bar.close));
@@ -125,9 +130,10 @@ export function resolveSources(
     // A DEAD LINE OCCUPIES NEITHER LANE NOR LEGEND. See docs/explanation/indicator.md#a-dead-line-draws-nothing
     const computed = plots.map((plot) => {
       try {
-        return { plot, values: alignReadings(plot.provider.compute(bars), positionOf, bars.length) };
+        const points = plot.provider.compute(bars);
+        return { plot, points, values: alignReadings(points, positionOf, bars.length) };
       } catch {
-        return { plot, values: null };
+        return { plot, points: NO_POINTS, values: null };
       }
     });
     const alive = computed.flatMap((item) =>
@@ -148,6 +154,8 @@ export function resolveSources(
       const field = fieldOf(at);
       labels.set(field, item.plot.spec.label);
       readings.set(field, item.values);
+      const hues = alignColors(item.points, positionOf);
+      if (hues !== null) colors.set(field, hues);
     });
 
     if (!overlay && alive.length > 0) activePaneIds.add(paneId);
@@ -173,5 +181,5 @@ export function resolveSources(
     };
   });
 
-  return { views, readings, labels, activePaneIds };
+  return { views, readings, labels, colors, activePaneIds };
 }

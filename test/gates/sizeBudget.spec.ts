@@ -221,13 +221,22 @@ const SYMBOLS_AT_CUTOVER = 13;
  * PineScript, which is why it is ONE array and not a map per study: 23 of the 52 emitters are drawn
  * in a lane of their own and still repaint the price. Read off the bitmap on the real engine:
  * 1,865 candle pixels in the study's own colour where there were 0.
+ * RE-PINNED 2026-08-22, entry 104450 -> 104821 (+371 B), ChartWorkspace 95150 -> 95292 and
+ * ChartSurface 24067 -> 24138: the colour a point carries reaches its segment. The NINTH channel,
+ * and measured the largest — 147 of the 320 offered rows emit 54,009 coloured plot points, against
+ * 108 rows for the fills, and the adapter discarded all of them in silence. `Point.color?` costs
+ * +1 B and stays OPTIONAL, which is what keeps the previous feature's zero-host-breakage promise
+ * and the doc examples green; the rest is the parallel channel `alignColors` -> `colors` ->
+ * `SeriesColorReader` -> the fifth argument of `plottedPoints`. The design measured +397 and the
+ * integration review +390: 371 is what the tree built, because a line whose points carry no colour
+ * — 173 of the 320 — archives NOTHING rather than an array of nulls.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104450,
+  '*': 104821,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -239,8 +248,8 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   PaneStack: 2714,
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
-  ChartSurface: 24067,
-  ChartWorkspace: 95150,
+  ChartSurface: 24138,
+  ChartWorkspace: 95292,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

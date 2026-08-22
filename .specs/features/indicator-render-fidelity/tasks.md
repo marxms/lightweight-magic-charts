@@ -515,13 +515,34 @@ were **0**. It is drawn in a lane of its own and still repaints the price, which
 - Skill: NONE
 
 **Done when**:
-- [ ] The map member is OPTIONAL — measured at +1 B, and mandatory would break the previous feature's zero-host-breakage promise and fail the doc examples
-- [ ] `isGap` is unchanged and a point with no value still means absence
-- [ ] A point with no colour draws in the series' own colour
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] The map member is OPTIONAL — measured at +1 B, and mandatory would break the previous feature's zero-host-breakage promise and fail the doc examples
+- [x] `isGap` is unchanged and a point with no value still means absence
+- [x] A point with no colour draws in the series' own colour
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **+371 B** (entry 104450 -> **104821**), against +397 in the design and
++390 in the review. The difference is measured and deliberate: `alignColors` archives **nothing**
+for a line whose points carry no colour — 173 of the 320 — instead of an array of nulls, so the
+common case costs one `null` return rather than one array per drawn line per resolve.
+`ChartWorkspace` 95292, `ChartSurface` **24138**, `ChartWorkspace.tsx` still **349** of 350 because
+the reader folds onto the two lines that already existed. Slack against the untouched ceiling:
+**172 B**.
+
+The chain is `Point.color?` -> `alignColors` -> `SourceResolution.colors?` -> `SeriesColorReader`
+-> the fifth argument of `plottedPoints`. Both new map members are OPTIONAL; `docExamples` and
+`docReference` are green in the same commit.
+
+**One thing outside the `Where`, and it is the producer half.** `example/indicators.ts` `toPoints`
+built `{time, value}` and dropped the vendor's `color` on the floor — that IS the amputation. Two
+lines there make the channel live end to end; without them the package would carry a channel with
+no producer and every clause below would pass over an empty set.
+
+**BAR-02's sentence, asserted for POINT-02 at both ends.** `isGap` on a point that carries a colour
+and no value, and the absence of ink at that index — and the colour that survives is the one aligned
+to the bar that HAS a reading, not the next one in the list, which is what an implementation that
+filtered before colouring would draw.
 
 ---
 

@@ -20,6 +20,7 @@ export const read: SeriesReader = () => closes;
 
 ## Exports
 
+- **`SeriesColorReader`** · type · `type SeriesColorReader = (pane: PaneSpec, series: SeriesSpec) => readonly (string | null)[]`
 - **`SeriesReader`** · type · `type SeriesReader = (pane: PaneSpec, series: SeriesSpec) => readonly (number | null)[]`
 
 Back to the [reference map](../../_index.md) · why it is shaped this way is under

@@ -48,7 +48,7 @@ import type { WorkspaceLanes } from './paneViews';
 import { PrimaryActions } from './PrimaryActions';
 import { SeriesMenuRegion } from './SeriesMenuRegion';
 import { StatusFooter } from './StatusFooter';
-import { studyReader } from './studyReaders';
+import { studyColorReader, studyReader } from './studyReaders';
 import { StylePickerRegion, styleChoicesOf } from './StylePickerRegion';
 import { SymbolTrigger } from './SymbolTrigger';
 import { TabsRegion, workspaceTabPanelAria } from './TabsRegion';
@@ -326,7 +326,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                 engine={data.engine}
                 convention={convention}
                 data={{
-                  panes: views, read, priceCaption: data.symbol,
+                  panes: views, read, readColors: studyColorReader(resolved), priceCaption: data.symbol,
                   pricePane: specs.find((spec) => String(spec.id) === PRICE_PANE_ID),
                   seriesStyles: setup.seriesStyles as Readonly<Record<string, SeriesShape>>,
                   autoFit: setup.autoFit, datasetId: `${data.symbol}·${timeframe}`,

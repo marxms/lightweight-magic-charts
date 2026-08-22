@@ -25,7 +25,7 @@ import { useLayoutApply } from './useLayoutApply';
 import { useDrawingSeam } from './useDrawingSeam';
 import { usePriceAlertLayer } from './usePriceAlertLayer';
 import { useReferenceLines } from './useReferenceLines';
-import { useSeriesData, type SeriesReader } from './useSeriesData';
+import { useSeriesData, type SeriesColorReader, type SeriesReader } from './useSeriesData';
 import { useSurfaceGeometry } from './useSurfaceGeometry';
 import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from '../theme';
 
@@ -40,7 +40,7 @@ export interface PaneView {
 
 // `SeriesReader` IS DECLARED WHERE IT IS CONSUMED, and re-exported here: one signature, one owner.
 // See docs/explanation/react-surface.md#seriesreader-re-export
-export type { SeriesReader } from './useSeriesData';
+export type { SeriesColorReader, SeriesReader } from './useSeriesData';
 
 /**
  * WHAT THE CHART DRAWS. One group per SUBSYSTEM: what fails together travels together.
@@ -50,6 +50,8 @@ export interface SurfaceData {
   readonly bars: readonly Bar[];
   readonly panes: readonly PaneView[];
   readonly read: SeriesReader;
+  /** The colour each bar declares for a drawn line. Absent, every segment takes the series' own. */
+  readonly readColors?: SeriesColorReader;
   /** The price pane's own spec. OMIT IT to draw no price at all.
    * See docs/explanation/react-surface.md#omitting-the-price-pane */
   readonly pricePane?: PaneSpec;
@@ -149,7 +151,7 @@ export function ChartSurface({
 }: ChartSurfaceProps): ReactElement {
   // DESTRUCTURED AT THE DOOR: the FIELDS go into every dependency list, never the groups.
   // See docs/explanation/react-surface.md#destructured-at-the-door
-  const { bars, panes, read, pricePane, priceCaption, seriesStyles, priceMarkers, seriesMarkers, barColors } = data;
+  const { bars, panes, read, readColors, pricePane, priceCaption, seriesStyles, priceMarkers, seriesMarkers, barColors } = data;
   const { datasetId, autoFit, futureBars } = data;
   const { heightPx, budget = DEFAULT_BUDGET, onLayout } = layout;
   const { label, describedBy } = a11y;
@@ -217,6 +219,7 @@ export function ChartSurface({
     panes,
     pricePane,
     read,
+    readColors,
     upColor,
     downColor,
     seriesStyles,

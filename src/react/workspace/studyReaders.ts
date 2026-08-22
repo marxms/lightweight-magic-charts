@@ -6,7 +6,7 @@
 import { readingWithTip } from '../../indicator/liveTip';
 import type { SourceResolution } from '../../indicator/resolution';
 import type { LiveTip } from '../../port/frames';
-import type { SeriesReader } from '../surface/ChartSurface';
+import type { SeriesColorReader, SeriesReader } from '../surface/ChartSurface';
 
 const NONE: readonly never[] = [];
 
@@ -24,4 +24,9 @@ export function studyReader(
       resolved?.readings.get(series.id) ?? (host ?? NO_READINGS)(pane, series),
       tip,
     );
+}
+
+/** What the resolve archived per bar. A study whose points carry no colour reaches nothing here. */
+export function studyColorReader(resolved: SourceResolution | undefined): SeriesColorReader {
+  return (_pane, series) => resolved?.colors?.get(series.id) ?? NONE;
 }

@@ -24,7 +24,7 @@ export const resolved = resolveSources(['sma.20'], lookup, bars, policy);
 
 - **`ResolvedSourceView`** · type · `interface ResolvedSourceView { id: string; lane: number; paneId: string; label: string | null; overlay: boolean; drawn: number; guide?: number | undefined; availability: IndicatorAvailability; warmUpBars: number; windowBars: number }`
 - **`resolveSources`** · value · `(active: readonly string[], lookup: SourceLookup, bars: readonly Bar[], policy: ResolutionPolicy) => SourceResolution`
-- **`SourceResolution`** · type · `interface SourceResolution { views: readonly ResolvedSourceView[]; readings: ReadonlyMap<SeriesId, readonly Reading[]>; labels: ReadonlyMap<SeriesId, string>; activePaneIds: ReadonlySet<string> }`
+- **`SourceResolution`** · type · `interface SourceResolution { views: readonly ResolvedSourceView[]; readings: ReadonlyMap<SeriesId, readonly Reading[]>; labels: ReadonlyMap<SeriesId, string>; colors?: ReadonlyMap<SeriesId, readonly (string | null)[]> | undefined; activePaneIds: ReadonlySet<string> }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).

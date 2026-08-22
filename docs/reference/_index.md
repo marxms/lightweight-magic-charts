@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **302 symbols** — 112 values and 190 types — across **53 modules**.
+The public entry exports **303 symbols** — 112 values and 191 types — across **53 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -110,7 +110,7 @@ whole and on its own, so nothing is stitched in behind it.
 | [`react/hoverIntent`](react/hoverIntent.md) | 6 (4 value) | opening on hover without opening on a passing pointer |
 | [`react/SeriesMenu`](react/SeriesMenu.md) | 6 (3 value) | the picker for what may be plotted |
 | [`react/surface/ChartSurface`](react/surface/ChartSurface.md) | 10 (2 value) | the chart itself: panes, series, alerts, drawings and overlays |
-| [`react/surface/useSeriesData`](react/surface/useSeriesData.md) | 1 (0 value) | where a series gets its numbers |
+| [`react/surface/useSeriesData`](react/surface/useSeriesData.md) | 2 (0 value) | where a series gets its numbers |
 | [`react/theme`](react/theme.md) | 2 (1 value) | twelve colour and type tokens, and nothing else |
 | [`react/TimeframeChips`](react/TimeframeChips.md) | 2 (1 value) | the interval row |
 | [`react/workspace/ChartWorkspace`](react/workspace/ChartWorkspace.md) | 7 (1 value) | the drop-in, and the shape of everything you hand it |

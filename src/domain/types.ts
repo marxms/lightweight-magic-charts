@@ -38,7 +38,7 @@ export interface Bar {
 
 /** A point without `value` is a DECLARED GAP, not a zero. See docs/explanation/domain.md#a-gap-is-not-a-zero */
 export type Point =
-  | { readonly time: UtcSeconds; readonly value: number }
+  | { readonly time: UtcSeconds; readonly value: number; readonly color?: string }
   | { readonly time: UtcSeconds };
 
 export const isGap = (p: Point): boolean => !('value' in p);
