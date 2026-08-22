@@ -70,8 +70,8 @@ import * as counter from './indicator-proof/counter-impl.mjs';
 import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
-import { EXCLUSION_MEASUREMENTS, channelsOf, digestPairOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
-import { IMPLEMENTATION_APPROXIMATED, UNVERSIONED_ENCODING, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
+import { EXCLUSION_MEASUREMENTS, channelsOf, digestPairOf, digestsOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
+import { ENCODERS, IMPLEMENTATION_APPROXIMATED, UNVERSIONED_ENCODING, VALUE_ENCODING, encoderFor } from './indicator-proof/value-encoding.mjs';
 import { valueLedgerFaults } from './indicator-proof/value-ledger.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -630,10 +630,24 @@ check(
   const derived = {};
   /** The same readings spelled WITHOUT the quantum, kept for the sensor below. Costs no extra run. */
   const unquantisedNow = {};
+  /**
+   * AND THE SAME READINGS SPELLED THE WAY THE COMMITTED FILE IS SPELLED, when that is not this
+   * run's spelling. A declared change of identity used to skip the per-id comparison for every id,
+   * so one line in the `encodings` chain covered all 310 digests; the comparison is made under the
+   * COMMITTED identity instead, and `null` when nothing can spell that way any more — which the
+   * ledger refuses rather than comparing under this run's spelling. `undefined` on every ordinary
+   * run, where the two identities are one string and this costs nothing.
+   */
+  const committedEncoding = FINGERPRINTS.algorithm?.id ?? UNVERSIONED_ENCODING;
+  const restating = committedEncoding === VALUE_ENCODING.id ? undefined : encoderFor(committedEncoding);
+  const underCommitted = committedEncoding === VALUE_ENCODING.id ? undefined : (restating === undefined ? null : {});
   for (const row of MANIFEST) {
     const entry = byId.get(row.id);
     const { values, unquantised } = digestPairOf(entry, row.plotIds, BARS_A);
     unquantisedNow[row.id] = unquantised;
+    if (restating !== undefined && underCommitted !== null) {
+      underCommitted[row.id] = digestsOf(entry, row.plotIds, BARS_A, { values: restating }).values;
+    }
     const settle = settleWithinBars(entry, row.plotIds, BARS_A);
     derived[row.id] = { values, confirmsWithinBars: settle };
     const committed = FINGERPRINTS.entries?.[row.id];
@@ -738,8 +752,8 @@ check(
   // the fingerprints is PART of taking the release. A digest may now only move when a human says
   // what moved it.
   const onFile = VALUE_CHANGES.changes ?? [];
-  const encoding = { committed: FINGERPRINTS.algorithm?.id ?? UNVERSIONED_ENCODING, derived: VALUE_ENCODING.id };
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding });
+  const encoding = { committed: committedEncoding, derived: VALUE_ENCODING.id };
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -776,7 +790,10 @@ check(
     // refused. The `from` has to be the identity actually on file, for the same reason a per-id
     // declaration's `from` does: one that starts somewhere else describes a different change.
     const RESPELT = { committed: 'spelling/v1', derived: 'spelling/v2' };
-    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT });
+    // Re-derived under the spelling on file, this run says what the file already says — so no value
+    // moved and the only thing being judged here is the identity. That the SAME re-spelling with a
+    // value moved underneath it is refused is the clause after this one; the two do not overlap.
+    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A } });
     const respelling = (from, to, why) => ({ from, to, reason: why });
     const encodingReason = 'the digest is quantised so that a platform re-rounding a transcendental cannot move it';
     const respeltSilently = respell();
@@ -799,8 +816,100 @@ check(
       'catalogue.the-declaration-rule-discriminates-in-nine-directions',
       verdicts.every(Boolean),
       verdicts.every(Boolean)
-        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; a declaration whose reason says only what the git log already says is refused for having no reason; a fingerprint DELETED for an id the committed manifest still offers is refused as a proof that vanished rather than waved through as an indicator that appeared; an id the committed manifest does not offer passes undeclared, because that one really is new; and one level up, an ENCODING that moved with nothing in the chain is refused, the same move WITH a declaration regenerates the whole file and asks for no per-id reason because no value moved, and a declaration starting from an identity that is not the one on file is refused like any other wrong `from`'
+        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; a declaration whose reason says only what the git log already says is refused for having no reason; a fingerprint DELETED for an id the committed manifest still offers is refused as a proof that vanished rather than waved through as an indicator that appeared; an id the committed manifest does not offer passes undeclared, because that one really is new; and one level up, an ENCODING that moved with nothing in the chain is refused, the same move WITH a declaration regenerates the whole file and asks for no per-id reason, because this run re-derived under the spelling on file is what the file already says, and a declaration starting from an identity that is not the one on file is refused like any other wrong `from`'
         : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}, deleted-entry→red ${verdicts[4]}, genuinely-new→green ${verdicts[5]}, respelt-silently→red ${verdicts[6]}, respelt-declared→green ${verdicts[7]}, respelt-from-elsewhere→red ${verdicts[8]}`,
+    );
+  }
+
+  // AND THE DECLARATION THAT UNLOCKS A RE-SPELLING BUYS THE SPELLING AND NOTHING ELSE.
+  //
+  // The clause above proves a declared re-spelling is not refused. It said nothing about what else
+  // rides in with it, and what rode in was everything: while the identity moved, the per-id
+  // comparison was SKIPPED for every id. MEASURED on this tree — vendor 0.5.1 everywhere, `wma`
+  // multiplied by 1.0001 and the quantum re-spelled 2^-36 → 2^-34 in one run: 310 of 310 digests
+  // rewritten, ZERO value declarations, this script 34/34 and `--check` exit 0, with `wma` on file
+  // at the byte-for-byte digest the undeclared rule refuses when it arrives alone. 304 of the 310
+  // offered rows have no oracle but their digest, so one line in the `encodings` chain covered them
+  // all.
+  //
+  // The comparison never needed THIS run's spelling — it needed the one the committed file was
+  // written in, and `ENCODERS` keeps it. So the pair judged is the digest on file against this
+  // run re-derived under the COMMITTED identity, and the five directions below are what that buys.
+  {
+    const HELD = 'spelling/v1';
+    const MOVED = 'spelling/v2';
+    const [X, Y, Z] = ['1', '2', '3'].map((ch) => ch.repeat(64));
+    const NEW = ['7', '8'].map((ch) => ch.repeat(64));
+    const reason = 'the vendor corrected the weighting so the newest bar carries the heaviest one';
+    const respelling = { from: HELD, to: MOVED, reason: 'the digest is quantised so that a platform re-rounding a transcendental cannot move it' };
+    /** The file: two ids, spelled the old way. */
+    const was = { wma: { values: X, confirmsWithinBars: 0 }, sma: { values: Y, confirmsWithinBars: 0 } };
+    /** This run, spelled the NEW way — every digest moves, which is what a re-spelling IS. */
+    const now = { wma: { values: NEW[0], confirmsWithinBars: 0 }, sma: { values: NEW[1], confirmsWithinBars: 0 } };
+    const judge = (underCommitted, ...changes) => valueLedgerFaults({
+      committed: was,
+      derived: now,
+      ledger: { changes, encodings: [respelling] },
+      offered: ['wma', 'sma'],
+      encoding: { committed: HELD, derived: MOVED },
+      underCommitted,
+    });
+    /** Nothing moved: this run, spelled the old way, is what the file already says. */
+    const honest = judge({ wma: X, sma: Y });
+    /** `wma` moved underneath the re-spelling — the drill's tamper, in the drill's disguise. */
+    const tampered = judge({ wma: Z, sma: Y });
+    const declaration = { id: 'wma', from: X, to: Z, reason, encoding: HELD };
+    const owned = judge({ wma: Z, sma: Y }, declaration);
+    const owndedElsewhere = judge({ wma: Z, sma: Y }, { ...declaration, encoding: MOVED });
+    /** And the spelling on file no longer exists, so nothing can be read against it. */
+    const unreadable = judge(null);
+    const names = (list, fault, id) => list.some((f) => f.id === id && f.fault === fault);
+    const verdicts = [
+      honest.length === 0,
+      names(tampered, 'undeclared', 'wma') && !tampered.some((f) => f.id === 'sma'),
+      owned.length === 0,
+      names(owndedElsewhere, 'undeclared', 'wma'),
+      unreadable.some((f) => f.fault === 'unaddressable-encoding'),
+    ];
+    check(
+      'catalogue.a-declared-re-spelling-discriminates-in-five-directions',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? 'a re-spelling in which no value moved passes and rewrites the file as before; the SAME re-spelling with one indicator\'s arithmetic moved underneath it is refused, naming that id and only that id, because every id is re-derived under the identity the committed file carries and compared there; the same move WITH a declaration written in the spelling the two ends share passes; the same declaration written in the spelling this run moves TO is refused, because neither of its digests is on file in that spelling; and a committed identity `ENCODERS` no longer answers to is refused outright rather than compared under this run\'s spelling, which would restore the amnesty in full'
+        : `honest-respelling→green ${verdicts[0]}, tampered-under-respelling→red-and-named ${verdicts[1]}, declared-in-the-old-spelling→green ${verdicts[2]}, declared-in-the-new-spelling→red ${verdicts[3]}, unaddressable-spelling→red ${verdicts[4]}`,
+    );
+  }
+
+  // AND THE SPELLING EVERY COMMITTED DIGEST WAS WRITTEN IN HAS TO STILL EXIST.
+  //
+  // The comparison above is only possible while the identity `fingerprints.json` carries resolves to
+  // an encoder. Deleting one is therefore exactly as expensive as deleting a rename: it removes the
+  // comparison rather than failing it, so `ENCODERS` is append-only and this clause is the ratchet.
+  // Both halves are asserted, because "addressable" is satisfied trivially by pointing every past
+  // identity at today's encoder — which is the amnesty wearing the registry's clothes. The
+  // spellings it holds have to genuinely disagree about a reading.
+  {
+    const chain = VALUE_CHANGES.encodings ?? [];
+    const everCommitted = [...new Set([
+      ...chain.flatMap((row) => [row?.from, row?.to]),
+      FINGERPRINTS.algorithm?.id ?? UNVERSIONED_ENCODING,
+      VALUE_ENCODING.id,
+    ])].filter((id) => typeof id === 'string' && id !== '');
+    const unaddressable = everCommitted.filter((id) => encoderFor(id) === undefined);
+    const probe = [1, 1 + 2 ** -20, -12345.6789, 0, NaN, null];
+    const spellings = new Set(everCommitted.map((id) => JSON.stringify(encoderFor(id)?.(probe) ?? null)));
+    const invented = encoderFor(`${VALUE_ENCODING.id}-nothing-registered-this`) === undefined;
+    const registered = Object.keys(ENCODERS).length;
+    check(
+      'catalogue.every-encoding-ever-committed-is-still-addressable',
+      unaddressable.length === 0 && spellings.size > 1 && invented,
+      unaddressable.length === 0 && spellings.size > 1 && invented
+        ? `${everCommitted.length} identity(ies) this catalogue has committed or declared — ${everCommitted.join(', ')} — all still addressable among the ${registered} in ENCODERS, and they spell one probe series ${spellings.size} genuinely different ways, so keeping them is not the same as aliasing them to this run's encoder. An identity nothing registered answers \`undefined\` rather than falling back: a committed digest can only be read under the spelling it was written in, and the fallback IS the hole`
+        : unaddressable.length > 0
+          ? `${unaddressable.length} identity(ies) the committed digests or the encodings chain name have no encoder, so nothing can re-derive what they were written in: ${unaddressable.join(', ')}`
+          : invented
+            ? `every registered identity spells a reading the same way, so "addressable" claims nothing — a re-spelling would be compared against itself and the ${MANIFEST.length} digests under it would answer for nothing`
+            : 'an identity nothing registered resolved to an encoder anyway, and a fallback there is the amnesty this registry exists to remove',
     );
   }
 }

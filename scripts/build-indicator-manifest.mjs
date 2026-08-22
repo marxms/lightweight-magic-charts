@@ -62,7 +62,7 @@ import { candidatesFor } from './indicator-proof/sensor.mjs';
 import { drawablePlotIds, movesTheDrawing } from './indicator-proof/drawing.mjs';
 import { declaredLevels, guideOf } from './indicator-proof/guide.mjs';
 import { sealOf, tallyOf } from './indicator-proof/seal.mjs';
-import { UNVERSIONED_ENCODING, VALUE_DIGEST_WHY, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
+import { UNVERSIONED_ENCODING, VALUE_DIGEST_WHY, VALUE_ENCODING, encoderFor } from './indicator-proof/value-encoding.mjs';
 import { valueLedgerFaults, valueLedgerRefusal } from './indicator-proof/value-ledger.mjs';
 import {
   EXCLUSION_MEASUREMENTS,
@@ -72,6 +72,7 @@ import {
   SETTLE_CUTS,
   channelsOf,
   digestOf,
+  digestsOf,
   refusalsOf,
   settleWithinBars,
   vendorPin,
@@ -376,6 +377,21 @@ for (const row of indicators) {
   }
 }
 
+/**
+ * THIS RUN'S OWN COMPUTATIONS, SPELLED UNDER AN OLDER IDENTITY — `{ [id]: digest }`, or `null` when
+ * that identity is no longer addressable. Costs one pass over the registry and is taken only when
+ * the encoding has actually moved, which is the one run in the life of the catalogue that needs it.
+ */
+function restatedUnder(identity) {
+  const encode = encoderFor(identity);
+  if (encode === undefined) return null;
+  const under = {};
+  for (const row of indicators) {
+    under[row.id] = digestsOf(byId.get(row.id), row.plotIds, FIXTURES[0], { values: encode }).values;
+  }
+  return under;
+}
+
 /* ---- A NUMBER THAT MOVED WITHOUT A DECLARATION STOPS THE BUILD ----------- *
  * Same doctrine as the block above, one level down: that one refuses while an ID has vanished and
  * nothing says whether it was renamed or removed; this one refuses while a VALUE has moved and
@@ -390,7 +406,16 @@ for (const row of indicators) {
   const onDisk = readJson('fingerprints');
   const committed = onDisk.entries ?? {};
   const encoding = { committed: onDisk.algorithm?.id ?? UNVERSIONED_ENCODING, derived: VALUE_ENCODING.id };
-  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered, encoding });
+  /* ---- AND A RE-SPELLING IS COMPARED IN THE SPELLING IT IS LEAVING ---------- *
+   * A declared change of identity used to skip the per-id comparison for every id, which made one
+   * line in the `encodings` chain an amnesty over all 310 digests: measured, a vendor bump, a
+   * tampered `wma` and a genuine re-spelling in one run rewrote every digest with no value
+   * declaration and both commands green. So this run is re-derived under the COMMITTED identity as
+   * well — the same computations, spelled the way the file on disk is spelled — and the ledger
+   * compares that pair. `null` when nothing can spell that way any more, which is refused there
+   * rather than quietly compared under this run's spelling.                                     */
+  const underCommitted = encoding.committed === encoding.derived ? undefined : restatedUnder(encoding.committed);
+  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered, encoding, underCommitted });
   if (faults.length > 0) {
     console.error(valueLedgerRefusal(faults, MANIFEST_PATHS.valueChanges));
     process.exit(1);

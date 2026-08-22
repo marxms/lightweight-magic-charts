@@ -232,9 +232,28 @@ export function vendorPin(packageJson) {
  * changing it is a declaration rather than three hundred silent digest moves.
  */
 export function digestOf(entry, plotIds, bars) {
+  return digestsOf(entry, plotIds, bars, { values: encodeSeries }).values;
+}
+
+/**
+ * EVERY SPELLING ASKED FOR, FROM A SINGLE `calculate` — the encoders in, their digests out under
+ * the same keys.
+ *
+ * Two callers need more than one spelling of one computation and neither may pay for a second run
+ * of the vendor: the sensor wants the unquantised control beside the committed digest, and the
+ * value ledger wants this run re-derived under the identity the COMMITTED file was written in, so
+ * that a declared re-spelling stops being an amnesty over every value that moved with it. A
+ * computation that throws answers `threw` under every spelling asked for, because what threw is the
+ * arithmetic and not the way it would have been written down.
+ */
+export function digestsOf(entry, plotIds, bars, encoders) {
   let result;
-  try { result = entry.calculate(bars, entry.defaultInputs); } catch { return 'threw'; }
-  return digestOfResult(result, plotIds, encodeSeries);
+  try { result = entry.calculate(bars, entry.defaultInputs); } catch {
+    return Object.fromEntries(Object.keys(encoders).map((name) => [name, 'threw']));
+  }
+  return Object.fromEntries(
+    Object.entries(encoders).map(([name, encode]) => [name, digestOfResult(result, plotIds, encode)]),
+  );
 }
 
 /** The digest of a result already computed, spelled by whichever encoder is handed in. */
@@ -260,12 +279,7 @@ export function digestOfResult(result, plotIds, encode) {
  * sensor that proves the perturbation was too small to matter.
  */
 export function digestPairOf(entry, plotIds, bars) {
-  let result;
-  try { result = entry.calculate(bars, entry.defaultInputs); } catch { return { values: 'threw', unquantised: 'threw' }; }
-  return {
-    values: digestOfResult(result, plotIds, encodeSeries),
-    unquantised: digestOfResult(result, plotIds, encodeSeriesUnquantised),
-  };
+  return digestsOf(entry, plotIds, bars, { values: encodeSeries, unquantised: encodeSeriesUnquantised });
 }
 
 /**
