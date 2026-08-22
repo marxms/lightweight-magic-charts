@@ -351,13 +351,27 @@ in its exact shape. Real canvas bytes are T10 and T17, where a fill exists to re
 - Skill: `ecc:react-patterns`, `ecc:react-testing`
 
 **Done when**:
-- [ ] The lane and over-price series id minters are published, so a host can name what it anchors to
-- [ ] A host overlay attached to a study pane draws, asserted through a mounted workspace
-- [ ] The measured cost is re-pinned with a written reason
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] The lane and over-price series id minters are published, so a host can name what it anchors to
+- [x] A host overlay attached to a study pane draws, asserted through a mounted workspace
+- [x] The measured cost is re-pinned with a written reason
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **+149 B** (entry 103951 -> 104100), the design's +63 and +86 exactly.
+`ChartWorkspace` 94715 -> 94801; `ChartSurface` does not move, because the merge with
+`useOverlayFields` lands one region above it. `ChartWorkspace.tsx` 345 -> **347** of 350: an import,
+the member, and the JSX prop folded onto the line beside `snapThresholdPx`.
+
+`test/workspaceOverlays.spec.tsx` mounts `<ChartWorkspace>` and reads the rectangle each overlay
+paints: anchored to the lane it lands at 20, unanchored at 44, and with no host array nothing is
+attached at all. Two host overlays side by side keep their own scales.
+
+**The comment budget is spent.** Measured `1816/9082 = 0.19996` — the whole repository has room for
+ONE more comment line per five code lines from here. The reasoning for this seam is in
+`docs/explanation/react-workspace.md#the-host-draws-what-the-package-will-not-name`, with a single
+pointer line in `src/`, and `scripts/reference-prose.mjs` gained the `catalogue/lanes` entry the
+generator refuses to write a page without.
 
 ---
 

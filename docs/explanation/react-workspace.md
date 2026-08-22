@@ -99,6 +99,21 @@ study's name and draw its numbers without the host being told the list through a
 `views` is the alternative for a composition that holds the list somewhere else and resolved it
 once.
 
+### The host draws what the package will not name
+
+`WorkspaceStudies.overlays` carries the host's own overlays to the surface, where they are merged
+with the two this package builds for itself. It is the other half of
+[an overlay may name its anchor](extension.md#an-overlay-may-name-its-anchor): the anchor says WHICH
+scale, this says WHOSE drawing.
+
+The alternative was for the package to own the primitives — a band between two lines, a shaded
+background, a label, a drawn line, a box. Measured, the band alone cost 986 B against the 30 B of
+the anchor, and it would have brought `transp`, `fillgaps`, `label_up` and `textHAlign` into `src/`
+behind it. Those are the vendor's words, and the whole point of the seam is that they stay outside.
+
+The array is the HOST's to memoise. The attach effect depends on it, so a fresh array every render
+detaches and re-attaches every primitive — the same rule the fields already follow.
+
 ### One hoisted empty of each kind
 
 `NONE`, `NO_GROUP`, `NO_TOOLS` and `NO_READINGS` are hoisted module constants.

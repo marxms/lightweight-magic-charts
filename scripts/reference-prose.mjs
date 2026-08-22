@@ -42,6 +42,19 @@ declare const lastPrice: number;
 export const observed: AlertObservation = observePrice([level], lastPrice);`,
   },
 
+  'catalogue/lanes': {
+    title: 'naming the line a study is drawn on',
+    summary: `A lane's slots are minted before anything is picked, so the identity of a drawn line is
+a FUNCTION of its position, not a name anybody stored. These three mint it. A host that wants to
+annotate a drawn line — anchor an overlay to it, read it back out of a resolution — asks for the id
+rather than re-deriving the spelling, which is a second place for the two to disagree.`,
+    example: `import { lanePaneId, laneSeriesId, priceOverlaySeriesId } from 'lightweight-magic-charts';
+
+export const pane: string = lanePaneId(0);
+export const inLane: string = laneSeriesId(0, 2);
+export const overPrice: string = priceOverlaySeriesId(0, 2);`,
+  },
+
   'catalogue/relabel': {
     title: 'renaming a pane and its series without rebuilding either',
     summary: `Titles are display, identifiers are not. \`relabelled\` returns a copy of a pane with new

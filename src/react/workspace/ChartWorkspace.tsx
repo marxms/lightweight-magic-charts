@@ -11,6 +11,7 @@ import { DEFAULT_PRICE_ALERT_STYLE } from '../../alerts/priceAlerts';
 import type { PriceAlert } from '../../alerts/priceAlerts';
 import type { Bar, PaneSpec, PriceScaleConvention } from '../../domain/types';
 import type { DrawingBinding } from '../../drawing/drawingLayer';
+import type { Overlay } from '../../extension/plugins';
 import { drawingScopeKey } from '../../drawing/drawingMemory';
 import type { ResolvedSourceView, SourceResolution } from '../../indicator/resolution';
 import type { StackApplication } from '../../layout/application';
@@ -122,6 +123,8 @@ export interface WorkspaceStudies {
   readonly capacity?: number;
   /** How the pre-created lanes are drawn. Absent, no lane exists and a study has nowhere to go. */
   readonly lanes?: WorkspaceLanes;
+  /** Drawn beside the package's own. See docs/explanation/react-workspace.md#the-host-draws-what-the-package-will-not-name */
+  readonly overlays?: readonly Overlay[];
 }
 
 export interface ChartWorkspaceProps {
@@ -339,7 +342,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                 }}
                 fields={{ tuning: setup.density, density: data.density,
                   showDensity: setup.showDensity, showProfile: setup.showProfile }}
-                snapThresholdPx={of.drawing?.snapThresholdPx}
+                snapThresholdPx={of.drawing?.snapThresholdPx} overlays={studies.overlays}
                 onLane={(state) => {
                   setLane(state);
                   notice.report(laneNotice(labels.notices, state.bars.length, state.outcome, data.symbol));

@@ -6,10 +6,11 @@
  * what this region adds is the seed transaction that produces the bars and the attachment of the
  * fields drawn behind them, both of which the composition file above it used to own.
  */
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import type { ReactElement } from 'react';
 
 import type { PriceScaleConvention } from '../../domain/types';
+import type { Overlay } from '../../extension/plugins';
 import type { ChartEngine } from '../../port/chartApi';
 import { ChartSurface } from '../surface/ChartSurface';
 import type {
@@ -45,6 +46,7 @@ export interface CanvasSurfaceProps {
   readonly snapThresholdPx?: number;
   /** What the seed decided, so the host can say it out loud instead of showing a short chart. */
   readonly onLane?: (state: CandleLaneState) => void;
+  readonly overlays?: readonly Overlay[];
 }
 
 const NO_FIELDS: Omit<OverlayFields, 'bars'> = {};
@@ -61,11 +63,13 @@ export const CanvasSurface = memo(function CanvasSurface({
   fields = NO_FIELDS,
   snapThresholdPx,
   onLane,
+  overlays: own,
 }: CanvasSurfaceProps): ReactElement {
   const drawing = useDrawingRail();
   const state = useCandleLane(lane);
   const { density, tuning, showDensity, showProfile } = fields;
-  const overlays = useOverlayFields({ bars: state.bars, density, tuning, showDensity, showProfile });
+  const fielded = useOverlayFields({ bars: state.bars, density, tuning, showDensity, showProfile });
+  const overlays = useMemo(() => (own === undefined ? fielded : [...fielded, ...own]), [fielded, own]);
 
   // By reference: a host writing the report inline hands over a new function on every render.
   const told = useRef(onLane);

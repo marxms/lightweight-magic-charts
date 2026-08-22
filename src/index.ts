@@ -134,6 +134,8 @@ export { buildWorkspaceReport, formatWorkspaceReport } from './indicator/coverag
 export type { BoundSeries, RelabellablePane } from './catalogue/relabel';
 export { relabelled } from './catalogue/relabel';
 
+export { lanePaneId, laneSeriesId, priceOverlaySeriesId } from './catalogue/lanes';
+
 export type { ResolvedSourceView, SourceResolution } from './indicator/resolution';
 export { resolveSources } from './indicator/resolution';
 

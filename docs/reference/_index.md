@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **299 symbols** — 109 values and 190 types — across **52 modules**.
+The public entry exports **302 symbols** — 112 values and 190 types — across **53 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -28,6 +28,7 @@ whole and on its own, so nothing is stitched in behind it.
 
 | Module | Exports | What it holds |
 | --- | --- | --- |
+| [`catalogue/lanes`](catalogue/lanes.md) | 3 (3 value) | naming the line a study is drawn on |
 | [`catalogue/relabel`](catalogue/relabel.md) | 3 (1 value) | renaming a pane and its series without rebuilding either |
 | [`catalogue/sources`](catalogue/sources.md) | 7 (1 value) | what may be plotted, and how much room the plotting gets |
 

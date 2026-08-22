@@ -201,13 +201,19 @@ const SYMBOLS_AT_CUTOVER = 13;
  * with an explicit `undefined` ternary measured +54 and was refused. `ChartSurface` moves the same
  * 30 B to 23815 of its 23840. The alternative — the package owning the band primitive — measured
  * +986 B, and it would have brought the vendor's drawing vocabulary into `src/` with it.
+ * RE-PINNED 2026-08-21, entry 103951 -> 104100 (+149 B) and ChartWorkspace 94715 -> 94801 (+86 B):
+ * the host's own overlay reaching the pane of the study it annotates. +63 B publishes the three id
+ * minters — without them a host names a drawn line by re-deriving `ind1p1`, which is a second place
+ * for the two to disagree — and +86 B carries `WorkspaceStudies.overlays` through `CanvasSurface`
+ * and merges it with this package's own two. `ChartSurface` does not move: the merge is one region
+ * above it.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 103951,
+  '*': 104100,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -220,7 +226,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 94715,
+  ChartWorkspace: 94801,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
