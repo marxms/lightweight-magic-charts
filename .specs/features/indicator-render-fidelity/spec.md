@@ -36,7 +36,8 @@ What the vendor's own demo draws, this demo draws.
 
 | Assumption / decision | Chosen default | Rationale | Confirmed? |
 | --- | --- | --- | --- |
-| What "canonical" means | What the vendor's own demo draws, this demo draws | Owner's words, emphatic: in every case | y |
+| What "canonical" means | What the vendor EMITS, not what its demo manages to paint | Owner's words were emphatic — in every case — and then measurement found the reference wrong in three places, so following it literally would ship a worse chart. It is the best witness to what the PineScript means, not the authority when it loses the channel itself | y |
+| The reference's three measured defects | Corrected here, not reproduced | It concatenates an alpha hex into `rgba(...)` and paints 46% of fills opaque black; it ignores `fills[].colors` and collapses 86 of 186 bicoloured fills, including the Ichimoku Kumo whose green-above/red-below IS the signal; and it silently drops the 7 fills bound to an `hline_*`. Owner decided: correct | y |
 | Where a fill is drawn | An overlay the host attaches, not a new series shape | The base library has no band series; the overlay seam is published, tested, and keeps the vocabulary in the host | n |
 | Where markers are drawn | Through `SeriesHandle.setMarkers?`, already on the port | The port already carries the door and its docblock already says an adapter has to add the plugin. 77 indicators sit behind a door nobody opened | n |
 | How a study declares its line count | From the manifest, per study | Measured distribution runs 1 to 56 plots; one number for all of them truncates 89 | n |
@@ -103,7 +104,11 @@ them. The measured distribution runs from 1 to 56.
 indicator signals.
 
 **Why P2**: 77 indicators emit 11,531 markers and the port already carries `setMarkers?` with a
-docblock saying an adapter has to add the plugin. The door exists and nobody opened it.
+docblock saying an adapter has to add the plugin. The door exists and nobody opened it — and measured,
+it is worse than unused: `ISeriesApi` in the installed base library has no such member, the demo engine
+returns the raw series, and the optional call is swallowed. **The candlestick pattern markers in the
+published 0.2.1 do not draw, and nothing is red.** The test therefore counts marks in the mounted
+composition, never through a probe of the port.
 
 **Acceptance Criteria**:
 
@@ -142,6 +147,26 @@ the last 34 indicators are whole too.
 
 ---
 
+### P1: The colour a point carries reaches the line ⭐ MVP
+
+**User Story**: As a user, I want a line that changes colour with its own signal to change colour on
+my screen, so that an indicator whose output IS the colour is not a flat line.
+
+**Why P1**: Measured after the seven-channel inventory was written, and larger than any of them:
+plot points arrive as `{time, value, color?}` and **147 of 320 indicators emit 54,009 coloured
+points**. The adapter discards every one in silence. A hand-written list of seven names missed the
+biggest channel, which is why PROOF-02 compares every emitted member rather than a list.
+
+**Acceptance Criteria**:
+
+1. WHEN a vendor plot point carries a colour THEN the chart SHALL draw that point's segment in that colour  <!-- event-driven -->
+2. The colour a point carries SHALL NOT change what the point means — a point with no value stays a declared gap  <!-- ubiquitous -->
+3. WHEN a point carries no colour THEN the chart SHALL draw it in the series' own colour  <!-- event-driven -->
+
+**Independent Test**: Offer an indicator the manifest says emits point colours, read the drawn segments at two indices the manifest says differ, and assert the two colours differ.
+
+---
+
 ### P1: A silent drop cannot pass the proof again ⭐ MVP
 
 **User Story**: As the maintainer, I want the proof to fail when a channel is dropped, so that the
@@ -153,7 +178,7 @@ in the manifest and nothing failed on it.
 **Acceptance Criteria**:
 
 1. WHEN the manifest records a dropped channel for an offered indicator THEN the proof SHALL fail, naming the indicator and the channel  <!-- event-driven -->
-2. WHEN an offered indicator is drawn THEN the proof SHALL assert that each channel the vendor emitted for it is present in the drawn result  <!-- event-driven -->
+2. WHEN an offered indicator is drawn THEN the proof SHALL compare EVERY member the vendor's result carries against what is drawn, enumerated from the result itself rather than from a written list of channel names  <!-- event-driven -->
 3. The proof SHALL assert the above against a synthetic dropped channel, so the clause discriminates rather than passing over an empty set  <!-- ubiquitous -->
 
 **Independent Test**: Plant a dropped fill on an offered row and assert the proof turns red naming it.
@@ -183,6 +208,9 @@ in the manifest and nothing failed on it.
 | LINES-02 | P1: A study's line count is the study's | - | Pending |
 | LINES-03 | P1: A study's line count is the study's | - | Pending |
 | LINES-04 | P1: A study's line count is the study's | - | Pending |
+| POINT-01 | P1: The colour a point carries | - | Pending |
+| POINT-02 | P1: The colour a point carries | - | Pending |
+| POINT-03 | P1: The colour a point carries | - | Pending |
 | PROOF-01 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
@@ -192,13 +220,14 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 17 total, 0 mapped to tasks, 17 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 20 total, 0 mapped to tasks, 20 unmapped ⚠️ (Tasks phase not yet run)
 
 ---
 
 ## Success Criteria
 
-- [ ] The manifest records zero dropped channels for every offered indicator
+- [ ] The manifest records zero dropped channels for every offered indicator, enumerated from the vendor result rather than from a list of names
+- [ ] A line whose points carry colours draws in those colours, and the Kumo keeps its two
 - [ ] Ichimoku draws five lines and a filled Kumo, and editing Leading Span B moves both
 - [ ] The proof turns red when a channel is planted as dropped
 - [ ] `node scripts/size-gate.mjs` exits 0 with the entry below the untouched provisional ceiling
