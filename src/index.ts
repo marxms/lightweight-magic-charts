@@ -229,6 +229,7 @@ export type {
   DensityFrameStats,
   DensityRamp,
   DensitySample,
+  DensityScale,
   DensitySlice,
   DensityTuning,
 } from './overlays/densityField';

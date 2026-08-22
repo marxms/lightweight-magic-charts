@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **295 symbols** — 106 values and 189 types — across **51 modules**.
+The public entry exports **296 symbols** — 106 values and 190 types — across **51 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -76,7 +76,7 @@ whole and on its own, so nothing is stitched in behind it.
 
 | Module | Exports | What it holds |
 | --- | --- | --- |
-| [`overlays/densityField`](overlays/densityField.md) | 11 (4 value) | the liquidation heatmap, from slices to columns to paint |
+| [`overlays/densityField`](overlays/densityField.md) | 12 (4 value) | the liquidation heatmap, from slices to columns to paint |
 | [`overlays/densityTuning`](overlays/densityTuning.md) | 3 (2 value) | the two knobs on the heatmap, and their bounds |
 | [`overlays/troughProfile`](overlays/troughProfile.md) | 9 (4 value) | the volume profile drawn beside the price scale |
 

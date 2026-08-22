@@ -30,6 +30,13 @@ export interface DensitySlice {
   readonly samples: readonly DensitySample[];
 }
 
+/** Which peak a cell is normalised against. Omitting it keeps the per-column behaviour. */
+export interface DensityScale {
+  readonly mode: 'column' | 'global';
+  /** Only in `global`: the peak to use. Absent means the largest weight across every slice. */
+  readonly peak?: number;
+}
+
 /**
  * THE TWO KNOBS. Neither changes the DATA: both are monotonic in the normalised weight.
  * See docs/explanation/overlays.md#why-faint-clusters-were-invisible
@@ -72,11 +79,24 @@ export interface DensityFrameStats {
 
 const NO_STATS: DensityFrameStats = { drawn: 0, skipped: 0, visibleColumns: 0 };
 
+/** Largest weight in the whole run, walked rather than spread: a run of slices overflows the stack. */
+function windowPeak(slices: readonly DensitySlice[]): number {
+  let peak = 0;
+  for (const slice of slices) {
+    for (const sample of slice.samples) if (sample.weight > peak) peak = sample.weight;
+  }
+  return peak;
+}
+
 /**
  * Turns samples into columns, deriving each band's half-height from the MEDIAN gap in that slice.
  * See docs/explanation/overlays.md#the-median-gap
  */
-export function toDensityColumns(slices: readonly DensitySlice[]): readonly DensityColumn[] {
+export function toDensityColumns(
+  slices: readonly DensitySlice[],
+  scale?: DensityScale,
+): readonly DensityColumn[] {
+  const shared = scale?.mode === 'global' ? (scale.peak ?? windowPeak(slices)) : null;
   return slices
     .map((slice): DensityColumn => {
       const prices = slice.samples.map((sample) => sample.price).sort((a, b) => a - b);
@@ -95,7 +115,7 @@ export function toDensityColumns(slices: readonly DensitySlice[]): readonly Dens
         if (sample.weight > peak) peak = sample.weight;
         cells.push({ low: sample.price - half, high: sample.price + half, weight: sample.weight });
       }
-      return { time: slice.time, cells, peak };
+      return { time: slice.time, cells, peak: shared ?? peak };
     })
     .filter((column) => column.cells.length > 0)
     .sort((a, b) => (a.time as number) - (b.time as number));

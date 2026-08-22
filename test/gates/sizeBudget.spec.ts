@@ -39,13 +39,21 @@ function runProbe(dist: string): Run {
 }
 
 /**
- * The highest the entry limit was ever allowed to reach, written down so the descent is checkable.
+ * The highest the entry limit is allowed to reach, written down so the descent is checkable.
  *
- * It is the last of the per-phase re-pins, the one the boundary declared provisional. Keeping it
- * here rather than in the budget is deliberate: the budget holds what is true now, and a ceiling the
- * ratchet has already left would read as a live allowance sitting next to the live one.
+ * It is a PER-PHASE ceiling, and AD-012 is what moves it: a phase that adds public API may raise it
+ * ONCE, to `ceil(measured * 1.1)`, and the re-pin has to name the phase and what the phase added.
+ * Keeping it here rather than in the budget is deliberate: the budget holds what is true now, and a
+ * ceiling the ratchet has already left would read as a live allowance sitting next to the live one.
+ *
+ * RAISED 2026-08-21, 104994 -> 115629 — THE ABSOLUTE-DENSITY-SCALE PHASE. The previous value was
+ * pinned by a phase that ended with the entry 21 B under it, and the prose here called that descent
+ * finished. It was not: `DensityScale` alone costs 144 B, and this phase also brings the absolute
+ * floor and the legend. What has NOT moved is the thing that makes the entry answerable — the
+ * budget's own ratchet is still zero-slack and down-only, so every byte is still named in
+ * `size-budget.json` before it is allowed through.
  */
-const PROVISIONAL_ENTRY_LIMIT = 104994;
+const PROVISIONAL_ENTRY_LIMIT = 115629;
 
 /**
  * THE TABLE AT THE CUTOVER — dated, because an equality between two sides that move together is no
@@ -118,9 +126,15 @@ const SYMBOLS_AT_CUTOVER = 13;
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
+ * RE-PINNED 2026-08-21, entry 104973 -> 105117 (+144 B) and ChartWorkspace 95702 -> 95846 (+144 B):
+ * THE ABSOLUTE-DENSITY-SCALE PHASE — `toDensityColumns` takes an optional `DensityScale`, so a run
+ * of slices normalises against one window peak instead of against each column's own. Per-column
+ * scale makes accumulation unrepresentable: a bin whose absolute magnitude never moves darkens on
+ * its own as some other column grows. The bytes are the walk that finds the peak and the branch that selects it; `draw()`
+ * is untouched, and omitting the argument returns what 0.2.1 publishes.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104973,
+  '*': 105117,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -133,7 +147,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95702,
+  ChartWorkspace: 95846,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
@@ -424,10 +438,10 @@ describe('LMC-27, LMC-34 — conformance leaves the entry and gets a subpath of 
   });
 
   it('pins the entry AT its measurement, with the down-only ratchet back and no slack left', () => {
-    // Per-phase re-pinning existed only while the composition was being mounted inside the library:
-    // the entry grew by design and a pre-feature pin would have rejected its own goal. The host's
-    // composition is dissolved, so the growth is over and the ratchet returns in its strict form —
-    // the limit IS the measurement, and the next byte of growth fails on the spot.
+    // The ratchet is the strict one and it never relaxes: the limit IS the measurement, so the next
+    // byte of growth fails on the spot and has to be defended in the budget's note before it passes.
+    // The provisional ceiling above is the OTHER half — a phase boundary, moved once per phase by
+    // AD-012 — and it bounds how far the named growth of one phase may carry the entry.
     expect(BUDGET.entry.ratchet).toBe('down-only');
     expect(BUDGET.entry.limit).toBe(BUDGET.entry.measured);
     // The descent, asserted rather than narrated: whatever the pin becomes, it may never climb back

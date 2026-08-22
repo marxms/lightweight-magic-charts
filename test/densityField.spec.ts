@@ -194,3 +194,125 @@ describe('task 4.5 — lifecycle', () => {
     expect(overlay.frameStats()).toEqual({ drawn: 0, skipped: 0, visibleColumns: 0 });
   });
 });
+
+/**
+ * LIQ-04 and LIQ-05 — the scale a cell is normalised against.
+ *
+ * Per-column normalisation makes accumulation unrepresentable: a bin holding a constant absolute
+ * magnitude darkens on its own as some OTHER column grows. LIQ-04 asks for one peak across the
+ * window; LIQ-05 asks that omitting the argument keep exactly what the package publishes today.
+ */
+describe('LIQ-04, LIQ-05 — column scale and global scale', () => {
+  /** The bin at 110 holds a constant 2 in both slices; the bin at 100 doubles. Maxima 4 and 8. */
+  const twoColumns = (): readonly DensitySlice[] => [
+    slice(10, [[100, 4], [110, 2]]),
+    slice(20, [[100, 8], [110, 2]]),
+  ];
+
+  /** The two bands share the edge at 105, so the gradient carries three stops, top price first. */
+  const CONSTANT_BIN = 0;
+  const GROWING_BIN = 2;
+
+  const alphasOf = (columns: readonly DensityColumn[], at: number): readonly number[] => {
+    const overlay = new DensityFieldOverlay();
+    overlay.setTuning({ floor: 0, gamma: 1 });
+    overlay.setColumns(columns);
+    const ctx = new RecordingContext();
+    overlay.draw(fakeTarget(ctx, { widthPx: 400, heightPx: 200 }), fakeProjection({ barSpacing: 4 }));
+    const stops = ctx.recordedGradients()[at].stops;
+    expect(stops).toHaveLength(3);
+    return stops.map(([, colour]) => alphaOf(colour));
+  };
+
+  it('omitting the scale returns exactly what the published signature returns', () => {
+    // The whole published contract in one literal: median-gap geometry, the column's OWN peak,
+    // non-positive samples dropped, empty slices dropped, ascending time.
+    expect(
+      toDensityColumns([
+        slice(20, [[100, 2], [110, 4]]),
+        slice(30, [[100, 0], [110, -1]]),
+        slice(10, [[100, 1], [110, 3], [120, 9]]),
+      ]),
+    ).toEqual([
+      {
+        time: 10,
+        cells: [
+          { low: 95, high: 105, weight: 1 },
+          { low: 105, high: 115, weight: 3 },
+          { low: 115, high: 125, weight: 9 },
+        ],
+        peak: 9,
+      },
+      {
+        time: 20,
+        cells: [
+          { low: 95, high: 105, weight: 2 },
+          { low: 105, high: 115, weight: 4 },
+        ],
+        peak: 4,
+      },
+    ]);
+  });
+
+  it('spells the default out: omitting the scale and asking for `column` are the same call', () => {
+    const slices = twoColumns();
+    expect(toDensityColumns(slices)).toEqual(toDensityColumns(slices, { mode: 'column' }));
+  });
+
+  it('under the default, the untouched bin DIMS as its neighbour grows', () => {
+    // LIQ-05 from the renderer's end, and the defect LIQ-04 exists to fix: a constant 2 is half of
+    // the first column's peak and a quarter of the second's, so a bin nobody touched loses light.
+    const columns = toDensityColumns(twoColumns());
+    expect(alphasOf(columns, 0)[CONSTANT_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.5, 1)), 6);
+    expect(alphasOf(columns, 1)[CONSTANT_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.25, 1)), 6);
+  });
+
+  it('global mode writes the SUPPLIED peak on every column', () => {
+    const columns = toDensityColumns(twoColumns(), { mode: 'global', peak: 50 });
+    expect(columns.map((c) => c.peak)).toEqual([50, 50]);
+  });
+
+  it('global mode with no peak derives the largest weight across ALL slices', () => {
+    const columns = toDensityColumns(twoColumns(), { mode: 'global' });
+    expect(columns.map((c) => c.peak)).toEqual([8, 8]);
+  });
+
+  it('global mode changes the peak and NOTHING else — the cells are the column-mode cells', () => {
+    const slices = twoColumns();
+    expect(toDensityColumns(slices, { mode: 'global' }).map((c) => c.cells)).toEqual(
+      toDensityColumns(slices).map((c) => c.cells),
+    );
+  });
+
+  it('under global mode, the untouched bin keeps the SAME alpha in both columns', () => {
+    // LIQ-04. `draw()` is untouched — it already divides by `column.peak`; what changed is the peak.
+    const columns = toDensityColumns(twoColumns(), { mode: 'global' });
+    expect(alphasOf(columns, 0)[CONSTANT_BIN]).toBeCloseTo(alphasOf(columns, 1)[CONSTANT_BIN], 6);
+    expect(alphasOf(columns, 0)[CONSTANT_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.25, 1)), 6);
+  });
+
+  it('under global mode a cell is its share of the WINDOW peak, not of its own column', () => {
+    // Weight 4 is the first column's own peak, so column mode paints it at full intensity. Against
+    // the window peak of 8 it is half, and half is what the ramp is asked for.
+    const columns = toDensityColumns(twoColumns(), { mode: 'global' });
+    expect(alphasOf(columns, 0)[GROWING_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.5, 1)), 6);
+    expect(alphasOf(columns, 1)[GROWING_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(1, 1)), 6);
+  });
+
+  it('honours a supplied peak of ZERO instead of deriving one over it', () => {
+    // LIQ-07 reaches the renderer through here: a window whose absolute peak is zero paints nothing.
+    // Falling back to the derived peak on a falsy value would paint it at full intensity instead.
+    expect(toDensityColumns(twoColumns(), { mode: 'global', peak: 0 }).map((c) => c.peak)).toEqual([
+      0, 0,
+    ]);
+  });
+
+  it('keeps the drop of non-positive samples and the time ordering under global mode too', () => {
+    const columns = toDensityColumns(
+      [slice(30, [[100, 5]]), slice(20, [[100, 0], [110, -3]]), slice(10, [[100, 1]])],
+      { mode: 'global' },
+    );
+    expect(columns.map((c) => c.time as number)).toEqual([10, 30]);
+    expect(columns.map((c) => c.cells.length)).toEqual([1, 1]);
+  });
+});

@@ -28,9 +28,10 @@ export const columns: readonly DensityColumn[] = toDensityColumns(slices);
 - **`DensityFrameStats`** · type · `interface DensityFrameStats { drawn: number; skipped: number; visibleColumns: number }`
 - **`DensityRamp`** · type · `type DensityRamp = (normalised: number, gamma: number) => string`
 - **`DensitySample`** · type · `interface DensitySample { price: number; weight: number }`
+- **`DensityScale`** · type · `interface DensityScale { mode: 'column' | 'global'; peak?: number | undefined }`
 - **`DensitySlice`** · type · `interface DensitySlice { time: UtcSeconds; samples: readonly DensitySample[] }`
 - **`DensityTuning`** · type · `interface DensityTuning { floor: number; gamma: number }`
-- **`toDensityColumns`** · value · `(slices: readonly DensitySlice[]) => readonly DensityColumn[]`
+- **`toDensityColumns`** · value · `(slices: readonly DensitySlice[], scale?: DensityScale) => readonly DensityColumn[]`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under
 [`explanation/`](../../explanation/README.md).
