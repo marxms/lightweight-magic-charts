@@ -43,6 +43,93 @@ export const EXCLUSION_MEASUREMENTS = (defects) =>
     .sort((a, b) => (a.id < b.id ? -1 : 1));
 
 /**
+ * THE THREE MEMBERS OF A RESULT THAT ARE NOT A CHANNEL.
+ *
+ * `plots` is the lines themselves, `hlines` is served by the guide, and `metadata` is the row's own
+ * name. Everything ELSE the vendor puts on a result is something asking to be drawn.
+ */
+export const NOT_A_CHANNEL = new Set(['metadata', 'plots', 'hlines']);
+
+/**
+ * THE CHANNELS THE HOST DRAWS, and the reason this is a set rather than a comment.
+ *
+ * A row that emits anything outside it emits something nobody paints, and this repository has now
+ * measured that failure twice in the same place: the generator used to walk a hand-written list of
+ * NINE channel names and ask `Array.isArray`, so `plotCandles` and `tables` — which arrive as
+ * OBJECTS — counted zero and were recorded as emitting nothing. Ten offered rows emitted one and
+ * the manifest declared they did not. The list is the defect; the enumeration below is the fix.
+ */
+export const HOST_CHANNELS = new Set([
+  'fills',
+  'markers',
+  'barColors',
+  'bgColors',
+  'labels',
+  'lines',
+  'boxes',
+]);
+
+/**
+ * EVERY CHANNEL A RESULT CARRIES, ENUMERATED FROM THE RESULT — never from a list of names.
+ *
+ * An OBJECT payload counts like an array one. `Array.isArray` on `plotCandles` answers false and
+ * the count silently became zero, which is how a channel with 2,970 drawable candles in it was
+ * recorded as absent. `unknown` is what the host has nowhere to put.
+ */
+export function channelsOf(result) {
+  const counts = {};
+  const unknown = [];
+  for (const [key, value] of Object.entries(result ?? {})) {
+    if (NOT_A_CHANNEL.has(key)) continue;
+    const size = Array.isArray(value)
+      ? value.length
+      : value !== null && typeof value === 'object'
+        ? Object.keys(value).length
+        : 0;
+    if (size === 0) continue;
+    if (HOST_CHANNELS.has(key)) counts[key] = size;
+    else unknown.push(key);
+  }
+  return { counts, unknown };
+}
+
+/**
+ * WHAT THE COMMITTED ARTEFACT WOULD HAVE TO REFUSE, judged against the widths it declares.
+ *
+ * ONE MECHANISM, TWO RISKS. The generator derives the widths from the rows it writes, so on its own
+ * output the set below is empty by construction — a maximum cannot be exceeded by what it is the
+ * maximum of. That is exactly why it is written as a function of (rows, widths) and not as a step
+ * inside the derivation: the PROOF calls it with the widths the committed file DECLARES, so a
+ * width that stops describing the rows underneath it — a hand edit, a partial regeneration, a
+ * vendor release read with a stale artefact — is a refusal instead of a study that draws four of
+ * its twenty lines. A row that carries a channel nothing draws is the same fault seen from the
+ * other side, and it is refused on the same terms.
+ */
+export function refusalsOf(indicators, widths) {
+  const declared = { 'over-price': widths?.overPrice ?? 0, 'own-pane': widths?.ownPane ?? 0 };
+  const refusals = [];
+  for (const row of indicators) {
+    const room = declared[row.placement] ?? 0;
+    if (row.plotIds.length > room) {
+      refusals.push({
+        id: row.id,
+        reason: 'wider than the resource declared for it',
+        detail: `${row.plotIds.length} plots against a declared ${row.placement} width of ${room}`,
+      });
+    }
+    for (const channel of Object.keys(row.channels ?? {})) {
+      if (HOST_CHANNELS.has(channel)) continue;
+      refusals.push({
+        id: row.id,
+        reason: 'emits a channel nothing draws',
+        detail: channel,
+      });
+    }
+  }
+  return refusals;
+}
+
+/**
  * HOW WIDE THE HOST'S DRAWING RESOURCE HAS TO BE, DERIVED FROM THE ROWS THE GENERATOR WRITES.
  *
  * Nothing in the library adds a series to the price pane, and a lane's slots are created once at

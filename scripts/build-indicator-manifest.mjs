@@ -69,7 +69,9 @@ import {
   MANIFEST_PATHS,
   PRICE_NEIGHBOURHOOD,
   SETTLE_CUTS,
+  channelsOf,
   digestOf,
+  refusalsOf,
   settleWithinBars,
   vendorPin,
   widthsOf,
@@ -272,11 +274,15 @@ for (const entry of registryOf()) {
 
   const levels = declaredLevels(entry, results[0]).sort((a, b) => a - b);
   const guide = guideOf(levels);
-  const dropped = {};
-  for (const channel of ['fills', 'markers', 'bgColors', 'barColors', 'plotCandles', 'boxes', 'labels', 'lines', 'tables']) {
-    const n = Array.isArray(results[0][channel]) ? results[0][channel].length : 0;
-    if (n > 0) dropped[channel] = n;
-  }
+
+  /* ---- what the row asks to be drawn, ENUMERATED FROM THE RESULT --------- *
+   * The list of nine names this replaces asked `Array.isArray`, so the two object-shaped channels
+   * counted zero: ten offered rows emitted a `plotCandles` or a `tables` and the manifest recorded
+   * that they emitted nothing. A row whose channel nobody paints is REFUSED here rather than
+   * offered with a piece missing, which is the same sentence the spec writes about a fill whose
+   * bounds do not resolve and about a study wider than its lane.                                */
+  const { counts: channels, unknown } = channelsOf(results[0]);
+  if (unknown.length > 0) { say('emits a channel nothing draws', unknown.join(', ')); continue; }
 
   indicators.push({
     id: entry.id,
@@ -290,7 +296,7 @@ for (const entry of registryOf()) {
     ...(guide === undefined ? {} : { guide }),
     ...(levels.filter((l) => l !== guide).length > 0 ? { extraLevels: levels.filter((l) => l !== guide) } : {}),
     ...(collapse.length > 0 ? { collapsed: collapse } : {}),
-    ...(Object.keys(dropped).length > 0 ? { dropped } : {}),
+    ...(Object.keys(channels).length > 0 ? { channels } : {}),
   });
 }
 
@@ -312,13 +318,29 @@ for (const row of indicators) {
   const committed = readJson('manifest');
   const derived = new Set(indicators.map((r) => r.id));
   const renamedFrom = new Map((RENAMES.renames ?? []).map((r) => [r.from, r]));
+  // AN ID THIS RUN REFUSED, WITH ITS REASON, IS NOT AN ID THAT VANISHED. The block exists because
+  // the generator can see that an id left the LIBRARY and cannot see whether it was renamed or
+  // removed. That ambiguity does not exist for a row still in the registry that a rule here turned
+  // down: the reason is written, printed, and in the diff. Refusing those too would mean no rule
+  // could ever be tightened without hand-editing a ledger to say what the generator already said.
+  const refused = new Map(rejected.map((r) => [r.id, r.reason]));
   const unexplained = [];
   for (const row of committed.indicators ?? committed) {
     if (derived.has(row.id)) continue;
     const rename = renamedFrom.get(row.id);
     if (rename !== undefined && derived.has(rename.to)) continue;
     if (excludingDefect.has(row.id)) continue;
+    if (refused.has(row.id)) continue;
     unexplained.push(row.id);
+  }
+  const withdrawn = (committed.indicators ?? committed)
+    .filter((row) => !derived.has(row.id) && refused.has(row.id))
+    .map((row) => `${row.id} — ${refused.get(row.id)}`);
+  if (withdrawn.length > 0) {
+    console.error(
+      `build-indicator-manifest: WITHDRAWING ${withdrawn.length} row(s) the committed manifest ` +
+      `still offers, each because a rule in this generator turned it down:\n  ${withdrawn.join('\n  ')}`,
+    );
   }
   if (unexplained.length > 0) {
     console.error(
@@ -353,6 +375,28 @@ for (const row of indicators) {
   }
 }
 
+/* ---- AND A ROW THAT CANNOT BE DRAWN WHOLE IS NOT WRITTEN ----------------- *
+ * The widths are DERIVED from the rows above, so on this generator's own output the set below is
+ * empty by construction — a maximum is not exceeded by what it is the maximum of. It is asserted
+ * anyway, and by the same function `scripts/indicator-proof.mjs` calls with the widths the
+ * COMMITTED file declares: one mechanism, and the two risks it closes are a width that stops
+ * describing the rows under it and a channel nobody counted.                                    */
+const widths = widthsOf(indicators);
+{
+  const refusals = refusalsOf(indicators, widths);
+  if (refusals.length > 0) {
+    console.error(
+      `build-indicator-manifest: REFUSING to write. ${refusals.length} row(s) cannot be drawn ` +
+      `whole against the resource this run derived (over-price ${widths.overPrice}, own-pane ` +
+      `${widths.ownPane}):\n` +
+      refusals.map((r) => `  ${r.id} — ${r.reason}: ${r.detail}`).join('\n') +
+      '\nA row offered with a piece missing is the defect this catalogue exists to remove. Either ' +
+      'the resource grows to fit it or the row is not offered; it is never both.',
+    );
+    process.exit(1);
+  }
+}
+
 const tally = tallyOf(seal);
 const manifest = {
   generatedBy: 'scripts/build-indicator-manifest.mjs',
@@ -370,7 +414,7 @@ const manifest = {
   },
   exclusions: EXCLUSION_MEASUREMENTS(DEFECTS),
   widths: {
-    ...widthsOf(indicators),
+    ...widths,
     why: 'THE HOST\'S DRAWING RESOURCE, DERIVED FROM THE ROWS BELOW rather than typed beside them. Nothing in the library adds a series to the price pane and a lane is built once at mount, so these two numbers are what the host must create before a study can be drawn into them — and a hand-written one is how a five-plot Ichimoku came to draw one line. DECLARED, never observed: `auto-support` brings 24 of its 56 plots alive at 240 bars and 40 at 1024, so sizing by what a window showed would drop the rest in silence.',
   },
   indicators,

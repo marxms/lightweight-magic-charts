@@ -504,10 +504,6 @@
    "values": "efe7e5e9ee3a553f2925fe2c0f9b3c7b6de6f7bfb22d2eac638b96111b3f0df8",
    "confirmsWithinBars": 0
   },
-  "madrid-trend-squeeze": {
-   "values": "a75e4d5beba4bc19761ba5022179e01f793c0f5fe925885884d6d64faa87a98e",
-   "confirmsWithinBars": 0
-  },
   "kaufman-adaptive-ma": {
    "values": "3d3c39d2fc13c20e6158aeed85918281dd628ba9464e633ac87956f194b2094c",
    "confirmsWithinBars": 0
@@ -764,10 +760,6 @@
    "values": "a426998de9eca0504f2727c1a8aa8c0cf88574461503f666b1e8705e5dfcf37d",
    "confirmsWithinBars": 0
   },
-  "linear-regression-candles": {
-   "values": "1855578718e73b0a565352935f45568681c81fcecf58fa794f829b825d38a7dd",
-   "confirmsWithinBars": 0
-  },
   "ma-adx": {
    "values": "9ce5b137befdb557053d8713e552da9384ba175eb6b8e8cef62adb068aa0a812",
    "confirmsWithinBars": 0
@@ -812,24 +804,12 @@
    "values": "56d21549e5c2a825896ba2931852aabb1d9b90986135dce9b5bf0a2885851d88",
    "confirmsWithinBars": 0
   },
-  "market-shift-levels": {
-   "values": "737ff445ada6bf9d639f63a5dff967c76e9da01c1b58414d5c9f6e14e272c295",
-   "confirmsWithinBars": 0
-  },
   "ma-shaded-fill": {
    "values": "4f84aa86f5d31f8b49fd0399498370c7c3c9f934f8736e08cc00df6d374bc3bc",
    "confirmsWithinBars": 0
   },
-  "matrix-series": {
-   "values": "2ca597bcb92c872d2fa2d2ab879a35da9e5f27cec55c8f440f06926e1957e1dd",
-   "confirmsWithinBars": 0
-  },
   "mfi-rsi-bb": {
    "values": "971f2370fea466dbb4be5cf616c9e766a2b7ecaeb9fa182656bb082a6b1a70e5",
-   "confirmsWithinBars": 0
-  },
-  "modified-heikin-ashi": {
-   "values": "d8e4163f5e3a1c9c0c7a6e4ae3841712c1d7a36802f92c1c7730a98cae2226a0",
    "confirmsWithinBars": 0
   },
   "multiple-ma": {
@@ -954,10 +934,6 @@
   },
   "super-smoothed-macd": {
    "values": "5f0ae64a20be03b72e8246e95507a8199c860e73f595b4f152d877f0b333b923",
-   "confirmsWithinBars": 0
-  },
-  "super-supertrend": {
-   "values": "fdd8cf1d4ec7d5e277c84598ff5d22c07b6411fd9626c4e07ea20bc6f775fd6a",
    "confirmsWithinBars": 0
   },
   "supertrend-channels": {
@@ -1140,10 +1116,6 @@
    "values": "411d8544eca7a583e18386c9881215b62bf2c139a95cb249ce6a99fde5dc2f54",
    "confirmsWithinBars": 0
   },
-  "ml-adaptive-supertrend": {
-   "values": "038cf8f9977300adf5c5ff4d670b04eb0734876e39a9a06a5122fcbc72d02c39",
-   "confirmsWithinBars": 0
-  },
   "ml-knn-strategy": {
    "values": "a8499dd5407ababf796d0903516c80ea1afe9c36949114ff99eb62153321ab3c",
    "confirmsWithinBars": 0
@@ -1156,24 +1128,12 @@
    "values": "498c4dab60deb7dc882b04328cf9cd598f6c7bf151b1cbd9e5df382e280c17d7",
    "confirmsWithinBars": 0
   },
-  "ml-rsi": {
-   "values": "7a4ee763bfcb39959594cd0c9f17a8a150930972128d9ff10bece3d6451b3b14",
-   "confirmsWithinBars": 0
-  },
-  "supertrend-ai-clustering": {
-   "values": "fc906b606302ffe6581a54b9244d1011596ca04fc5246199e9cc970616185bbb",
-   "confirmsWithinBars": 0
-  },
   "volume-supertrend-ai": {
    "values": "f161668cc75a0b76145f8c8f601fdd8883be337290e2b5399f9b53a0e008678e",
    "confirmsWithinBars": 0
   },
   "trader-xo": {
    "values": "eecceb2dd231dbe50945ce1f27ce8375b7aef17828a2aafe87dab41ca17585ca",
-   "confirmsWithinBars": 0
-  },
-  "banker-fund-flow": {
-   "values": "4dc221134c56d8eaef301d86a50c74ca9a03c16366ff390a195ee586d5501ba9",
    "confirmsWithinBars": 0
   },
   "adaptive-macd": {

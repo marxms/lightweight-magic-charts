@@ -16,8 +16,8 @@
  },
  "seal": {
   "pinned": 6,
-  "constrained": 111,
-  "structural": 203
+  "constrained": 108,
+  "structural": 196
  },
  "sealMeaning": {
   "pinned": "a hand-computed golden vector or example/studies.ts fixes its numbers",
@@ -299,7 +299,7 @@
      "max": 50
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "pinned",
@@ -611,7 +611,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -690,7 +690,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -1083,7 +1083,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "pinned",
@@ -1301,7 +1301,7 @@
      "fallbackTitle": "Offset"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -1379,7 +1379,7 @@
      "step": 0.01
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -1895,7 +1895,7 @@
      "min": 0
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -2185,7 +2185,7 @@
     -1,
     1
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -2642,7 +2642,7 @@
      "fallbackTitle": "Exponential"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -3671,7 +3671,7 @@
     0,
     100
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -3790,7 +3790,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "bgColors": 1016
    },
    "verification": "structural",
@@ -3835,7 +3835,7 @@
     53,
     60
    ],
-   "dropped": {
+   "channels": {
     "markers": 140,
     "barColors": 140
    },
@@ -3977,7 +3977,7 @@
      "fallbackTitle": "Use Close for Extremums"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 16
    },
@@ -4017,7 +4017,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "barColors": 958
    },
    "verification": "constrained",
@@ -4088,7 +4088,7 @@
     }
    ],
    "guide": 50,
-   "dropped": {
+   "channels": {
     "fills": 3,
     "markers": 55
    },
@@ -4183,7 +4183,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 84
    },
    "verification": "constrained",
@@ -4226,7 +4226,7 @@
      "fallbackTitle": "Use RSI instead of MFI"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 78
    },
@@ -4265,7 +4265,7 @@
      "min": 0
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 44
    },
@@ -4359,7 +4359,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 91,
     "barColors": 973
    },
@@ -4408,10 +4408,10 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 44,
-    "bgColors": 1003,
-    "barColors": 1003
+    "barColors": 1003,
+    "bgColors": 1003
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -4445,7 +4445,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 49,
     "barColors": 1014
    },
@@ -4502,7 +4502,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 969
    },
@@ -4556,7 +4556,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 30
    },
@@ -4707,7 +4707,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 998
    },
@@ -4891,7 +4891,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 5
    },
    "verification": "structural",
@@ -4961,7 +4961,7 @@
      "plot1"
     ]
    ],
-   "dropped": {
+   "channels": {
     "barColors": 992
    },
    "verification": "constrained",
@@ -5063,7 +5063,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -5137,7 +5137,7 @@
      "fallbackTitle": "Show EMA"
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 990
    },
    "verification": "structural",
@@ -5200,7 +5200,7 @@
      "step": 0.001
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -5262,7 +5262,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 744,
     "barColors": 1019
    },
@@ -5290,7 +5290,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 94,
     "barColors": 1021
    },
@@ -5338,7 +5338,7 @@
     -2,
     2
    ],
-   "dropped": {
+   "channels": {
     "fills": 3
    },
    "verification": "constrained",
@@ -5395,7 +5395,7 @@
    "extraLevels": [
     50
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -5471,7 +5471,7 @@
      "step": 0.01
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -5521,7 +5521,7 @@
     -2.5,
     2.5
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 989
    },
@@ -5626,7 +5626,7 @@
     -100,
     100
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -5683,49 +5683,6 @@
     }
    ],
    "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "madrid-trend-squeeze",
-   "fallbackLabel": "Madrid Trend Squeeze",
-   "fallbackShortLabel": "MTS",
-   "category": "Momentum",
-   "placement": "own-pane",
-   "plotIds": [
-    "plot0",
-    "plot1",
-    "plot2"
-   ],
-   "plotTitles": [
-    "CMA",
-    "RMA",
-    "SMA"
-   ],
-   "inputs": [
-    {
-     "id": "length",
-     "type": "int",
-     "defval": 34,
-     "fallbackTitle": "Length",
-     "min": 1
-    },
-    {
-     "id": "ref",
-     "type": "int",
-     "defval": 13,
-     "fallbackTitle": "Reference Length",
-     "min": 1
-    },
-    {
-     "id": "sqzLen",
-     "type": "int",
-     "defval": 5,
-     "fallbackTitle": "Squeeze Length",
-     "min": 1
-    }
-   ],
-   "guide": 0,
-   "verification": "constrained",
    "confirmsWithinBars": 0
   },
   {
@@ -5916,7 +5873,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 18,
     "barColors": 974
@@ -5985,10 +5942,10 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
-    "markers": 970,
-    "barColors": 132
+    "barColors": 132,
+    "markers": 970
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -6020,7 +5977,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -6188,7 +6145,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 1006
    },
    "verification": "structural",
@@ -6277,7 +6234,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -6321,7 +6278,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -6417,10 +6374,10 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
-    "markers": 12,
-    "barColors": 997
+    "barColors": 997,
+    "markers": 12
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -6465,7 +6422,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -6499,7 +6456,7 @@
     -0.8,
     0.8
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 1008
    },
@@ -6567,7 +6524,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 51
    },
@@ -6666,7 +6623,7 @@
      "plot1"
     ]
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -6694,7 +6651,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "barColors": 859
    },
    "verification": "constrained",
@@ -6726,7 +6683,7 @@
     }
    ],
    "guide": 25,
-   "dropped": {
+   "channels": {
     "bgColors": 1010
    },
    "verification": "constrained",
@@ -6753,7 +6710,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 24
    },
    "verification": "structural",
@@ -6805,7 +6762,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 1016
    },
    "verification": "structural",
@@ -6925,7 +6882,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 21,
     "barColors": 1010
    },
@@ -6965,7 +6922,7 @@
      "min": 2
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 6
    },
    "verification": "structural",
@@ -7207,7 +7164,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 31
    },
@@ -7362,7 +7319,7 @@
     "VolumeIndex"
    ],
    "inputs": [],
-   "dropped": {
+   "channels": {
     "barColors": 1024
    },
    "verification": "structural",
@@ -7487,7 +7444,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -7516,7 +7473,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 1011
    },
    "verification": "structural",
@@ -7574,7 +7531,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -7669,7 +7626,7 @@
     90,
     100
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -7714,7 +7671,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 123
    },
    "verification": "structural",
@@ -7770,7 +7727,7 @@
    "extraLevels": [
     80
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -7857,7 +7814,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 49
    },
    "verification": "structural",
@@ -7920,7 +7877,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3
    },
    "verification": "structural",
@@ -7989,7 +7946,7 @@
     20,
     25
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 87,
     "barColors": 996
@@ -8029,7 +7986,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -8101,11 +8058,11 @@
      ]
     }
    ],
-   "dropped": {
-    "fills": 1,
+   "channels": {
     "markers": 1068,
+    "barColors": 762,
     "bgColors": 4,
-    "barColors": 762
+    "fills": 1
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -8151,7 +8108,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "bgColors": 1004
    },
@@ -8204,7 +8161,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 998
    },
    "verification": "structural",
@@ -8246,7 +8203,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3
    },
    "verification": "structural",
@@ -8450,7 +8407,7 @@
      "fallbackTitle": "DMA 200 Displacement"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3,
     "markers": 18
    },
@@ -8590,7 +8547,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -8626,7 +8583,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "bgColors": 995
    },
    "verification": "structural",
@@ -8711,7 +8668,7 @@
      "min": 2
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3
    },
    "verification": "structural",
@@ -8730,7 +8687,7 @@
     "Session Volume"
    ],
    "inputs": [],
-   "dropped": {
+   "channels": {
     "bgColors": 1024
    },
    "verification": "structural",
@@ -8796,7 +8753,7 @@
      "histogram"
     ]
    ],
-   "dropped": {
+   "channels": {
     "barColors": 1011
    },
    "verification": "constrained",
@@ -8894,7 +8851,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -8921,7 +8878,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 36,
     "barColors": 36
    },
@@ -8997,7 +8954,7 @@
      "sqzState"
     ]
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 843,
     "barColors": 867
@@ -9035,54 +8992,10 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 46,
     "barColors": 1020
    },
-   "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "linear-regression-candles",
-   "fallbackLabel": "Linear Regression Candles",
-   "fallbackShortLabel": "LRCandle",
-   "category": "Candlestick Patterns",
-   "placement": "over-price",
-   "plotIds": [
-    "signal"
-   ],
-   "plotTitles": [
-    "Signal"
-   ],
-   "inputs": [
-    {
-     "id": "length",
-     "type": "int",
-     "defval": 11,
-     "fallbackTitle": "Linear Regression Length",
-     "min": 1
-    },
-    {
-     "id": "smoothLen",
-     "type": "int",
-     "defval": 1,
-     "fallbackTitle": "Smooth Length",
-     "min": 1
-    },
-    {
-     "id": "signalLength",
-     "type": "int",
-     "defval": 11,
-     "fallbackTitle": "Signal Smoothing",
-     "min": 1
-    },
-    {
-     "id": "smaSignal",
-     "type": "bool",
-     "defval": true,
-     "fallbackTitle": "Simple MA (Signal Line)"
-    }
-   ],
    "verification": "structural",
    "confirmsWithinBars": 0
   },
@@ -9259,7 +9172,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 762
    },
@@ -9322,7 +9235,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "barColors": 991
    },
    "verification": "constrained",
@@ -9384,7 +9297,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -9505,7 +9418,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 12
    },
    "verification": "constrained",
@@ -9569,7 +9482,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "bgColors": 997
    },
    "verification": "constrained",
@@ -9686,7 +9599,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 4
    },
    "verification": "constrained",
@@ -9776,7 +9689,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 275
    },
@@ -9867,38 +9780,10 @@
      "crossLine"
     ]
    ],
-   "dropped": {
+   "channels": {
     "markers": 74
    },
    "verification": "constrained",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "market-shift-levels",
-   "fallbackLabel": "Market Shift Levels",
-   "fallbackShortLabel": "MSL",
-   "category": "Trend",
-   "placement": "over-price",
-   "plotIds": [
-    "plot0"
-   ],
-   "plotTitles": [
-    "Market Shift Level"
-   ],
-   "inputs": [
-    {
-     "id": "length",
-     "type": "int",
-     "defval": 55,
-     "fallbackTitle": "Length",
-     "min": 1
-    }
-   ],
-   "dropped": {
-    "barColors": 891,
-    "labels": 3
-   },
-   "verification": "structural",
    "confirmsWithinBars": 0
   },
   {
@@ -9947,87 +9832,8 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
-   },
-   "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "matrix-series",
-   "fallbackLabel": "Matrix Series",
-   "fallbackShortLabel": "MTX",
-   "category": "Oscillators",
-   "placement": "own-pane",
-   "plotIds": [
-    "resistance",
-    "support",
-    "obMarker",
-    "osMarker"
-   ],
-   "plotTitles": [
-    "Resistance Line",
-    "Support Line",
-    "OB Cross",
-    "OS Cross"
-   ],
-   "inputs": [
-    {
-     "id": "smoother",
-     "type": "int",
-     "defval": 5,
-     "fallbackTitle": "Smoother",
-     "min": 1
-    },
-    {
-     "id": "supResPeriod",
-     "type": "int",
-     "defval": 50,
-     "fallbackTitle": "Sup/Res Period",
-     "min": 1
-    },
-    {
-     "id": "supResPercentage",
-     "type": "int",
-     "defval": 100,
-     "fallbackTitle": "Sup/Res Percentage",
-     "min": 1
-    },
-    {
-     "id": "pricePeriod",
-     "type": "int",
-     "defval": 16,
-     "fallbackTitle": "Price Period",
-     "min": 1
-    },
-    {
-     "id": "ob",
-     "type": "int",
-     "defval": 200,
-     "fallbackTitle": "Overbought"
-    },
-    {
-     "id": "os",
-     "type": "int",
-     "defval": -200,
-     "fallbackTitle": "Oversold"
-    },
-    {
-     "id": "showOBOS",
-     "type": "bool",
-     "defval": false,
-     "fallbackTitle": "Show OB/OS"
-    },
-    {
-     "id": "dynamic",
-     "type": "bool",
-     "defval": true,
-     "fallbackTitle": "Dynamic Zones"
-    }
-   ],
-   "dropped": {
-    "fills": 1,
-    "markers": 390
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -10101,44 +9907,11 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "bgColors": 113
    },
    "verification": "constrained",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "modified-heikin-ashi",
-   "fallbackLabel": "Modified Heikin-Ashi",
-   "fallbackShortLabel": "ModHA",
-   "category": "Candlestick Patterns",
-   "placement": "over-price",
-   "plotIds": [
-    "emaTrend"
-   ],
-   "plotTitles": [
-    "EMA Trend"
-   ],
-   "inputs": [
-    {
-     "id": "emaLen",
-     "type": "int",
-     "defval": 6,
-     "fallbackTitle": "EMA Length",
-     "min": 1
-    },
-    {
-     "id": "showEma",
-     "type": "bool",
-     "defval": true,
-     "fallbackTitle": "Show EMA Trend Line?"
-    }
-   ],
-   "dropped": {
-    "barColors": 1018
-   },
-   "verification": "structural",
    "confirmsWithinBars": 0
   },
   {
@@ -10227,7 +10000,7 @@
     87.5,
     100
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "barColors": 924
    },
@@ -10374,7 +10147,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 8
    },
    "verification": "structural",
@@ -10566,7 +10339,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 44
    },
    "verification": "constrained",
@@ -10601,10 +10374,10 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 27,
-    "bgColors": 973,
-    "barColors": 686
+    "barColors": 686,
+    "bgColors": 973
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -10664,7 +10437,7 @@
     }
    ],
    "guide": 50,
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -10760,7 +10533,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 61
    },
    "verification": "structural",
@@ -10901,7 +10674,7 @@
    "extraLevels": [
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -11003,7 +10776,7 @@
      "plot1"
     ]
    ],
-   "dropped": {
+   "channels": {
     "barColors": 1010
    },
    "verification": "constrained",
@@ -11107,7 +10880,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "bgColors": 44
    },
    "verification": "constrained",
@@ -11170,7 +10943,7 @@
      "max": 100
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -11223,7 +10996,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 15
    },
    "verification": "structural",
@@ -11283,7 +11056,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -11359,7 +11132,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -11542,7 +11315,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 1
    },
    "verification": "structural",
@@ -11598,7 +11371,7 @@
      "max": 50
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3,
     "barColors": 1005
    },
@@ -11655,7 +11428,7 @@
      "max": 50
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3,
     "barColors": 1005
    },
@@ -11710,7 +11483,7 @@
    "extraLevels": [
     80
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 206,
     "bgColors": 1001
@@ -11785,61 +11558,6 @@
    "confirmsWithinBars": 0
   },
   {
-   "id": "super-supertrend",
-   "fallbackLabel": "Super SuperTrend",
-   "fallbackShortLabel": "SST",
-   "category": "Trend",
-   "placement": "over-price",
-   "plotIds": [
-    "plot0",
-    "plot1",
-    "plot2"
-   ],
-   "plotTitles": [
-    "ST1",
-    "ST2",
-    "ST3"
-   ],
-   "inputs": [
-    {
-     "id": "atrLen",
-     "type": "int",
-     "defval": 10,
-     "fallbackTitle": "ATR Length",
-     "min": 1
-    },
-    {
-     "id": "mult1",
-     "type": "float",
-     "defval": 1,
-     "fallbackTitle": "Multiplier 1",
-     "min": 0.1,
-     "step": 0.1
-    },
-    {
-     "id": "mult2",
-     "type": "float",
-     "defval": 2,
-     "fallbackTitle": "Multiplier 2",
-     "min": 0.1,
-     "step": 0.1
-    },
-    {
-     "id": "mult3",
-     "type": "float",
-     "defval": 3,
-     "fallbackTitle": "Multiplier 3",
-     "min": 0.1,
-     "step": 0.1
-    }
-   ],
-   "dropped": {
-    "markers": 162
-   },
-   "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
    "id": "supertrend-channels",
    "fallbackLabel": "SuperTrend Channels",
    "fallbackShortLabel": "STCh",
@@ -11881,7 +11599,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "structural",
@@ -11924,7 +11642,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 46
    },
    "verification": "structural",
@@ -11986,7 +11704,7 @@
     32,
     68
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -12093,7 +11811,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 56
    },
    "verification": "structural",
@@ -12136,7 +11854,7 @@
     -40,
     40
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 34,
     "barColors": 34
@@ -12174,7 +11892,7 @@
      "step": 0.01
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 30
    },
    "verification": "structural",
@@ -12354,7 +12072,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "barColors": 974
    },
    "verification": "structural",
@@ -12398,7 +12116,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 38,
     "lines": 19
    },
@@ -12638,7 +12356,7 @@
      "min": 0
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3,
     "markers": 144
    },
@@ -12703,7 +12421,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -12722,7 +12440,7 @@
     "Volume"
    ],
    "inputs": [],
-   "dropped": {
+   "channels": {
     "barColors": 1024
    },
    "verification": "structural",
@@ -12778,7 +12496,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -12997,7 +12715,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 241
    },
    "verification": "structural",
@@ -13058,7 +12776,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 18,
     "bgColors": 934
    },
@@ -13104,7 +12822,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 3,
     "barColors": 1003
    },
@@ -13162,7 +12880,7 @@
     80,
     100
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 167
    },
@@ -13218,7 +12936,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "barColors": 1004
    },
@@ -13283,7 +13001,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 10,
     "bgColors": 961
    },
@@ -13378,7 +13096,7 @@
      "fallbackTitle": "Use Kahlman"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 95
    },
@@ -13584,7 +13302,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 4,
     "markers": 24,
     "lines": 24
@@ -13623,7 +13341,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 44
    },
@@ -13733,7 +13451,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 8
    },
    "verification": "structural",
@@ -13825,7 +13543,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 12
    },
@@ -13876,7 +13594,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -13920,7 +13638,7 @@
      "fallbackTitle": "Show Channel"
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 268,
     "labels": 171
    },
@@ -13980,7 +13698,7 @@
    "extraLevels": [
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 64
    },
@@ -14037,7 +13755,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 6
    },
@@ -14093,7 +13811,7 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "barColors": 974
    },
@@ -14185,7 +13903,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "constrained",
@@ -14243,7 +13961,7 @@
    "extraLevels": [
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -14384,7 +14102,7 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 259,
     "barColors": 975
@@ -14415,7 +14133,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 16,
     "boxes": 14,
@@ -14477,69 +14195,9 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 254,
     "bgColors": 974
-   },
-   "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "ml-adaptive-supertrend",
-   "fallbackLabel": "ML Adaptive SuperTrend",
-   "fallbackShortLabel": "MLAST",
-   "category": "Trend",
-   "placement": "over-price",
-   "plotIds": [
-    "plot0"
-   ],
-   "plotTitles": [
-    "SuperTrend"
-   ],
-   "inputs": [
-    {
-     "id": "atrLen",
-     "type": "int",
-     "defval": 14,
-     "fallbackTitle": "ATR Length",
-     "min": 1
-    },
-    {
-     "id": "minFactor",
-     "type": "float",
-     "defval": 1,
-     "fallbackTitle": "Min Factor (High Vol)",
-     "min": 0.1,
-     "step": 0.1
-    },
-    {
-     "id": "midFactor",
-     "type": "float",
-     "defval": 2,
-     "fallbackTitle": "Mid Factor",
-     "min": 0.1,
-     "step": 0.1
-    },
-    {
-     "id": "maxFactor",
-     "type": "float",
-     "defval": 3,
-     "fallbackTitle": "Max Factor (Low Vol)",
-     "min": 0.1,
-     "step": 0.1
-    },
-    {
-     "id": "trainLen",
-     "type": "int",
-     "defval": 200,
-     "fallbackTitle": "Training Length",
-     "min": 10
-    }
-   ],
-   "dropped": {
-    "fills": 2,
-    "markers": 837,
-    "labels": 810
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -14603,7 +14261,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 357
    },
    "verification": "constrained",
@@ -14678,7 +14336,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 2
    },
    "verification": "constrained",
@@ -14741,150 +14399,10 @@
      ]
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 8,
     "bgColors": 8
-   },
-   "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "ml-rsi",
-   "fallbackLabel": "ML RSI",
-   "fallbackShortLabel": "MLRSI",
-   "category": "Momentum",
-   "placement": "own-pane",
-   "plotIds": [
-    "plot0",
-    "plot1",
-    "plot2",
-    "plot3"
-   ],
-   "plotTitles": [
-    "RSI",
-    "Adaptive OB",
-    "Adaptive OS",
-    "50 Level"
-   ],
-   "inputs": [
-    {
-     "id": "rsiLen",
-     "type": "int",
-     "defval": 14,
-     "fallbackTitle": "RSI Length",
-     "min": 1
-    },
-    {
-     "id": "k",
-     "type": "int",
-     "defval": 10,
-     "fallbackTitle": "K Neighbors",
-     "min": 1
-    },
-    {
-     "id": "lookback",
-     "type": "int",
-     "defval": 200,
-     "fallbackTitle": "Lookback",
-     "min": 10
-    },
-    {
-     "id": "src",
-     "type": "enum",
-     "defval": "close",
-     "fallbackTitle": "Source",
-     "options": [
-      "open",
-      "high",
-      "low",
-      "close",
-      "hl2",
-      "hlc3",
-      "ohlc4",
-      "hlcc4"
-     ]
-    }
-   ],
-   "guide": 30,
-   "extraLevels": [
-    70
-   ],
-   "dropped": {
-    "fills": 1,
-    "barColors": 1009
-   },
-   "verification": "constrained",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "supertrend-ai-clustering",
-   "fallbackLabel": "SuperTrend AI Clustering",
-   "fallbackShortLabel": "STAI",
-   "category": "Trend",
-   "placement": "over-price",
-   "plotIds": [
-    "plot0",
-    "plot1"
-   ],
-   "plotTitles": [
-    "Trailing Stop",
-    "Trailing Stop AMA"
-   ],
-   "inputs": [
-    {
-     "id": "atrLen",
-     "type": "int",
-     "defval": 10,
-     "fallbackTitle": "ATR Length",
-     "min": 1
-    },
-    {
-     "id": "minFactor",
-     "type": "int",
-     "defval": 1,
-     "fallbackTitle": "Min Factor",
-     "min": 0
-    },
-    {
-     "id": "maxFactor",
-     "type": "int",
-     "defval": 5,
-     "fallbackTitle": "Max Factor",
-     "min": 0,
-     "max": 100
-    },
-    {
-     "id": "factorStep",
-     "type": "float",
-     "defval": 0.5,
-     "fallbackTitle": "Step",
-     "min": 0,
-     "step": 0.1
-    },
-    {
-     "id": "perfAlpha",
-     "type": "float",
-     "defval": 10,
-     "fallbackTitle": "Performance Memory",
-     "min": 2
-    },
-    {
-     "id": "fromCluster",
-     "type": "enum",
-     "defval": "Best",
-     "fallbackTitle": "From Cluster",
-     "options": [
-      "Best",
-      "Average",
-      "Worst"
-     ]
-    }
-   ],
-   "dropped": {
-    "markers": 20,
-    "barColors": 972,
-    "labels": 20
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -14954,9 +14472,9 @@
      ]
     }
    ],
-   "dropped": {
-    "fills": 2,
-    "markers": 14
+   "channels": {
+    "markers": 14,
+    "fills": 2
    },
    "verification": "structural",
    "confirmsWithinBars": 0
@@ -15006,61 +14524,11 @@
      "fallbackTitle": "Show Both EMAs"
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 15,
     "barColors": 1000
    },
    "verification": "structural",
-   "confirmsWithinBars": 0
-  },
-  {
-   "id": "banker-fund-flow",
-   "fallbackLabel": "Banker Fund Flow Trend Oscillator",
-   "fallbackShortLabel": "BankerFlow",
-   "category": "Oscillators",
-   "placement": "own-pane",
-   "plotIds": [
-    "plot0",
-    "plot1"
-   ],
-   "plotTitles": [
-    "Fund Flow Trend",
-    "Bull Bear Line"
-   ],
-   "inputs": [
-    {
-     "id": "normLength",
-     "type": "int",
-     "defval": 27,
-     "fallbackTitle": "Normalization Length",
-     "min": 2
-    },
-    {
-     "id": "typicalLength",
-     "type": "int",
-     "defval": 34,
-     "fallbackTitle": "Typical Price Length",
-     "min": 2
-    },
-    {
-     "id": "emaLength",
-     "type": "int",
-     "defval": 13,
-     "fallbackTitle": "EMA Length",
-     "min": 1
-    }
-   ],
-   "guide": 20,
-   "extraLevels": [
-    10,
-    80,
-    90
-   ],
-   "dropped": {
-    "fills": 2,
-    "markers": 19
-   },
-   "verification": "constrained",
    "confirmsWithinBars": 0
   },
   {
@@ -15188,7 +14656,7 @@
     20,
     80
    ],
-   "dropped": {
+   "channels": {
     "fills": 4,
     "bgColors": 45
    },
@@ -15233,10 +14701,10 @@
      "step": 0.1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
-    "bgColors": 990,
     "barColors": 990,
+    "bgColors": 990,
     "labels": 10
    },
    "verification": "structural",
@@ -15329,7 +14797,7 @@
      "gatedBy": "showZone"
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 66,
     "bgColors": 434
    },
@@ -15488,7 +14956,7 @@
      "min": 2
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "lines": 86
    },
@@ -15532,7 +15000,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1
    },
    "verification": "structural",
@@ -15564,7 +15032,7 @@
      "max": 500
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 13
    },
@@ -15649,7 +15117,7 @@
    "extraLevels": [
     30
    ],
-   "dropped": {
+   "channels": {
     "markers": 85
    },
    "verification": "constrained",
@@ -15841,7 +15309,7 @@
     }
    ],
    "guide": 0,
-   "dropped": {
+   "channels": {
     "markers": 25
    },
    "verification": "constrained",
@@ -15872,7 +15340,7 @@
      "step": 5
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 3
    },
@@ -15912,7 +15380,7 @@
      "step": 0.5
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 12
    },
@@ -15949,7 +15417,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 113,
     "barColors": 980,
@@ -15986,7 +15454,7 @@
     30,
     70
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 31,
     "lines": 22
@@ -16035,7 +15503,7 @@
      "step": 0.25
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "boxes": 51
    },
@@ -16157,7 +15625,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 42
    },
    "verification": "structural",
@@ -16197,7 +15665,7 @@
      "fallbackTitle": "Display levels as they form?"
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 2,
     "markers": 12,
     "bgColors": 42,
@@ -16246,7 +15714,7 @@
      "gatedBy": "showMA"
     }
    ],
-   "dropped": {
+   "channels": {
     "markers": 1024
    },
    "verification": "structural",
@@ -16304,7 +15772,7 @@
      "min": 1
     }
    ],
-   "dropped": {
+   "channels": {
     "fills": 1,
     "markers": 29,
     "barColors": 1024

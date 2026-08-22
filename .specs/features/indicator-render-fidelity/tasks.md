@@ -617,13 +617,48 @@ no border to draw.
 - Skill: NONE
 
 **Done when**:
-- [ ] Channels are enumerated from the result, never from a written list of names — measured, the list of nine missed two object-shaped channels and 10 offered rows emit one
-- [ ] The declared widths are derived from the rows the generator itself writes, so a wider vendor release cannot under-declare the resource in silence
-- [ ] A row that cannot be drawn whole is refused rather than offered
-- [ ] Gate check passes: `npm run build && npm test && npm run proof`
+- [x] Channels are enumerated from the result, never from a written list of names — measured, the list of nine missed two object-shaped channels and 10 offered rows emit one
+- [x] The declared widths are derived from the rows the generator itself writes, so a wider vendor release cannot under-declare the resource in silence
+- [x] A row that cannot be drawn whole is refused rather than offered
+- [x] Gate check passes: `npm run build && npm test && npm run proof`
 
 **Tests**: integration
 **Gate**: proof
+**Status**: DONE — **0 B in the package** (entry stays 104821); this is all generator and proof.
+`npm test` 117 -> **118** suites and 1435 -> **1446** tests, proof **29/29**, e2e **94/94**.
+
+**The catalogue goes from 320 offered to 310, and that is the task, not a side effect.** The ten
+withdrawn rows each emit a channel nothing draws, enumerated from the result: `plotCandles` on
+`madrid-trend-squeeze` (2,970 drawable candles), `linear-regression-candles`, `market-shift-levels`,
+`matrix-series`, `modified-heikin-ashi`, `super-supertrend`, `banker-fund-flow`; `tables` on
+`ml-adaptive-supertrend`, `ml-rsi`, `supertrend-ai-clustering`. Every one carries real content —
+measured item by item, none is an empty channel. Offering them is exactly the partial draw this
+feature exists to remove, and the spec says so twice: "an indicator whose channel cannot be drawn is
+not offered", and "a row that cannot be drawn whole is refused rather than offered".
+
+**The vanished-id refusal needed one clause, and the reason is the block's own.** It exists because
+the generator can see that an id left the LIBRARY and cannot see whether it was renamed or removed.
+That ambiguity does not exist for a row still in the registry that a rule here turned down: the
+reason is written, printed as a `WITHDRAWING` line, and in the diff. Without the clause no rule in
+this generator could ever be tightened without hand-editing a ledger to restate what the generator
+already said.
+
+**One mechanism, two risks, and the vacuity is asserted.** `refusalsOf(rows, widths)` is a function
+of both rather than a step inside the derivation, because over the generator's own output its set is
+EMPTY BY CONSTRUCTION — a maximum is not exceeded by what it is the maximum of. That emptiness is
+pinned by a test, so a derivation that stopped being a maximum says so; and the same function is
+what T16 calls with the widths the COMMITTED file declares, where a narrowed width is a study
+drawing four of its twenty lines in silence.
+
+**`dropped` became `channels`.** It recorded counts of what was NOT drawn; every one of those seven
+channels is now drawn, so the same numbers are the row's declaration of what to draw and PROOF-02
+can compare against them. Nothing in the host ever read `dropped` — `ManifestRow` never declared it.
+Measured on the 310: fills 104, markers 72, barColors 48, bgColors 20, lines 4, labels 4, boxes 3.
+
+`test/manifestChannels.spec.ts` drives the module through `node` the way `sizeBudget.spec.ts` drives
+the size probe. **The object clause was verified by deletion**: written back as
+`Array.isArray(v) ? v.length : 0`, the object case reads `[]` and turns red while the other ten stay
+green.
 
 ---
 

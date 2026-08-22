@@ -210,7 +210,7 @@ in the manifest and nothing failed on it.
 | LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
 | LINES-03 | P1: A study's line count is the study's | T7 | Partial |
-| LINES-04 | P1: A study's line count is the study's | T5, T14 | Partial |
+| LINES-04 | P1: A study's line count is the study's | T5, T15 | Done |
 | POINT-01 | P1: The colour a point carries | T13 | Done |
 | POINT-02 | P1: The colour a point carries | T13 | Done |
 | POINT-03 | P1: The colour a point carries | T13 | Done |
@@ -230,9 +230,16 @@ LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a 
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but
 the count READ OFF THE SCREEN for a five-line study is T17.
 
-LINES-04 is PARTIAL by measurement, not by omission: T5 removed the only place inside the package
-where a study's lines could be cut, so the clause has no producer left there. The single point that
-can still refuse to offer a row is the manifest generator, which is T14.
+LINES-04 CLOSES IN T15. T5 removed the only place inside the package where a study's lines could be
+cut, leaving the clause with no producer there; T15 put the single refusal point in the manifest
+generator — a row wider than the resource declared for it is not written — and made it a function of
+(rows, widths) so the proof can call it with the widths the committed file declares.
+
+FILL-05 stays PARTIAL, and it is the one non-offering clause without a discriminating control. T10
+measured 247 of 247 bounds resolving over the whole registry, so the set is empty; T15's refusal
+covers a row that is too WIDE and a row that carries a channel nothing draws, not a row whose fill
+bound cannot resolve. Closing it needs a third refusal clause and a planting of its own, and neither
+is in this `tasks.md`.
 
 ---
 
