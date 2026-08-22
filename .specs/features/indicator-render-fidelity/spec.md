@@ -92,7 +92,8 @@ them. The measured distribution runs from 1 to 56.
 
 1. WHEN a study declares more lines than the host's default lane width THEN the workspace SHALL draw every one of them  <!-- event-driven -->
 2. The package SHALL take a study's line count from that study rather than from a single value applied to all studies  <!-- ubiquitous -->
-3. WHEN a study is drawn THEN the number of lines on screen SHALL equal the number of its plots that produce a finite value — measured at 915 live of 1048 declared, with 133 dead across 32 rows, so comparing against the declared count would fail by construction  <!-- event-driven -->
+3. WHEN a study is drawn THEN the number of lines on screen SHALL equal the number of its plots that produce a finite value, counted on the bitmap — one hue per plot position, each of them zero before the study is picked  <!-- event-driven -->
+3a. WHEN the committed catalogue is proved THEN every live plot of every offered row SHALL have a declared slot to be drawn into — the necessary condition for clause 3 at catalogue scale, and an INEQUALITY on purpose: measured at 949 live plots of 1026 declared over the 310 offered rows, 77 dead across 23 rows, so judging the drawing by the declared count would be red on 23 rows for ever, and sizing the resource by the live count would drop what a longer window brings alive  <!-- event-driven -->
 4. IF a study's lines cannot all be drawn THEN it SHALL NOT be offered  <!-- unwanted-behavior -->
 
 **Independent Test**: Offer Ichimoku and assert five drawn lines, not three; offer the 56-plot entry and assert 56.
@@ -209,7 +210,7 @@ in the manifest and nothing failed on it.
 | FILL-06 | P1: The cloud that is the indicator | T17 | Done |
 | LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
-| LINES-03 | P1: A study's line count is the study's | T7, T16, T17 | Done |
+| LINES-03 | P1: A study's line count is the study's | T7, T16, T17, T23 | Done |
 | LINES-04 | P1: A study's line count is the study's | T5, T15 | Done |
 | POINT-01 | P1: The colour a point carries | T13 | Done |
 | POINT-02 | P1: The colour a point carries | T13 | Done |
@@ -233,10 +234,19 @@ study whose marker colours appear in no other channel of its own result, and re-
 T19 gives `example/studyMarks.ts` the suite it never had — every rule it declares, each proved to
 discriminate on its own — and implements the edge case below about a marker outside the window.
 
-LINES-03 CLOSES IN T17. T7 gave every resolved line a declared series to be drawn into and asserted
-the correspondence with a narrow width planted as a positive control; T16 pinned the live count
-against the declared resource over the proof's own window; and T17 reads the five lines off the
-bitmap, one hue per plot position, each of them zero before the pick.
+LINES-03 CLOSES IN T17, AT TWO DIFFERENT STRENGTHS, AND T23 SAYS SO IN THE CLAUSE. T7 gave every
+resolved line a declared series to be drawn into and asserted the correspondence with a narrow width
+planted as a positive control; T16 pinned the live count against the declared resource over the
+proof's own window; and T17 reads the five lines off the bitmap, one hue per plot position, each of
+them zero before the pick.
+
+The EQUALITY is a pixel measurement and exists for Ichimoku. The catalogue-wide clause is an
+INEQUALITY — every live plot fits the declared resource — and it is written as clause 3a rather than
+folded into clause 3, because the two are different assertions and the spec used to word only the
+strong one. Verifying the equality for all 310 offered rows means rendering all 310 in a browser and
+counting hues that repeat every six plot positions; the widest row declares 56. The inequality is
+the strongest catalogue-scale form of the clause that does not need that, and it carries its own
+planted positive control (`auto-support: 40 live against a declared 20` under a narrowed width).
 
 LINES-04 CLOSES IN T15. T5 removed the only place inside the package where a study's lines could be
 cut, leaving the clause with no producer there; T15 put the single refusal point in the manifest

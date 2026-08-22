@@ -1023,3 +1023,44 @@ and bearish **0**. Two real defects, two different clauses, and the narrative ha
 Re-measured at the same time, over the 310 rows now offered rather than the 320 the brief was
 written against: **104 rows emit a fill, 180 fills, 83 carrying a per-bar `colors[]`, 47 rows
 emitting more than one fill.** Same conclusions, smaller scope.
+
+---
+
+### T23: LINES-03 stops wording one clause and verifying another
+
+**What**: Split LINES-03's equality from the catalogue-wide inequality that stands in for it, so the spec says what is measured and where.
+**Where**: `.specs/features/indicator-render-fidelity/spec.md`
+**Depends on**: T22
+**Reuses**: the proof's own printed measurement
+**Requirement**: LINES-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] The equality is scoped to the layer that measures it — pixels, one hue per plot position
+- [x] The catalogue-wide clause is written as the inequality it is, with the reason it cannot be the equality
+- [x] Gate check passes: `npm test`
+
+**Tests**: none
+**Gate**: quick
+**Status**: DONE — documentation only, 0 B.
+
+**The clause said EQUAL and the catalogue check asserts FITS.** `spec.md` clause 3 read *"the number
+of lines on screen SHALL equal the number of its plots that produce a finite value"*.
+`lines.every-live-plot-has-a-slot-in-the-declared-resource` asserts that every live plot fits the
+declared resource — an inequality. Pixel-level equality exists, and it exists for exactly one study:
+Ichimoku's five hues, each reading zero before the pick.
+
+**Both are kept, and they are now two clauses.** Clause 3 is the equality, scoped to the bitmap.
+Clause 3a is the inequality, with the measurement printed beside it: **949 live plots of 1026
+declared over the 310 offered rows, 77 dead across 23 rows.** The inequality is not a weakening of
+the equality; it is the strongest catalogue-scale form that does not require rendering 310 studies in
+a browser and counting hues that repeat every six plot positions — the widest offered row declares
+**56** plots against a palette of six. It also carries a planted positive control of its own
+(`auto-support: 40 live against a declared 20` under a narrowed width), which the equality at
+catalogue scale would not have.
+
+**The old numbers were also stale**: the clause carried `915 live of 1048 declared, 133 dead across
+32 rows`, measured over 320 rows before T15 withdrew ten. Re-read off the proof's own output.
