@@ -4,6 +4,31 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.1 — 2026-08-22
+
+Four seams that shipped open in 0.3.0, found by an adversarial review of the diff before merge and
+fixed here. Anyone on 0.3.0 should move: two of them are reachable from a well-formed host.
+
+### Fixed
+
+- **A supplied `DensityScale.peak` is validated instead of trusted.** A non-finite or negative peak
+  used to cross the public seam untouched, erasing or inverting the field. Both now fall back to the
+  peak the package derives from the window. **Zero is still honoured** — a window with no mass paints
+  nothing, and deriving a peak over it would paint that same empty window at full intensity.
+- **A peak below the window maximum no longer drives the ramp out of gamut.** Capping the scale is
+  what a liquidity threshold is for, but the normalised share was unclamped: a cell at several times
+  the cap reached past the end of the 64-bucket ramp, where the alpha and the channel interpolation
+  both run out of range and produce a colour the palette does not contain. The share is clamped to 1,
+  so cells above the cap saturate.
+- **`floorMode` survives a tab restore.** The setup coercion rebuilt the tuning from `floor` and
+  `gamma` only, so an absolute floor came back reinterpreted as a share of the column peak — a
+  different setting entirely, with nothing reporting the change.
+- **The floor rail no longer rewrites an absolute floor.** Its range is a share of a column peak, so
+  an absolute floor was unreachable on the track and one drag replaced the host's threshold with a
+  share that suppresses almost nothing. Widening the rail would mean declaring a range in the host's
+  unit, which the package does not do — so under an absolute floor the rail is inert, the readout
+  shows the number as a number rather than a percentage, and reset preserves the mode.
+
 ## 0.3.0 — 2026-08-21
 
 A density map normalised per column cannot show accumulation. A bin whose absolute magnitude never
