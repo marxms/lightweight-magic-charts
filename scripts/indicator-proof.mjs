@@ -71,6 +71,7 @@ import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
 import { EXCLUSION_MEASUREMENTS, channelsOf, digestOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
+import { UNVERSIONED_ENCODING, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
 import { valueLedgerFaults } from './indicator-proof/value-ledger.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -677,7 +678,8 @@ check(
   // the fingerprints is PART of taking the release. A digest may now only move when a human says
   // what moved it.
   const onFile = VALUE_CHANGES.changes ?? [];
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id) });
+  const encoding = { committed: FINGERPRINTS.algorithm?.id ?? UNVERSIONED_ENCODING, derived: VALUE_ENCODING.id };
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -693,8 +695,9 @@ check(
     const was = { wma: { values: A, confirmsWithinBars: 0 } };
     const now = { wma: { values: B, confirmsWithinBars: 0 } };
     const reason = 'the vendor corrected the weighting so the newest bar carries the heaviest one';
-    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes }, offered: ['wma'] });
-    const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why });
+    const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD });
+    const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why, encoding: HELD.derived });
     const silent = judge();
     const correct = judge(entry(A, B));
     const wrongFrom = judge(entry(C, B));
@@ -703,8 +706,23 @@ check(
     // forging a sha256, and it reaches the same place through the sanctioned regeneration command —
     // so the committed MANIFEST decides which of the two an absent digest is. Both directions are
     // asserted: a proof that vanished is refused, an indicator that genuinely appeared is not.
-    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [] }, offered: ['wma'] });
-    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [] }, offered: [] });
+    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD });
+    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD });
+    // AND THE THIRD PAIR, WHICH IS THE ONE THE DIGESTS CANNOT TELL APART AT ALL. Re-spelling how a
+    // reading is written moves EVERY digest in the file at once while no indicator computes anything
+    // different — so declaring it per id would be three hundred false statements, and waving it
+    // through would be the widest laundering channel in the file. The identity is what decides:
+    // held and moved is a value change, moved and declared is a re-spelling, moved and silent is
+    // refused. The `from` has to be the identity actually on file, for the same reason a per-id
+    // declaration's `from` does: one that starts somewhere else describes a different change.
+    const RESPELT = { committed: 'spelling/v1', derived: 'spelling/v2' };
+    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT });
+    const respelling = (from, to, why) => ({ from, to, reason: why });
+    const encodingReason = 'the digest is quantised so that a platform re-rounding a transcendental cannot move it';
+    const respeltSilently = respell();
+    const respeltDeclared = respell(respelling('spelling/v1', 'spelling/v2', encodingReason));
+    const respeltFromElsewhere = respell(respelling('spelling/v0', 'spelling/v2', encodingReason));
+    const anyFault = (list, fault) => list.some((f) => f.fault === fault);
     const named = (list, fault) => list.some((f) => f.id === 'wma' && f.fault === fault);
     const verdicts = [
       named(silent, 'undeclared'),
@@ -713,13 +731,16 @@ check(
       named(thin, 'no-reason'),
       named(deleted, 'vanished-fingerprint'),
       debut.length === 0,
+      anyFault(respeltSilently, 'undeclared-encoding'),
+      respeltDeclared.length === 0,
+      anyFault(respeltFromElsewhere, 'undeclared-encoding'),
     ];
     check(
-      'catalogue.the-declaration-rule-discriminates-in-six-directions',
+      'catalogue.the-declaration-rule-discriminates-in-nine-directions',
       verdicts.every(Boolean),
       verdicts.every(Boolean)
-        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; a declaration whose reason says only what the git log already says is refused for having no reason; a fingerprint DELETED for an id the committed manifest still offers is refused as a proof that vanished rather than waved through as an indicator that appeared; and an id the committed manifest does not offer passes undeclared, because that one really is new'
-        : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}, deleted-entry→red ${verdicts[4]}, genuinely-new→green ${verdicts[5]}`,
+        ? 'a digest that moved with NO declaration is refused; the same move WITH a correct declaration passes; a declaration whose old digest is not the one on file is refused as a different change; a declaration whose reason says only what the git log already says is refused for having no reason; a fingerprint DELETED for an id the committed manifest still offers is refused as a proof that vanished rather than waved through as an indicator that appeared; an id the committed manifest does not offer passes undeclared, because that one really is new; and one level up, an ENCODING that moved with nothing in the chain is refused, the same move WITH a declaration regenerates the whole file and asks for no per-id reason because no value moved, and a declaration starting from an identity that is not the one on file is refused like any other wrong `from`'
+        : `undeclared→red ${verdicts[0]}, declared→green ${verdicts[1]}, wrong-from→red ${verdicts[2]}, no-reason→red ${verdicts[3]}, deleted-entry→red ${verdicts[4]}, genuinely-new→green ${verdicts[5]}, respelt-silently→red ${verdicts[6]}, respelt-declared→green ${verdicts[7]}, respelt-from-elsewhere→red ${verdicts[8]}`,
     );
   }
 }

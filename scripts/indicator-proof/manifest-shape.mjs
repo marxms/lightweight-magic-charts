@@ -8,6 +8,8 @@
  */
 import { createHash } from 'node:crypto';
 
+import { encodeSeries } from './value-encoding.mjs';
+
 export const MANIFEST_PATHS = {
   manifest: 'example/indicators/manifest.json',
   fingerprints: 'example/indicators/fingerprints.json',
@@ -224,14 +226,20 @@ export function vendorPin(packageJson) {
  * Only finite readings are digested, and each is keyed by plot and index, so a value moving, a
  * warm-up getting longer, or a plot losing its readings all change the digest — while a title
  * being reworded does not, because a title is not arithmetic.
+ *
+ * HOW a reading becomes text is `value-encoding.mjs`, and it is deliberately not spelled here:
+ * both sides of this check import the one encoder, and the encoding carries a NAME so that
+ * changing it is a declaration rather than three hundred silent digest moves.
  */
 export function digestOf(entry, plotIds, bars) {
   let result;
   try { result = entry.calculate(bars, entry.defaultInputs); } catch { return 'threw'; }
   const hash = createHash('sha256');
   for (const key of plotIds) {
-    for (const [index, point] of (result.plots?.[key] ?? []).entries()) {
-      if (Number.isFinite(point?.value)) hash.update(`${key}:${index}:${point.value}\n`);
+    const { scale, tokens } = encodeSeries((result.plots?.[key] ?? []).map((point) => point?.value));
+    if (scale !== null) hash.update(`${key}:scale:${scale}\n`);
+    for (const [index, token] of tokens.entries()) {
+      if (token !== null) hash.update(`${key}:${index}:${token}\n`);
     }
   }
   return hash.digest('hex');

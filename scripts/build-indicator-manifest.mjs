@@ -62,6 +62,7 @@ import { candidatesFor } from './indicator-proof/sensor.mjs';
 import { drawablePlotIds, movesTheDrawing } from './indicator-proof/drawing.mjs';
 import { declaredLevels, guideOf } from './indicator-proof/guide.mjs';
 import { sealOf, tallyOf } from './indicator-proof/seal.mjs';
+import { UNVERSIONED_ENCODING, VALUE_DIGEST_WHY, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
 import { valueLedgerFaults, valueLedgerRefusal } from './indicator-proof/value-ledger.mjs';
 import {
   EXCLUSION_MEASUREMENTS,
@@ -386,8 +387,10 @@ for (const row of indicators) {
 {
   const onFile = readJson('manifest');
   const offered = (onFile.indicators ?? onFile).map((row) => row.id);
-  const committed = readJson('fingerprints').entries ?? {};
-  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered });
+  const onDisk = readJson('fingerprints');
+  const committed = onDisk.entries ?? {};
+  const encoding = { committed: onDisk.algorithm?.id ?? UNVERSIONED_ENCODING, derived: VALUE_ENCODING.id };
+  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered, encoding });
   if (faults.length > 0) {
     console.error(valueLedgerRefusal(faults, MANIFEST_PATHS.valueChanges));
     process.exit(1);
@@ -440,9 +443,9 @@ const manifest = {
 };
 
 const fingerprintFile = {
-  why: 'NAMES AND SHAPES ARE NOT ENOUGH. A check that compares ids, plot keys and input shapes stays green when a vendor release changes what a number IS — the upgrade that matters and the one nobody would notice. These are digests of computed VALUES.',
+  why: VALUE_DIGEST_WHY,
   declaredIn: 'NOT EDITED BY HAND, AND NOT REGENERATED IN SILENCE EITHER. A digest that moved has to be DECLARED in example/indicators/value-changes.json — the id, the digest it moved from, the digest it moved to and the reason — and until it is, `scripts/build-indicator-manifest.mjs` REFUSES to write and `--check` REFUSES to pass. Deleting an entry is not a way round it: while the committed manifest still offers the id, an absent digest is a proof that vanished, not an indicator that appeared. Typing a number in here to agree with a vendor you patched yourself is the one move this file cannot catch, which is why the sentence you are reading is at the top of the file you would be editing.',
-  algorithm: 'sha256 over `plotId:index:value` for every finite reading of every promised plot, at the entry\'s own defaults, over the fixture named in the manifest',
+  algorithm: VALUE_ENCODING,
   vendor: PIN,
   entries: fingerprints,
 };

@@ -30,6 +30,16 @@
  * is refused on the same terms — while an id the committed manifest does not offer is genuinely new
  * and needs no declaration.
  *
+ * AND IT SEPARATES A VALUE THAT MOVED FROM A SPELLING THAT CHANGED. The rule above is right for a
+ * value and wrong for the ENCODING: changing how a reading is written down moves every digest in
+ * the file at once, and declaring three hundred value changes for it would be three hundred false
+ * statements — no value moved, the spelling did. So `fingerprints.json` carries the encoding's
+ * IDENTITY, and a change of identity is declared once, in this file's `encodings` chain, with the
+ * reason written by hand. While the identity holds, every digest answers for itself exactly as
+ * before; when it changes and the chain says so, the whole file is re-derived and the per-id
+ * comparison is not made, because comparing two digests taken over different spellings measures
+ * nothing. An identity that changed with NO entry in the chain is refused like anything else.
+ *
  * It does NOT make a hand-forged `fingerprints.json` impossible — a digest typed in by hand to match
  * a hand-patched vendor agrees with itself, and in a repository diff exactly ONE committed file
  * moves. What that costs is the doctrine at the top of the file being edited, which names this rule
@@ -57,19 +67,59 @@ const short = (digest) => `${String(digest).slice(0, 12)}…`;
  * of `fingerprints.json`, the second computed by this run. `offered` is the ids the COMMITTED
  * manifest offers, and it is what tells an absent digest apart from a new indicator: without it the
  * two are the same shape, and the cheapest way past this rule is to make a proof look like a debut.
+ * `encoding` is `{ committed, derived }` — the identity the committed file was written under and
+ * the one this run encodes with. They agree on every ordinary run; when they do not, the digests on
+ * file are written in a different spelling and comparing them to this run's says nothing at all.
  */
-export function valueLedgerFaults({ committed, derived, ledger, offered }) {
+export function valueLedgerFaults({ committed, derived, ledger, offered, encoding }) {
   const changes = Array.isArray(ledger?.changes) ? ledger.changes : null;
   if (changes === null) {
     return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `changes` array' }];
   }
+  const encodings = Array.isArray(ledger?.encodings) ? ledger.encodings : null;
+  if (encodings === null) {
+    return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `encodings` array, and an encoding that cannot be declared is one that changes in silence' }];
+  }
   if (!Array.isArray(offered) && !(offered instanceof Set)) {
     return [{ id: '—', fault: 'unreadable', detail: 'the caller did not say which ids the committed manifest offers, and an absent digest cannot be told from a new indicator without that' }];
   }
+  if (typeof encoding?.committed !== 'string' || typeof encoding?.derived !== 'string') {
+    return [{ id: '—', fault: 'unreadable', detail: 'the caller did not name the encoding the committed digests were written under and the one this run writes, and without both a re-spelling is indistinguishable from three hundred values moving' }];
+  }
   const offers = new Set(offered);
+  const sameEncoding = encoding.committed === encoding.derived;
 
   const faults = [];
   const say = (id, fault, detail) => faults.push({ id, fault, detail });
+
+  /* ---- the encoding answers first, because what it says decides whether the digests can be read ---- */
+  let encodingHead = null;
+  for (const [at, row] of encodings.entries()) {
+    const where = `encodings entry ${at}`;
+    if (typeof row?.from !== 'string' || typeof row?.to !== 'string' || row.from === '' || row.to === '') {
+      say('—', 'malformed-encoding', `${where}: two encoding names are the whole of the form`);
+      continue;
+    }
+    if (row.from === row.to) {
+      say('—', 'malformed-encoding', `${where}: declares a move from \`${row.from}\` to itself`);
+    }
+    if (typeof row.reason !== 'string' || row.reason.trim().length < REASON_FLOOR) {
+      say('—', 'no-reason', `${where}: re-spelling every digest in the file is the one change a generator can make without a single value moving, so the reason is the whole of the evidence; ${REASON_FLOOR} characters is the floor`);
+    }
+    if (encodingHead !== null && encodingHead.to !== row.from) {
+      say('—', 'broken-encoding-chain', `${where}: starts at \`${row.from}\` where the entry before it ended at \`${encodingHead.to}\` — this file is append-only, so the chain has to link`);
+    }
+    encodingHead = row;
+  }
+  if (encodingHead !== null && encodingHead.to !== encoding.derived) {
+    say('—', 'stale-encoding-head', `the newest encoding declaration ends at \`${encodingHead.to}\` and this run encodes with \`${encoding.derived}\` — a chain that stops describing the spelling it governs governs nothing`);
+  }
+  if (!sameEncoding) {
+    const declared = encodings.some((row) => row?.from === encoding.committed && row?.to === encoding.derived);
+    if (!declared) {
+      say('—', 'undeclared-encoding', `the committed digests were written under \`${encoding.committed}\` and this run writes \`${encoding.derived}\`, and nothing in the chain says why — a re-spelling moves every digest in the file at once, which is the cheapest way there is to make three hundred changed values look like one refactor`);
+    }
+  }
 
   /* ---- the ledger answers for itself before it is allowed to answer for a digest ---- */
   const head = new Map();
@@ -77,6 +127,10 @@ export function valueLedgerFaults({ committed, derived, ledger, offered }) {
     const where = `entry ${at}`;
     if (typeof row?.id !== 'string' || !HEX64.test(row?.from ?? '') || !HEX64.test(row?.to ?? '')) {
       say(row?.id ?? '—', 'malformed', `${where}: an id and two 64-character hex digests are the whole of the form`);
+      continue;
+    }
+    if (typeof row.encoding !== 'string' || row.encoding === '') {
+      say(row.id, 'malformed', `${where}: names no encoding, and a digest whose spelling is unknown cannot be compared with anything`);
       continue;
     }
     const settles = row.settles;
@@ -87,6 +141,12 @@ export function valueLedgerFaults({ committed, derived, ledger, offered }) {
     if (typeof row.reason !== 'string' || row.reason.trim().length < REASON_FLOOR) {
       say(row.id, 'no-reason', `${where}: the reason is the one thing a generator cannot write; ${REASON_FLOOR} characters is the floor`);
     }
+    // A declaration written under an earlier spelling is HISTORY: it says why the numbers became
+    // what they are, and it answers for nothing this run derives, because its digests were taken
+    // over a different encoding. Keeping it is the point of an append-only file; asking it to
+    // describe a digest written in another spelling is not. It still answers for its own form
+    // above — an entry does not stop being well-formed because the encoding moved on.
+    if (row.encoding !== encoding.derived) { continue; }
     const previous = head.get(row.id);
     if (previous !== undefined && previous.to !== row.from) {
       say(row.id, 'broken-chain', `${where}: starts at ${short(row.from)} where the entry before it ended at ${short(previous.to)} — this file is append-only, so the chain has to link`);
@@ -112,17 +172,33 @@ export function valueLedgerFaults({ committed, derived, ledger, offered }) {
       // and no longer has one, which is a proof that was deleted, and deleting it is exactly what
       // gets a moved number through the sanctioned regeneration command.
       if (!offers.has(id)) continue;
-      const restated = changes.some((entry) => entry?.id === id && entry.to === row.values);
+      const restated = changes.some((entry) => entry?.id === id && entry.encoding === encoding.derived && entry.to === row.values);
       if (!restated) {
         say(id, 'vanished-fingerprint', `the committed manifest offers it and no digest is on file for it — an entry that was there and is gone is not a new indicator; restore it, or declare the move to ${short(row.values)} like any other`);
       }
       continue;
     }
-    const movedValue = was.values !== row.values;
     const movedSettle = was.confirmsWithinBars !== row.confirmsWithinBars;
+    // THE ENCODING MOVED, SO THE DIGESTS ARE NOT COMPARABLE — and pretending otherwise would print
+    // 310 undeclared moves for a change in which no value moved at all. The chain above has already
+    // refused unless a human declared the re-spelling, so this is the sanctioned branch, not a hole:
+    // one declaration bought it, and every digest below is re-derived rather than compared. The
+    // SETTLE WINDOW is not part of the spelling — it is a bar count measured against a tolerance —
+    // so it still answers for itself here.
+    if (!sameEncoding) {
+      if (movedSettle) {
+        const carried = changes.some((entry) => entry?.id === id && entry.encoding === encoding.derived
+          && entry.to === row.values && entry.settles?.from === was.confirmsWithinBars && entry.settles?.to === row.confirmsWithinBars);
+        if (!carried) {
+          say(id, 'undeclared-settle', `settles within ${row.confirmsWithinBars} bars where the file says ${was.confirmsWithinBars}; re-spelling a digest does not move a bar count, so this one moved on its own and nothing says why`);
+        }
+      }
+      continue;
+    }
+    const movedValue = was.values !== row.values;
     if (!movedValue && !movedSettle) continue;
 
-    const chain = changes.filter((entry) => entry?.id === id);
+    const chain = changes.filter((entry) => entry?.id === id && entry.encoding === encoding.derived);
     const declared = chain.find((entry) => entry.from === was.values && entry.to === row.values);
     if (declared === undefined) {
       const claimsTo = chain.find((entry) => entry.to === row.values);
@@ -159,5 +235,10 @@ export function valueLedgerRefusal(faults, ledgerPath) {
     'which is append-only. A digest that is ABSENT is not a new indicator either: while the committed',
     'manifest still offers the id, the entry was deleted rather than born, and deleting it is the',
     'cheapest way past this rule. A wrong number only gets through a red build.',
+    '',
+    'If what changed is the ENCODING rather than any value — every digest in the file moving at once,',
+    'with no indicator computing anything different — that is declared ONCE, in the same file\'s',
+    '`encodings` chain, naming the spelling it moved from, the spelling it moved to and why. Declaring',
+    'it as three hundred value changes would be three hundred false statements.',
   ].join('\n');
 }
