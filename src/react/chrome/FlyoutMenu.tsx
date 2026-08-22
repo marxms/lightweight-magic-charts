@@ -7,7 +7,7 @@
 import { memo, useEffect, useRef } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react';
 
-import { CENTER_ROW, type WorkspaceTheme } from '../theme';
+import { CENTER_ROW, accented, type WorkspaceTheme } from '../theme';
 import { nextRovingIndex } from './rovingFocus';
 import { useFlyoutPosition } from './useFlyoutPosition';
 
@@ -62,8 +62,7 @@ function itemStyle(theme: WorkspaceTheme, selected: boolean): CSSProperties {
     textAlign: 'left',
     border: `1px solid ${selected ? theme.accent : 'transparent'}`,
     borderRadius: 4,
-    background: selected ? theme.accentFill : 'transparent',
-    color: selected ? theme.accentText : theme.text,
+    ...accented(theme, selected),
     fontSize: 12,
     fontFamily: 'inherit',
   };

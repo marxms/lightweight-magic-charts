@@ -185,12 +185,14 @@ all; `test/scopeDeferral.spec.ts` closes that.
 - Skill: NONE
 
 **Done when**:
-- [ ] Rendered colours are byte-identical, asserted
-- [ ] Re-pinned DOWN separately, with the measured number
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] Rendered colours are byte-identical, asserted
+- [x] Re-pinned DOWN separately, with the measured number
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — the pair is at SIX sites, not five, and measures **-275 B** (entry 104367 ->
+104092) against the -203 estimated. Every site pinned in BOTH states.
 
 ---
 

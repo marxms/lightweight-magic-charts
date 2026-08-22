@@ -16,7 +16,7 @@ import type { WorkspaceSection } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
 import { useHoverIntent } from './hoverIntent';
-import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, STACK, type WorkspaceTheme } from './theme';
+import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, STACK, accented, type WorkspaceTheme } from './theme';
 
 export interface SeriesCatalogueEntry {
   /** The instance the host built. Handed straight back on assignment, so no lookup table is needed. */
@@ -81,8 +81,7 @@ function chipStyle(theme: WorkspaceTheme, active: boolean): CSSProperties {
     borderRadius: 4,
     border: `1px solid ${active ? theme.accent : theme.border}`,
     fontSize: 11.5,
-    background: active ? theme.accentFill : 'transparent',
-    color: active ? theme.accentText : theme.text,
+    ...accented(theme, active),
     textAlign: 'left',
   };
 }
@@ -96,8 +95,7 @@ function railTabStyle(theme: WorkspaceTheme, active: boolean, lead: CSSPropertie
     cursor: 'pointer',
     border: 'none',
     borderLeft: `2px solid ${active ? theme.accent : 'transparent'}`,
-    background: active ? theme.accentFill : 'transparent',
-    color: active ? theme.accentText : theme.text,
+    ...accented(theme, active),
     fontSize: 11.5,
   };
 }

@@ -37,3 +37,8 @@ export const DEFAULT_WORKSPACE_THEME: WorkspaceTheme = {
   legendShadow: '0 1px 4px rgba(0,0,0,0.95)',
   fontFamily: 'Inter, system-ui, sans-serif',
 };
+
+export const accented = (theme: WorkspaceTheme, on: boolean) => ({
+  background: on ? theme.accentFill : 'transparent',
+  color: on ? theme.accentText : theme.text,
+});

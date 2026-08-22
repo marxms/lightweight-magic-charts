@@ -26,7 +26,7 @@ import type { ChartEngine, SeriesHandle, WorkspaceChartHandle } from '../port/ch
 import { useChromeTheme } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
-import { CENTER_ROW, STACK } from './theme';
+import { CENTER_ROW, STACK, accented } from './theme';
 
 export interface CompactCellLabels {
   /** Names the cell's timeframe group. Repeated per cell, so the title has to be in the name. */
@@ -331,8 +331,7 @@ export function CompactCell({
                 borderRadius: 3,
                 fontSize: 10,
                 border: `1px solid ${timeframe === scope.resolution ? theme.accent : 'transparent'}`,
-                background: timeframe === scope.resolution ? theme.accentFill : 'transparent',
-                color: timeframe === scope.resolution ? theme.accentText : theme.text,
+                ...accented(theme, timeframe === scope.resolution),
               }}
             >
               {timeframe}

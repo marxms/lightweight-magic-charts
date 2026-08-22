@@ -6,7 +6,7 @@
 import { memo, useEffect } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
-import type { WorkspaceTheme } from '../theme';
+import { accented, type WorkspaceTheme } from '../theme';
 import { isActive, stateAttributes } from './chromeState';
 import type { IconButtonProps } from './slots';
 
@@ -22,8 +22,7 @@ function iconStyle(theme: WorkspaceTheme, disabled: boolean, active: boolean): C
     padding: 0,
     borderRadius: 4,
     border: `1px solid ${active ? theme.accent : 'transparent'}`,
-    background: active ? theme.accentFill : 'transparent',
-    color: active ? theme.accentText : theme.text,
+    ...accented(theme, active),
     fontFamily: theme.fontFamily,
     fontSize: 14,
     cursor: disabled ? 'default' : 'pointer',
