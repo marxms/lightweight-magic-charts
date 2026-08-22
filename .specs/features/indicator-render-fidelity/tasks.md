@@ -559,12 +559,48 @@ filtered before colouring would draw.
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] Each of the four draws, read from the canvas
-- [ ] The package gains no byte for them, measured
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] Each of the four draws, read from the canvas
+- [x] The package gains no byte for them, measured
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — **0 B in the package**, measured: entry stays at **104821** with the whole channel
+in `example/channelOverlays.ts`. That is the seam's second demonstration; the anchor and the overlay
+path cost 30 B and 86 B when the fill needed them, and these four reuse both. e2e 82 -> **94**,
+suites 116 -> **117**, tests 1416 -> **1435**.
+
+Read off the real bitmap, each with a control that reads zero before the pick:
+- `bgColors` — `kdj`, **50,147 and 40,432** px in its own green and red, one full-height column per bar
+- `labels` — `pivot-hh-hl-lh-ll`, **2,913** px of text
+- `lines` — `triangular-momentum-osc`, **919 and 846** px
+- `boxes` — `hema-trend-levels`, **8,787 and 11,871** px
+
+**The tolerance was measured, not copied.** The fill's scene reads at 6 and the marks' at 2; these
+read at **4**, and the number is forced from below: a canvas keeps colour PREMULTIPLIED and
+`getImageData` divides the alpha out again, so `rgba(0,128,0,0.3)` comes back as 127 and an EXACT
+match counts 0 of its 50,000 pixels. Measured at tolerance 0 the green column reads 0 and the red
+one reads 40,416 — the rounding, not the drawing.
+
+**One hue was dropped from a control, and the reason is measured.** `pivot-hh-hl-lh-ll` also labels
+in `rgba(0,128,128,0.5)`, and the chrome already carries **17** pixels within four of that teal
+before any study is picked. A control on it could never read zero, so it asserts nothing and is not
+read.
+
+**Two layers per slot, not one.** Shading and boxes go BEHIND — a box drawn over the plot it frames
+buries it — and labels and lines go AHEAD, because text under a line is text nobody can read. The
+reference makes the same split and `Overlay.zOrder` already carried both values.
+
+`test/channelOverlays.spec.ts` (19 cases) answers what pixels cannot localise: a column that spans
+the pane instead of the bar, a box read as top-left-plus-size instead of two opposite corners, a
+line extended along the horizontal instead of its own slope, a label hung on the wrong side of the
+price it names. All four would light a pixel count exactly as well. `test/renderFakes.ts` gained
+stroke and text recorders for it.
+
+**Numbers corrected against the design by measurement**: 13,572 background items on 20 rows (all
+`rgba`), 1,023 labels on 7 rows of which **4** carry no bubble colour at all (the design said 5),
+151 lines on 4 rows with **0 of 151** carrying an `extend`, and 99 boxes on 3 rows of which 34 have
+no border to draw.
 
 ---
 

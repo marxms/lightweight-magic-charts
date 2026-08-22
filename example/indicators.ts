@@ -103,6 +103,11 @@ export interface VendorResult {
   }[];
   /** Shaded regions between two bounds. Narrowed where it is drawn — see `example/bandOverlay.ts`. */
   readonly fills?: readonly unknown[];
+  /** The last four. Narrowed where they are drawn — see `example/channelOverlays.ts`. */
+  readonly bgColors?: readonly unknown[];
+  readonly labels?: readonly unknown[];
+  readonly lines?: readonly unknown[];
+  readonly boxes?: readonly unknown[];
 }
 
 export interface VendorEntry {

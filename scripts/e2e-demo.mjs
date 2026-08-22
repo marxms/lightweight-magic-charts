@@ -1427,6 +1427,91 @@ async function sceneBarsAreRecoloured(browser, base) {
   await page.close();
 }
 
+// ---------------------------------------------------------------------------------------------
+// Scene 19 — THE LAST FOUR CHANNELS. Background shading, labels, drawn lines and boxes: 34 offered
+// indicators between them, and until this feature not one of the four reached a canvas. They ride
+// the anchor and the overlay channel the fill already paid for, so the package gains nothing for
+// them — which is exactly why the proof has to be pixels. A host primitive that is never attached
+// costs zero bytes and draws zero pixels, and only one of those two is detectable from `src/`.
+//
+// Each colour below is the VENDOR'S OWN, read off the registry at its own defaults over the proof's
+// fixture: an overlay paints onto a transparent pane layer, so the three colour bytes survive the
+// composite verbatim and the alpha is what says the pixel was painted at all.
+// ---------------------------------------------------------------------------------------------
+const CHANNEL_SCENES = [
+  {
+    id: 'bgColors',
+    category: 'Oscillators',
+    study: 'kdj',
+    // `rgba(0,128,0,0.3)` and `rgba(255,0,0,0.3)`, one per bar, a full-height column each.
+    hues: [[0, 128, 0], [255, 0, 0]],
+    note: 'KDJ shades its own pane green and red, one column per bar',
+  },
+  {
+    id: 'labels',
+    category: 'Trend',
+    study: 'pivot-hh-hl-lh-ll',
+    // 171 labels, text only: 4 of the 7 emitters carry no bubble colour, so the text IS the label.
+    // The row's OTHER label colour is `rgba(0,128,128,0.5)`, and it is deliberately not read here:
+    // measured, the chrome already carries 17 pixels within four of that teal before any study is
+    // picked, so a control on it could never read zero and would be asserting nothing.
+    hues: [[255, 0, 0]],
+    note: '171 pivot labels, drawn as text in the colour the vendor names',
+  },
+  {
+    id: 'lines',
+    category: 'Oscillators',
+    study: 'triangular-momentum-osc',
+    hues: [[255, 68, 31], [0, 196, 43]],
+    note: '19 drawn lines between two endpoints in time and price',
+  },
+  {
+    id: 'boxes',
+    category: 'Trend',
+    study: 'hema-trend-levels',
+    // `#00ffbb4D` and `#ff11004D` — hex8, the alpha already in the string.
+    hues: [[0, 255, 187], [255, 17, 0]],
+    note: '34 boxes between two corners, filled and unbordered',
+  },
+];
+
+/**
+ * FOUR, and the number was measured in both directions rather than copied from the fill's six.
+ *
+ * A translucent fill does not read back byte-exact: the canvas keeps colour PREMULTIPLIED and
+ * `getImageData` divides the alpha out again, so the shading the vendor writes as `rgba(0,128,0,0.3)`
+ * comes back as 127 and an exact match counts ZERO of its 50,000 pixels. Measured: at a tolerance of
+ * zero the green column reads 0 and the red one reads 40,416, which is the rounding and not the
+ * drawing. Four admits the round-trip and still refuses a neighbouring hue.
+ */
+const SLACK = 4;
+
+async function sceneRemainingChannelsDraw(browser, base) {
+  const surface = '[data-testid="workspace-surface"]';
+  for (const scene of CHANNEL_SCENES) {
+    const { page, console_ } = await freshPage(browser, base);
+    const before = await Promise.all(scene.hues.map((hue) => hueCount(page, surface, hue, SLACK)));
+    check(
+      `channels.${scene.id}-absent-before-the-pick`,
+      before.every((count) => count === 0),
+      `pixels in ${scene.study}'s own colours before picking anything: ${before.join(', ')}`,
+    );
+
+    await openStudies(page);
+    await pickStudy(page, scene.category, scene.study);
+    await page.waitForTimeout(SETTLE_MS);
+
+    const after = await Promise.all(scene.hues.map((hue) => hueCount(page, surface, hue, SLACK)));
+    check(
+      `channels.${scene.id}-draw`,
+      after.every((count) => count > 0),
+      `after picking "${scene.study}": ${after.join(' and ')} pixels — ${scene.note}`,
+    );
+    reportConsole(`channels.${scene.id}-console-clean`, console_);
+    await page.close();
+  }
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -1463,6 +1548,7 @@ try {
   await sceneCloudIsShaded(browser, base);
   await sceneMarksReachTheBars(browser, base);
   await sceneBarsAreRecoloured(browser, base);
+  await sceneRemainingChannelsDraw(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

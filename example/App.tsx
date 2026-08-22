@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ReactElement } from 'react';
 
 import { bandChannel } from './bandOverlay';
 import { barColourChannel } from './barColours';
+import { channelChannel } from './channelOverlays';
 import { demoSetupPolicy } from './catalogue';
 import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
@@ -70,6 +71,9 @@ export function App({ indicators }: AppProps): ReactElement {
   const bands = useMemo(() => bandChannel(STUDY_CAPACITY), []);
   const marks = useMemo(() => markChannel(), []);
   const hues = useMemo(() => barColourChannel(), []);
+  /** The last four channels, on the same door the fill opened. `0 B` in the package, measured. */
+  const extras = useMemo(() => channelChannel(STUDY_CAPACITY), []);
+  const overlays = useMemo(() => [...bands.overlays, ...extras.overlays], [bands, extras]);
   const offered = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const catalogue = useMemo(
     () => demoSetupPolicy([...offered], indicators?.coerceStudySettingsFor()),
@@ -100,6 +104,7 @@ export function App({ indicators }: AppProps): ReactElement {
           bands.record(pass);
           marks.record(pass);
           hues.record(pass);
+          extras.record(pass);
         });
         const resolution = resolveSources(
           ids,
@@ -110,9 +115,10 @@ export function App({ indicators }: AppProps): ReactElement {
         // AFTER the resolve, because which slot a study lands on is what the resolve decided: an
         // over-price request measured off the price scale is filed in a lane instead.
         bands.apply(resolution);
+        extras.apply(resolution);
         return resolution;
       },
-      overlays: bands.overlays,
+      overlays,
       markers: marks.map,
       barColors: hues.colours,
       capacity: STUDY_CAPACITY,
@@ -122,7 +128,7 @@ export function App({ indicators }: AppProps): ReactElement {
     }),
     // `library` is a dependency because the arithmetic arriving has to invalidate the memo the
     // composition holds — otherwise the study stays a name with no line under it.
-    [bands, entries, hues, indicators, library, marks, offered, rows, widths.ownPane],
+    [bands, entries, extras, hues, indicators, library, marks, offered, overlays, rows, widths.ownPane],
   );
 
   return (

@@ -222,9 +222,9 @@ in the manifest and nothing failed on it.
 | MARK-02 | P2: The marks reach the bars | T11 | Done |
 | BAR-01 | P2: A bar the indicator colours | T12 | Done |
 | BAR-02 | P2: A bar the indicator colours | T12 | Done |
-| REST-01 | P3: The remaining channels | - | Pending |
+| REST-01 | P3: The remaining channels | T14 | Done |
 
-**Coverage:** 22 total, 15 mapped to tasks, 7 unmapped
+**Coverage:** 22 total, 16 mapped to tasks, 6 unmapped
 
 LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but

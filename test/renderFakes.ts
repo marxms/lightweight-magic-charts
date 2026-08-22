@@ -38,10 +38,39 @@ class FakeGradient {
   }
 }
 
+/** A stroked segment, with the pen as it stood at the call: colour, width and dash pattern. */
+export interface RecordedStroke {
+  readonly from: readonly [number, number];
+  readonly to: readonly [number, number];
+  readonly stroke: string;
+  readonly width: number;
+  readonly dash: readonly number[];
+}
+
+/** A run of text, with the point it was drawn at and the fill that painted it. */
+export interface RecordedText {
+  readonly text: string;
+  readonly x: number;
+  readonly y: number;
+  readonly fill: string;
+  readonly font: string;
+}
+
 export class RecordingContext {
   readonly rects: RecordedRect[] = [];
+  readonly strokes: RecordedStroke[] = [];
+  readonly texts: RecordedText[] = [];
   private readonly gradients: FakeGradient[] = [];
+  private pen: readonly [number, number] = [0, 0];
   fillStyle: string | FakeGradient = '';
+  strokeStyle = '';
+  lineWidth = 1;
+  font = '';
+  textAlign = 'start';
+  textBaseline = 'alphabetic';
+  private dash: readonly number[] = [];
+  /** The bitmap an overlay reads to decide how far an extended line runs. */
+  readonly canvas = { width: 1000, height: 400 };
 
   createLinearGradient(x0: number, y0: number, x1: number, y1: number): FakeGradient {
     const gradient = new FakeGradient(`gradient#${this.gradients.length}`, [x0, y0], [x1, y1]);
@@ -52,6 +81,57 @@ export class RecordingContext {
   fillRect(x: number, y: number, w: number, h: number): void {
     const fill = this.fillStyle;
     this.rects.push({ x, y, w, h, fill: typeof fill === 'string' ? fill : fill.id });
+  }
+
+  setLineDash(pattern: readonly number[]): void {
+    this.dash = [...pattern];
+  }
+
+  beginPath(): void {
+    this.pen = [0, 0];
+  }
+
+  moveTo(x: number, y: number): void {
+    this.pen = [x, y];
+  }
+
+  private pending: readonly [number, number] | null = null;
+
+  lineTo(x: number, y: number): void {
+    this.pending = [x, y];
+  }
+
+  stroke(): void {
+    if (this.pending === null) return;
+    this.strokes.push({
+      from: this.pen,
+      to: this.pending,
+      stroke: this.strokeStyle,
+      width: this.lineWidth,
+      dash: this.dash,
+    });
+    this.pending = null;
+  }
+
+  /** A rectangle's outline, recorded as its four corners' box so a case can assert on the frame. */
+  strokeRect(x: number, y: number, w: number, h: number): void {
+    this.strokes.push({
+      from: [x, y],
+      to: [x + w, y + h],
+      stroke: this.strokeStyle,
+      width: this.lineWidth,
+      dash: this.dash,
+    });
+  }
+
+  fillText(text: string, x: number, y: number): void {
+    const fill = this.fillStyle;
+    this.texts.push({ text, x, y, fill: typeof fill === 'string' ? fill : fill.id, font: this.font });
+  }
+
+  /** Monospace-ish, so a width assertion is arithmetic rather than a font metric. */
+  measureText(text: string): { width: number } {
+    return { width: text.length * 6 };
   }
 
   recordedGradients(): readonly RecordedGradient[] {
