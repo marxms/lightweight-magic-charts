@@ -40,9 +40,9 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 ## Execution Plan
 
-Every position is forced by a gate. Measured: the combined stack lands at 105734 and the ceiling
-admits 104993, so **the four shrinkages and the lane deletion are not optional and must come first** —
-without the lane deletion the feature is 125 B short, which is more than the whole shrinkage bank.
+Every position is forced by a gate. Measured after Phase 1-3: the entry sits at **103921** against a
+ceiling that admits **104993**, so the bank the shrinkages built — **-1071 B**, better than the -1040
+projected — is what the render stack's +835 spends.
 
 ### Phase 1: Pay first
 
@@ -64,34 +64,43 @@ T4 → T5
 T5 → T6
 ```
 
-### Phase 4: The fill
+### Phase 4: The host's resource matches the catalogue
+
+The package resolving a line is not the chart drawing it. Without this the five-line study still draws
+one, and the last task cannot read what it asserts.
 
 ```
-T6 → T7 → T8 → T9
+T6 → T7
 ```
 
-### Phase 5: The marks
+### Phase 5: The fill
 
 ```
-T9 → T10
+T7 → T8 → T9 → T10
 ```
 
-### Phase 6: The colours
+### Phase 6: The marks
 
 ```
-T10 → T11 → T12
+T10 → T11
 ```
 
-### Phase 7: The rest, and the generator
+### Phase 7: The colours
 
 ```
-T12 → T13 → T14
+T11 → T12 → T13
 ```
 
-### Phase 8: The proof
+### Phase 8: The rest, and the generator
 
 ```
-T14 → T15 → T16
+T13 → T14 → T15
+```
+
+### Phase 9: The proof
+
+```
+T15 → T16 → T17
 ```
 
 ---
@@ -255,11 +264,34 @@ bank, which stands at -1071 B.
 
 ---
 
-### T7: An overlay may say what it anchors to
+### T7: The host's slots match what the catalogue declares
+
+**What**: The generator emits the widths it derives from the rows it writes, and the host mints its over-price slots and its lane width from them.
+**Where**: `example/panes.ts`
+**Depends on**: T6
+**Reuses**: the manifest the previous feature already generates and commits
+**Requirement**: LINES-01, LINES-03
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [ ] The manifest carries the two widths, each derived from the rows written under it rather than typed by hand
+- [ ] The host mints one over-price slot per declared line, and its lane width from the declared own-pane width — measured, it mints ONE today, which is why a five-line study drew one line
+- [ ] A resolved line that has no series id to be drawn into turns a test red, because the package resolving a line is not the same as the chart drawing it
+- [ ] Gate check passes: `npm run build && npm test && npm run e2e && npm run proof`
+
+**Tests**: e2e
+**Gate**: full
+
+---
+
+### T8: An overlay may say what it anchors to
 
 **What**: Add the optional anchor to the overlay contract and resolve it to a series handle at attach time.
 **Where**: `src/extension/plugins.ts`
-**Depends on**: T6
+**Depends on**: T7
 **Reuses**: `attachOverlay`, `OverlayPrimitive`, and the two living overlay precedents
 **Requirement**: FILL-01, FILL-03
 
@@ -277,11 +309,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T8: A host overlay reaches a study's pane
+### T9: A host overlay reaches a study's pane
 
 **What**: Publish the path that carries a host overlay from the workspace props to the surface, merged with the package's own.
 **Where**: `src/react/workspace/CanvasSurface.tsx`
-**Depends on**: T7
+**Depends on**: T8
 **Reuses**: `useOverlayFields` and the existing overlay merge
 **Requirement**: FILL-01, FILL-02
 
@@ -300,11 +332,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T9: The host draws the band the package will not name
+### T10: The host draws the band the package will not name
 
 **What**: The band primitive, in the host: two bounds, interrupted where either is not finite, and bicoloured where the vendor says so.
 **Where**: `example/bandOverlay.ts`
-**Depends on**: T8
+**Depends on**: T9
 **Reuses**: the vendor's `fills[]` with its `colors`, and the manifest's resolved bounds
 **Requirement**: FILL-01, FILL-02, FILL-04, FILL-05
 
@@ -324,11 +356,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T10: The marker door stops being a no-op
+### T11: The marker door stops being a no-op
 
 **What**: Make the engine adapter add the marker plugin, feed the socket, and stop the repo's fake from implementing what the real one does not.
 **Where**: `example/engine.ts`
-**Depends on**: T9
+**Depends on**: T10
 **Reuses**: `SeriesHandle.setMarkers?`, already on the port
 **Requirement**: MARK-01, MARK-02
 
@@ -348,11 +380,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T11: A bar the indicator colours is coloured
+### T12: A bar the indicator colours is coloured
 
 **What**: Carry per-bar colours to the candle payload and feed the socket that was never fed.
 **Where**: `src/react/surface/useSeriesData.ts`
-**Depends on**: T10
+**Depends on**: T11
 **Reuses**: the candle payload the base library already accepts
 **Requirement**: BAR-01, BAR-02
 
@@ -371,11 +403,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T12: The colour a point carries reaches its segment
+### T13: The colour a point carries reaches its segment
 
 **What**: Let a point carry a colour and route it through a parallel map the resolution already has room for.
 **Where**: `src/domain/types.ts`
-**Depends on**: T11
+**Depends on**: T12
 **Reuses**: the readings map, which is the same shape of parallel channel
 **Requirement**: POINT-01, POINT-02, POINT-03
 
@@ -394,11 +426,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T13: The last four channels ride the door already paid for
+### T14: The last four channels ride the door already paid for
 
 **What**: Background shading, labels, drawn lines and boxes, as host overlays through the anchor seam.
 **Where**: `example/channelOverlays.ts`
-**Depends on**: T12
+**Depends on**: T13
 **Reuses**: T7's anchor and T9's primitive shape — measured at 0 B in the package
 **Requirement**: REST-01
 
@@ -416,11 +448,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T14: The generator stops keeping a list
+### T15: The generator stops keeping a list
 
 **What**: Enumerate every member of the vendor result, count an object channel like any other, derive the widths from the rows written, and refuse a row wider than its declared width.
 **Where**: `scripts/build-indicator-manifest.mjs`
-**Depends on**: T13
+**Depends on**: T14
 **Reuses**: the refusal doctrine `renames.json` and `value-changes.json` already carry
 **Requirement**: LINES-04, FILL-05, PROOF-01
 
@@ -439,11 +471,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T15: A dropped channel cannot pass again
+### T16: A dropped channel cannot pass again
 
 **What**: The proof compares every emitted member against what is drawn, with three plantings proving each clause discriminates.
 **Where**: `scripts/indicator-proof.mjs`
-**Depends on**: T14
+**Depends on**: T15
 **Reuses**: the six-direction declaration rule already in the proof
 **Requirement**: PROOF-01, PROOF-02, PROOF-03, PROOF-04, LINES-03
 
@@ -462,11 +494,11 @@ bank, which stands at -1071 B.
 
 ---
 
-### T16: The page shows the indicator its name promises
+### T17: The page shows the indicator its name promises
 
 **What**: The e2e assertion that Ichimoku draws five lines and a two-coloured Kumo, and that editing a span moves both.
 **Where**: `scripts/e2e-demo.mjs`
-**Depends on**: T15
+**Depends on**: T16
 **Reuses**: the script's legend-value and canvas-checksum assertions
 **Requirement**: FILL-04, LINES-01, LINES-03
 
