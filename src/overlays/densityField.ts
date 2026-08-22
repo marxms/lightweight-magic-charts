@@ -94,11 +94,17 @@ function windowPeak(slices: readonly DensitySlice[]): number {
  * Turns samples into columns, deriving each band's half-height from the MEDIAN gap in that slice.
  * See docs/explanation/overlays.md#the-median-gap
  */
+/** A supplied peak, or nothing. See docs/explanation/overlays.md#what-a-supplied-peak-may-be */
+function usablePeak(peak: number | undefined): number | null {
+  if (peak === undefined) return null;
+  return Number.isFinite(peak) && peak >= 0 ? peak : null;
+}
+
 export function toDensityColumns(
   slices: readonly DensitySlice[],
   scale?: DensityScale,
 ): readonly DensityColumn[] {
-  const shared = scale?.mode === 'global' ? (scale.peak ?? windowPeak(slices)) : null;
+  const shared = scale?.mode === 'global' ? usablePeak(scale.peak) ?? windowPeak(slices) : null;
   return slices
     .map((slice): DensityColumn => {
       const prices = slice.samples.map((sample) => sample.price).sort((a, b) => a - b);
@@ -214,7 +220,8 @@ export class DensityFieldOverlay implements Overlay {
         const gradient = ctx.createLinearGradient(0, columnTop * vRatio, 0, columnBottom * vRatio);
         let lastOffset = -1;
         for (const band of bands) {
-          const normalised = column.peak > 0 ? band.cell.weight / column.peak : 0;
+          const raw = column.peak > 0 ? band.cell.weight / column.peak : 0;
+          const normalised = raw > 1 ? 1 : raw;
           const below = absolute ? band.cell.weight < floor : normalised < floor;
           if (below) skipped += 1;
           const stop = below ? 'rgba(0,0,0,0)' : colour(Math.round(normalised * RAMP_BUCKETS));
