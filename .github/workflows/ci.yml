@@ -91,10 +91,15 @@ jobs:
   # this job and this job does not imply it.
   #
   # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
-  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 122.2 s on
-  # a linux/amd64 Node 22 container against 11.7 s on the author's macOS/arm64 machine — a 10x gap
-  # that is the runner's, not the suite's, and the reason the timeout below has room in it. 115.6 s
-  # of that was there before the platform sensor below; the sensor costs one extra pass, 6.6 s.
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 117.5,
+  # 122.2, 140.7 and 150.4 s across four runs in a linux/amd64 Node 22 container against 12.4 s on
+  # the author's macOS/arm64 machine — a 10x gap that is the container's (amd64 under emulation),
+  # not the suite's, and the reason the timeout below has room in it.
+  #
+  # THE PLATFORM SENSOR'S COST IS INSIDE THAT NOISE and is not claimed to be more: the same container
+  # measured 118.2 and 118.1 s on the commit immediately before it. A 33 s spread between runs of
+  # identical code is what the emulation costs, so any per-clause figure read off two runs of it
+  # would be a number invented by rounding.
   #
   # ONE NODE, AND THE REASON WAS WRONG UNTIL IT WAS FIXED. This comment used to say that none of what
   # the job measures varies by Node runtime. It did: the digests were taken over raw doubles, and
