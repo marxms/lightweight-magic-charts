@@ -73,6 +73,7 @@ of them.
 2. WHEN a fill's bound is a constant level rather than a plot THEN the chart SHALL draw the fill against that level  <!-- event-driven -->
 3. The fill SHALL be drawn beneath the lines it spans, so a boundary is never hidden by its own shading  <!-- ubiquitous -->
 4. WHEN a parameter that moves a fill's bounds is edited THEN the fill SHALL be redrawn against the new bounds in the same frame as the lines  <!-- event-driven -->
+4a. WHEN nothing has changed THEN an idle re-render SHALL NOT rewrite the drawn data — measured before this feature at 111 writes on mount and 148 more on an idle re-render, against a series count this feature takes from 43 to 505  <!-- event-driven -->
 5. IF a fill's bounds cannot both be resolved THEN that indicator SHALL NOT be offered, rather than being drawn without it  <!-- unwanted-behavior -->
 
 **Independent Test**: Offer Ichimoku, read the canvas where the Kumo sits between Leading Span A and B, and assert the shading is present and bounded by the two lines; edit the Leading Span B length and assert the shaded region moves.
@@ -91,7 +92,7 @@ them. The measured distribution runs from 1 to 56.
 
 1. WHEN a study declares more lines than the host's default lane width THEN the workspace SHALL draw every one of them  <!-- event-driven -->
 2. The package SHALL take a study's line count from that study rather than from a single value applied to all studies  <!-- ubiquitous -->
-3. WHEN a study is drawn THEN the number of lines on screen SHALL equal the number its manifest row declares  <!-- event-driven -->
+3. WHEN a study is drawn THEN the number of lines on screen SHALL equal the number of its plots that produce a finite value — measured at 915 live of 1048 declared, with 133 dead across 32 rows, so comparing against the declared count would fail by construction  <!-- event-driven -->
 4. IF a study's lines cannot all be drawn THEN it SHALL NOT be offered  <!-- unwanted-behavior -->
 
 **Independent Test**: Offer Ichimoku and assert five drawn lines, not three; offer the 56-plot entry and assert 56.
@@ -179,7 +180,8 @@ in the manifest and nothing failed on it.
 
 1. WHEN the manifest records a dropped channel for an offered indicator THEN the proof SHALL fail, naming the indicator and the channel  <!-- event-driven -->
 2. WHEN an offered indicator is drawn THEN the proof SHALL compare EVERY member the vendor's result carries against what is drawn, enumerated from the result itself rather than from a written list of channel names  <!-- event-driven -->
-3. The proof SHALL assert the above against a synthetic dropped channel, so the clause discriminates rather than passing over an empty set  <!-- ubiquitous -->
+2a. WHEN a channel arrives as an object rather than an array THEN it SHALL be counted the same as any other — measured: the generator tested `Array.isArray` against a hand-written list of nine names, and 10 offered rows emit a `plotCandles` or a `tables` the manifest therefore declares they do not  <!-- event-driven -->
+3. The proof SHALL assert the above against three synthetic plantings — a dropped channel, an object-shaped channel, and a declared width narrower than the rows written under it — so each clause discriminates rather than passing over an empty set  <!-- ubiquitous -->
 
 **Independent Test**: Plant a dropped fill on an offered row and assert the proof turns red naming it.
 
@@ -204,6 +206,7 @@ in the manifest and nothing failed on it.
 | FILL-03 | P1: The cloud that is the indicator | - | Pending |
 | FILL-04 | P1: The cloud that is the indicator | - | Pending |
 | FILL-05 | P1: The cloud that is the indicator | - | Pending |
+| FILL-06 | P1: The cloud that is the indicator | - | Pending |
 | LINES-01 | P1: A study's line count is the study's | - | Pending |
 | LINES-02 | P1: A study's line count is the study's | - | Pending |
 | LINES-03 | P1: A study's line count is the study's | - | Pending |
@@ -214,13 +217,14 @@ in the manifest and nothing failed on it.
 | PROOF-01 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-02 | P1: A silent drop cannot pass again | - | Pending |
 | PROOF-03 | P1: A silent drop cannot pass again | - | Pending |
+| PROOF-04 | P1: A silent drop cannot pass again | - | Pending |
 | MARK-01 | P2: The marks reach the bars | - | Pending |
 | MARK-02 | P2: The marks reach the bars | - | Pending |
 | BAR-01 | P2: A bar the indicator colours | - | Pending |
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 20 total, 0 mapped to tasks, 20 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 22 total, 0 mapped to tasks, 22 unmapped ⚠️ (Tasks phase not yet run)
 
 ---
 
