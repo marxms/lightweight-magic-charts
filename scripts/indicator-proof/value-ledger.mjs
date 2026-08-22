@@ -21,6 +21,16 @@
  * It closes the regeneration path: no run of the generator can overwrite a digest that nobody
  * declared, and no `--check` reports a moved digest as merely stale.
  *
+ * AND IT FOLLOWS AN ID THROUGH ITS RENAMES, because a rename is a claim about the NAME and says
+ * nothing about the arithmetic. `renames.json` resolved the vanished id for the generator and the
+ * old digest simply left the file: the new id had never been seen, so it was read as a debut, and a
+ * debut has no old value to answer to. MEASURED: `wma` renamed to `wma-weighted` in the registry
+ * with its arithmetic multiplied by 1.0001 and only the rename declared wrote, passed `--check` and
+ * passed the proof, with the new id on file at the digest an undeclared move is refused for. Vendors
+ * rename and rewrite an indicator in the same release routinely. So the committed digest is carried
+ * forward under the new id BEFORE anything is judged, and the OFFER is carried with it — otherwise
+ * deleting the old entry buys back through the rename exactly what deleting it buys anywhere else.
+ *
  * AND IT CLOSES THE CHEAPER PATH, which is not forging a digest but DELETING one. An absent entry
  * read as "a new indicator has nothing to declare" hands the sanctioned command back the hole this
  * file was written to close: measured, the same inverted-weight `wma` with `entries.wma` removed
@@ -77,6 +87,34 @@ const REASON_FLOOR = 40;
 const short = (digest) => `${String(digest).slice(0, 12)}…`;
 
 /**
+ * WHERE AN ID ENDS UP, following every rename recorded for it.
+ *
+ * The chain is walked rather than the single step taken, because `renames.json` is append-only and
+ * a vendor that renames the same study twice leaves `a -> b` and `b -> c` side by side in it — an
+ * `a` that stopped at `b` would then hand the digest to an id nothing offers, which is the debut
+ * this closes, one link along. A cycle stops where it started rather than looping: a malformed
+ * table is `catalogue.every-recorded-rename-lands-somewhere-offered`'s business, not a hang here.
+ */
+function landingOf(renames) {
+  const next = new Map();
+  for (const row of renames) {
+    if (typeof row?.from !== 'string' || typeof row?.to !== 'string' || row.from === '' || row.to === '') continue;
+    next.set(row.from, row.to);
+  }
+  return (id) => {
+    let at = id;
+    const seen = new Set([id]);
+    while (next.has(at)) {
+      const to = next.get(at);
+      if (seen.has(to)) break;
+      seen.add(to);
+      at = to;
+    }
+    return at;
+  };
+}
+
+/**
  * Every fault the ledger and the digests carry between them, each named with its measurement.
  *
  * `committed` and `derived` are both `{ [id]: { values, confirmsWithinBars } }` — the first read out
@@ -95,8 +133,13 @@ const short = (digest) => `${String(digest).slice(0, 12)}…`;
  * `vendor` is `{ committed, derived }` — the pin the committed digests were taken under and the one
  * this run computes against, `version/peerVersion` each. It is what says whether a re-spelling
  * arrived alone or with a release, and the two may not arrive together.
+ *
+ * `renames` is `renames.json`'s own list, and the file is read THROUGH it: a digest and an offer
+ * both follow their id to wherever the recorded renames land it, so an indicator that was renamed
+ * and rewritten in one release answers for the value under its new name instead of arriving as a
+ * debut with nothing to answer to.
  */
-export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted, vendor }) {
+export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted, vendor, renames }) {
   const changes = Array.isArray(ledger?.changes) ? ledger.changes : null;
   if (changes === null) {
     return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `changes` array' }];
@@ -114,7 +157,24 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
   if (typeof vendor?.committed !== 'string' || typeof vendor?.derived !== 'string') {
     return [{ id: '—', fault: 'unreadable', detail: 'the caller did not name the vendor pin the committed digests were taken under and the one this run computes against, and a re-spelling that arrives with a release is the one shape in which every digest in the file moves for two reasons at once' }];
   }
-  const offers = new Set(offered);
+  if (!Array.isArray(renames)) {
+    return [{ id: '—', fault: 'unreadable', detail: 'the caller did not hand over the recorded renames, and an id that was renamed arrives looking exactly like a debut — which is a value with no old digest to answer to' }];
+  }
+  /* ---- THE FILE IS READ THROUGH THE RENAME TABLE, BEFORE ANY OF IT IS JUDGED ------------------- *
+   * A rename is a claim about the NAME. It resolves the vanished id one block up in the generator
+   * and it says nothing whatever about the arithmetic — so the digest travels with the id, and so
+   * does the OFFER that tells a deleted proof apart from a debut. Without the second half, deleting
+   * `entries.wma` while renaming `wma` reaches the same place: the new id is offered by nothing the
+   * committed manifest names, and an absent digest for an unoffered id is a genuine debut.        */
+  const lands = landingOf(renames);
+  const inherited = { ...committed };
+  for (const [id, entry] of Object.entries(committed)) {
+    const to = lands(id);
+    if (to !== id && inherited[to] === undefined) inherited[to] = entry;
+  }
+  committed = inherited;
+  const offers = new Set();
+  for (const id of offered) { offers.add(id); offers.add(lands(id)); }
   const sameEncoding = encoding.committed === encoding.derived;
 
   const faults = [];

@@ -418,7 +418,7 @@ function restatedUnder(identity) {
   /** The pin the digests on file were taken under, against the one this run computes against. */
   const pin = (v) => `${v?.version}/${v?.peer?.version}`;
   const vendor = { committed: pin(onDisk.vendor), derived: pin(PIN) };
-  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered, encoding, underCommitted, vendor });
+  const faults = valueLedgerFaults({ committed, derived: fingerprints, ledger: VALUE_CHANGES, offered, encoding, underCommitted, vendor, renames: RENAMES.renames ?? [] });
   if (faults.length > 0) {
     console.error(valueLedgerRefusal(faults, MANIFEST_PATHS.valueChanges));
     process.exit(1);

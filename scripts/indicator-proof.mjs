@@ -757,7 +757,7 @@ check(
   const onFile = VALUE_CHANGES.changes ?? [];
   const encoding = { committed: committedEncoding, derived: VALUE_ENCODING.id };
   const vendor = { committed: pinOf(FINGERPRINTS.vendor), derived: pinOf(declared) };
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted, vendor });
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted, vendor, renames: RENAMES.renames ?? [] });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -776,7 +776,7 @@ check(
     const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
     /** The pin is HELD in every direction below: this clause is about the declaration, not the release. */
     const PIN = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
-    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN });
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [] });
     const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why, encoding: HELD.derived });
     const silent = judge();
     const correct = judge(entry(A, B));
@@ -786,8 +786,8 @@ check(
     // forging a sha256, and it reaches the same place through the sanctioned regeneration command —
     // so the committed MANIFEST decides which of the two an absent digest is. Both directions are
     // asserted: a proof that vanished is refused, an indicator that genuinely appeared is not.
-    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN });
-    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD, vendor: PIN });
+    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [] });
+    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD, vendor: PIN, renames: [] });
     // AND THE THIRD PAIR, WHICH IS THE ONE THE DIGESTS CANNOT TELL APART AT ALL. Re-spelling how a
     // reading is written moves EVERY digest in the file at once while no indicator computes anything
     // different — so declaring it per id would be three hundred false statements, and waving it
@@ -799,7 +799,7 @@ check(
     // Re-derived under the spelling on file, this run says what the file already says — so no value
     // moved and the only thing being judged here is the identity. That the SAME re-spelling with a
     // value moved underneath it is refused is the clause after this one; the two do not overlap.
-    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A }, vendor: PIN });
+    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A }, vendor: PIN, renames: [] });
     const respelling = (from, to, why) => ({ from, to, reason: why });
     const encodingReason = 'the digest is quantised so that a platform re-rounding a transcendental cannot move it';
     const respeltSilently = respell();
@@ -860,6 +860,7 @@ check(
       encoding: { committed: HELD, derived: MOVED },
       underCommitted,
       vendor: { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' },
+      renames: [],
     });
     /** Nothing moved: this run, spelled the old way, is what the file already says. */
     const honest = judge({ wma: X, sma: Y });
@@ -887,6 +888,56 @@ check(
     );
   }
 
+  // AND A RENAME MOVES THE ID, NOT THE ARITHMETIC.
+  //
+  // `renames.json` resolves a vanished id for the generator, and the old digest simply left the
+  // file: the new id had never been seen, so it read as a debut, and a debut has no old value to
+  // answer to. MEASURED — `wma` renamed to `wma-weighted` in the registry with its arithmetic
+  // multiplied by 1.0001, only the rename declared: the generator wrote, `--check` exited 0, this
+  // script passed, and `entries["wma-weighted"]` was on file at 042a185abf7c…, the byte-for-byte
+  // digest an undeclared move is refused for. Vendors rename and rewrite in the same release
+  // routinely. So the digest is carried to the new id before anything is judged, and the OFFER is
+  // carried with it: without the second half, deleting the entry buys back through the rename what
+  // deleting it buys nowhere else.
+  {
+    const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
+    const PIN = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
+    const [X, Z] = ['1', '3'].map((ch) => ch.repeat(64));
+    const was = { wma: { values: X, confirmsWithinBars: 0 } };
+    const renamed = [{ from: 'wma', to: 'wma-weighted', reason: 'the vendor renamed it in 0.5.1' }];
+    const twice = [...renamed, { from: 'wma-weighted', to: 'weighted-ma', reason: 'and again in 0.6.0' }];
+    const judge = ({ committed = was, derived, renames, offered = ['wma'] }) => valueLedgerFaults({
+      committed, derived, ledger: { changes: [], encodings: [] }, offered, encoding: HELD, vendor: PIN, renames,
+    });
+    const held = { 'wma-weighted': { values: X, confirmsWithinBars: 0 } };
+    const moved = { 'wma-weighted': { values: Z, confirmsWithinBars: 0 } };
+    /** Renamed and rewritten in one release, with only the rename declared — the measured hole. */
+    const rewritten = judge({ derived: moved, renames: renamed });
+    /** Renamed and nothing else: the id moved, the arithmetic did not. */
+    const purely = judge({ derived: held, renames: renamed });
+    /** Renamed, rewritten, and the old entry deleted from the file rather than forged. */
+    const deleted = judge({ committed: {}, derived: moved, renames: renamed });
+    /** Renamed twice, because the file is append-only and a chain is what it accumulates. */
+    const chained = judge({ derived: { 'weighted-ma': { values: Z, confirmsWithinBars: 0 } }, renames: twice });
+    /** And an id nothing renamed and nothing offers is still a genuine debut, declaring nothing. */
+    const debut = judge({ committed: {}, derived: moved, renames: [], offered: [] });
+    const names = (list, fault, id) => list.some((f) => f.id === id && f.fault === fault);
+    const verdicts = [
+      names(rewritten, 'undeclared', 'wma-weighted'),
+      purely.length === 0,
+      names(deleted, 'vanished-fingerprint', 'wma-weighted'),
+      names(chained, 'undeclared', 'weighted-ma'),
+      debut.length === 0,
+    ];
+    check(
+      'catalogue.a-declared-rename-carries-the-old-digest-forward',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? 'an indicator renamed AND rewritten in one release is refused under its NEW id, because the committed digest is carried to wherever the recorded renames land it before anything is judged; a rename that moves only the name passes and declares nothing, which is what a rename is; deleting the old entry instead of forging it is refused as a proof that vanished, because the OFFER is carried forward with the digest; a chain of two renames carries it the whole way, which is what an append-only table accumulates; and an id nothing renamed and the committed manifest does not offer is still a debut with nothing to declare'
+        : `renamed-and-rewritten→red-under-the-new-id ${verdicts[0]}, renamed-only→green ${verdicts[1]}, renamed-and-deleted→red ${verdicts[2]}, renamed-twice→red ${verdicts[3]}, genuine-debut→green ${verdicts[4]}`,
+    );
+  }
+
   // AND THE TWO CHANGES THAT MOVE EVERY DIGEST AT ONCE ARRIVE ONE AT A TIME.
   //
   // The clause above compares each id under the spelling on file, which rests on ONE thing nothing
@@ -911,6 +962,7 @@ check(
       encoding,
       underCommitted: respelt ? { wma: X } : undefined,
       vendor,
+      renames: [],
     });
     const RESPELT = { encoding: { committed: HELD, derived: MOVED }, respelt: true };
     const SPELT = { encoding: { committed: HELD, derived: HELD }, respelt: false };
@@ -919,7 +971,7 @@ check(
     const together = judge({ ...RESPELT, vendor: BUMPED });
     const respellingAlone = judge({ ...RESPELT, vendor: SAME });
     const releaseAlone = judge({ ...SPELT, vendor: BUMPED });
-    const unnamed = valueLedgerFaults({ committed: was, derived: was, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: SPELT.encoding });
+    const unnamed = valueLedgerFaults({ committed: was, derived: was, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: SPELT.encoding, renames: [] });
     const verdicts = [
       together.some((f) => f.fault === 'release-with-respelling'),
       respellingAlone.length === 0,
