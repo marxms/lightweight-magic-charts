@@ -258,3 +258,23 @@ these opacities a hairline is exactly what the eye picks up.
 The control line is a level, so it spans the plot — MINUS the live column, which it steps over.
 Split into the two segments either side of the newest bar rather than stopping short of it: a level
 that ends halfway across reads as a level that expired, and this one has not.
+
+## What a supplied peak may be
+
+`DensityScale.peak` crosses a public seam, so it is not trusted the way a value computed inside the
+package is. Three cases, and only one of them is a rejection.
+
+**Zero is honoured.** A window whose absolute peak is zero paints nothing. Deriving a peak over it —
+treating zero as "unset" — would paint that same empty window at full intensity, which is the
+opposite of what the data says. Zero is a scale; it is the scale of a window with no mass.
+
+**A peak below the window maximum is honoured too.** Capping the scale is the entire point of a
+liquidity threshold: everything above the cap saturates at the top of the ramp instead of leaving
+it. The renderer clamps the normalised share to 1 for exactly this reason — unclamped, a cell at
+four times the cap reaches past the end of the colour ramp, where the alpha and the channel
+interpolation both run out of gamut and produce a colour the palette does not contain.
+
+**Non-finite and negative fall back to the derived window peak.** `NaN`, either infinity, and a
+negative number are not scales at all. Dividing by them erases the field or inverts it, and a host
+that supplies one has a bug upstream — degrading to the peak the package can compute itself is the
+answer that keeps the field readable while the host is fixed.

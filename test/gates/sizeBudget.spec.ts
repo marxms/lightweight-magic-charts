@@ -149,6 +149,15 @@ const SYMBOLS_AT_CUTOVER = 13;
  * called `toDensityColumns` with one argument, so the mode shipped, could not be asked for, and no
  * gate saw it. The bytes are the argument and the effect dependency that re-attacks the columns when
  * only the scale moves. The smallest item of the phase, and the one that makes the rest reachable.
+ * RE-PINNED 2026-08-22, entry 106294 -> 106562 (+268 B) and ChartWorkspace 96125 -> 96390 (+265 B):
+ * the same phase again, closing four seams an adversarial review found open before the merge. A
+ * supplied `peak` is validated instead of trusted (non-finite and negative fall back to the derived
+ * window peak; zero is honoured, because a window with no mass paints nothing); the normalised
+ * share is clamped, so a peak below the window maximum saturates rather than driving the ramp out
+ * of gamut; `floorMode` rides through the persistence gate, which rebuilt the tuning from two
+ * fields and silently reinterpreted an absolute floor as a share on every restore; and the floor
+ * rail goes inert under an absolute floor instead of rewriting the host's threshold on the first
+ * drag. NOT new surface — four defects that had already shipped into the branch.
  * RE-PINNED 2026-08-21, entry 106257 -> 106294 (+37 B) and ChartWorkspace 96088 -> 96125 (+37 B):
  * the same phase, the seam — `WorkspaceDataSource` gains `densityScale` and the drop-in can finally
  * ask for the mode. NESTED in the group that already carries the slices, so the composed root still
@@ -157,7 +166,7 @@ const SYMBOLS_AT_CUTOVER = 13;
  * 9335 B under the ceiling the phase raised once.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 106294,
+  '*': 106562,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -170,7 +179,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 96125,
+  ChartWorkspace: 96390,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
