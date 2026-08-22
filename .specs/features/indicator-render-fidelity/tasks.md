@@ -727,11 +727,42 @@ has recorded twice.
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] Five lines are read on screen, not three and not one — measured before this feature at one
-- [ ] The Kumo is shaded and keeps two colours
-- [ ] Editing Leading Span B moves the lines and the shading together
-- [ ] An idle re-render does not rewrite the drawn data
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e && npm run proof && node scripts/size-gate.mjs`
+- [x] Five lines are read on screen, not three and not one — measured before this feature at one
+- [x] The Kumo is shaded and keeps two colours
+- [x] Editing Leading Span B moves the lines and the shading together
+- [x] An idle re-render does not rewrite the drawn data
+- [x] Gate check passes: `npm run build && npm test && npm run e2e && npm run proof && node scripts/size-gate.mjs`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — e2e 94 -> **96**, suites 118 -> **119**, tests 1446 -> **1449**, proof 33/33,
+entry 104821 -> **104853** (+32 B), slack **140 B**. `ChartWorkspace.tsx` still **349** of 350.
+
+**FIVE LINES, COUNTED ON THE BITMAP.** `Conversion Line 2910px · Base Line 2699px · Lagging Span
+2744px · Leading Span A 2060px · Leading Span B 1652px`, each hue reading ZERO before the pick. The
+colour is the HOST'S — `example/panes.ts` cycles `OVERLAY_COLORS` by plot position — so five
+distinct hues is five distinct lines. **The legend cannot do this job**: it shows four, because the
+Lagging Span is displaced 26 bars back and has no value at the right edge to print, so a
+legend-only count would read four for ever and could not tell that from a line that failed to draw.
+
+**Editing Leading Span B moves both.** 52 -> 26: the line moves **1,652 -> 2,098 px** and the Kumo
+bounded by it moves **13,459/8,425 -> 3,803/1,883 px**. A fill still drawn against the OLD bounds
+would leave the second pair alone while the first moved, which is the exact shape of the defect.
+
+**FILL-04a needed a fix, and the fix is measured by deletion.** `test/idleRedraw.spec.tsx` counts
+payloads on a mounted workspace with a counting engine.
+- The first measurement was of the HARNESS, not the code: sampling the counter at the first write
+  reads **37** and sampling it once the mount settles reads **111**. Without `settled()` the suite
+  would report a rewrite that never happened. This is written into the suite.
+- A host that memoises its prop groups is already saved by `React.memo` on the composition — with
+  or without the fix. **The re-render that matters is the one the composition does to ITSELF.**
+  Measured by deletion, with the readers built inline: adding ONE horizontal price line takes the
+  write count **111 -> 148**, and a second line adds the same again. A horizontal line has nothing
+  to do with a series payload, and this feature took the series count from 43 to 505.
+- The fix is one `useMemo` over both readers, +32 B, and it holds the file at 349 lines because it
+  replaces the line that was already there.
+- The control positive is asserted too: a change of market still rewrites. An effect that never
+  fired again would satisfy the clause perfectly and freeze the chart on its first window.
+
+**A host that hands over inline prop groups is beyond what the composition can fix** — `resolved` is
+a function of the `studies` object it was given. That is documented rather than asserted.

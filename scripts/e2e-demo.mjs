@@ -1316,12 +1316,34 @@ check(
 const KUMO_BULLISH = [67, 160, 71]; // #43A047, the vendor's own
 const KUMO_BEARISH = [244, 67, 54]; // #F44336
 
+/**
+ * THE FIVE LINES, BY THE HUE EACH ONE IS DRAWN IN.
+ *
+ * The colour is the HOST'S, not the vendor's: `example/panes.ts` cycles `OVERLAY_COLORS` by plot
+ * position, so plot 0 of a study drawn over the price is `#4c9aff` and plot 4 is `#66bb6a`. Reading
+ * five distinct hues is therefore reading five distinct LINES — and it is the only instrument that
+ * can count them. The legend shows four, because the Lagging Span is displaced 26 bars back and has
+ * no value at the right edge to print; a legend-only count would report four for ever and could not
+ * tell that from a line that failed to draw.
+ *
+ * Measured before this feature: ONE. The host minted a single over-price slot per lane, so four of
+ * the five readings were filed against a series id nothing had declared.
+ */
+const ICHIMOKU_LINES = [
+  { title: 'Conversion Line', rgb: [76, 154, 255] },
+  { title: 'Base Line', rgb: [199, 146, 234] },
+  { title: 'Lagging Span', rgb: [38, 198, 218] },
+  { title: 'Leading Span A', rgb: [245, 166, 35] },
+  { title: 'Leading Span B', rgb: [102, 187, 106] },
+];
+
 async function sceneCloudIsShaded(browser, base) {
   const { page, console_ } = await freshPage(browser, base);
   const surface = '[data-testid="workspace-surface"]';
 
   const beforeGreen = await hueCount(page, surface, KUMO_BULLISH);
   const beforeRed = await hueCount(page, surface, KUMO_BEARISH);
+  const beforeLines = await Promise.all(ICHIMOKU_LINES.map(({ rgb }) => hueCount(page, surface, rgb, 4)));
   check(
     'cloud.nothing-shaded-before-the-pick',
     beforeGreen === 0 && beforeRed === 0,
@@ -1352,6 +1374,34 @@ async function sceneCloudIsShaded(browser, base) {
     'cloud.five-lines-under-it',
     (await drawnReadingCount(page, 'workspace-legend-price')) >= 4,
     `price legend after Ichimoku: ${JSON.stringify(legend)}`,
+  );
+
+  // FIVE LINES, COUNTED ON THE BITMAP. Measured before this feature at one.
+  const lines = await Promise.all(ICHIMOKU_LINES.map(({ rgb }) => hueCount(page, surface, rgb, 4)));
+  check(
+    'cloud.five-lines-are-drawn',
+    lines.every((count) => count > 0) && beforeLines.every((count) => count === 0),
+    lines.every((count) => count > 0)
+      ? `${ICHIMOKU_LINES.map(({ title }, at) => `${title} ${lines[at]}px`).join(', ')} — five distinct hues, five drawn lines, where the page drew ONE before this feature`
+      : `drawn: ${ICHIMOKU_LINES.map(({ title }, at) => `${title} ${lines[at]}px`).join(', ')} · before the pick: ${beforeLines.join(', ')}`,
+  );
+
+  /* ---- FILL-04: editing a bound moves the lines AND the shading, in the same frame ---------- */
+  await page.locator('[data-testid="workspace-catalogue-section-params"]').click();
+  await page.waitForTimeout(ACTION_SETTLE_MS);
+  const span = page.getByLabel('Leading Span B Length');
+  await span.fill('26');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const movedLine = await hueCount(page, surface, ICHIMOKU_LINES[4].rgb, 4);
+  const movedGreen = await hueCount(page, surface, KUMO_BULLISH);
+  const movedRed = await hueCount(page, surface, KUMO_BEARISH);
+  check(
+    'cloud.editing-a-bound-moves-the-line-and-the-shading-together',
+    movedLine !== lines[4] && (movedGreen !== green || movedRed !== red) && movedGreen + movedRed > 0,
+    movedLine !== lines[4] && (movedGreen !== green || movedRed !== red)
+      ? `Leading Span B 52 -> 26: the line moves ${lines[4]} -> ${movedLine} px and the Kumo bounded by it moves ${green}/${red} -> ${movedGreen}/${movedRed} px. A fill still drawn against the OLD bounds would leave the second pair alone while the first moved, which is the shape of the defect the clause is about`
+      : `line ${lines[4]} -> ${movedLine}, bullish ${green} -> ${movedGreen}, bearish ${red} -> ${movedRed}`,
   );
 
   reportConsole('cloud.console-clean', console_);

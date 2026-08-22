@@ -204,12 +204,12 @@ in the manifest and nothing failed on it.
 | FILL-01 | P1: The cloud that is the indicator | T8, T9, T10 | Done |
 | FILL-02 | P1: The cloud that is the indicator | T9, T10 | Done |
 | FILL-03 | P1: The cloud that is the indicator | T8, T10 | Done |
-| FILL-04 | P1: The cloud that is the indicator | - | Pending |
+| FILL-04 | P1: The cloud that is the indicator | T17 | Done |
 | FILL-05 | P1: The cloud that is the indicator | T10, T15 | Partial |
-| FILL-06 | P1: The cloud that is the indicator | - | Pending |
+| FILL-06 | P1: The cloud that is the indicator | T17 | Done |
 | LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
-| LINES-03 | P1: A study's line count is the study's | T7, T16 | Partial |
+| LINES-03 | P1: A study's line count is the study's | T7, T16, T17 | Done |
 | LINES-04 | P1: A study's line count is the study's | T5, T15 | Done |
 | POINT-01 | P1: The colour a point carries | T13 | Done |
 | POINT-02 | P1: The colour a point carries | T13 | Done |
@@ -224,11 +224,12 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | T12 | Done |
 | REST-01 | P3: The remaining channels | T14 | Done |
 
-**Coverage:** 22 total, 20 mapped to tasks, 2 unmapped
+**Coverage:** 22 total, 22 mapped to tasks, 0 unmapped
 
-LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
-drawn into, and asserts the correspondence with the narrow width planted as a positive control, but
-the count READ OFF THE SCREEN for a five-line study is T17.
+LINES-03 CLOSES IN T17. T7 gave every resolved line a declared series to be drawn into and asserted
+the correspondence with a narrow width planted as a positive control; T16 pinned the live count
+against the declared resource over the proof's own window; and T17 reads the five lines off the
+bitmap, one hue per plot position, each of them zero before the pick.
 
 LINES-04 CLOSES IN T15. T5 removed the only place inside the package where a study's lines could be
 cut, leaving the clause with no producer there; T15 put the single refusal point in the manifest

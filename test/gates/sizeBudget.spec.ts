@@ -230,13 +230,19 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `SeriesColorReader` -> the fifth argument of `plottedPoints`. The design measured +397 and the
  * integration review +390: 371 is what the tree built, because a line whose points carry no colour
  * — 173 of the 320 — archives NOTHING rather than an array of nulls.
+ * RE-PINNED 2026-08-22, entry 104821 -> 104853 (+32 B) and ChartWorkspace 95292 -> 95324: the
+ * reading closures are memoised on the resolve they read. Measured by DELETION on a mounted
+ * workspace with a counting engine: built inline, adding one horizontal price line rewrites every
+ * drawn series — 111 payloads to 148, and a second line adds the same again. A host that memoises
+ * its own prop groups is already saved by `React.memo` on the composition; what this closes is the
+ * re-render the composition does to itself, over a series count this feature took from 43 to 505.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104821,
+  '*': 104853,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -249,7 +255,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 24138,
-  ChartWorkspace: 95292,
+  ChartWorkspace: 95324,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

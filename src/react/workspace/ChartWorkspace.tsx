@@ -215,7 +215,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
       lanes: studies.lanes, labels: resolved?.labels, laneTitle: labels.laneTitle }),
     [specs, setup.panes, chosen, capacity, studies.lanes, resolved, labels],
   );
-  const read = studyReader(resolved, data.read, data.tip);
+  const readers = useMemo(() => ({ read: studyReader(resolved, data.read, data.tip), readColors: studyColorReader(resolved) }), [resolved, data.read, data.tip]);
   const write = (patch: Partial<WorkspaceSetup>): void =>
     act({ kind: 'update-active', setup: { ...setup, ...patch } });
   const footerId = `${testIdPrefix}-state`;
@@ -326,7 +326,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                 engine={data.engine}
                 convention={convention}
                 data={{
-                  panes: views, read, readColors: studyColorReader(resolved), priceCaption: data.symbol,
+                  panes: views, ...readers, priceCaption: data.symbol,
                   pricePane: specs.find((spec) => String(spec.id) === PRICE_PANE_ID),
                   seriesStyles: setup.seriesStyles as Readonly<Record<string, SeriesShape>>,
                   autoFit: setup.autoFit, datasetId: `${data.symbol}·${timeframe}`,
