@@ -448,6 +448,16 @@ bounds live.`,
 export const labels: DensityControlLabels = { ...DEFAULT_DENSITY_CONTROL_LABELS, reset: 'padrão' };`,
   },
 
+  'react/DensityLegend': {
+    title: 'the colour scale of the heatmap, read back in the host\'s unit',
+    summary: `The ramp, with its top end labelled by a string the host has already formatted. The package
+never learns what the unit is — the same way it learns nothing else about the consumer's domain — so a
+legend in dollars, in contracts or in bars is the caller's decision and not a mode here.`,
+    example: `import { DEFAULT_DENSITY_LEGEND_LABELS, type DensityLegendLabels } from 'lightweight-magic-charts';
+
+export const labels: DensityLegendLabels = { ...DEFAULT_DENSITY_LEGEND_LABELS, empty: 'nada' };`,
+  },
+
   'react/DrawingToolbar': {
     title: 'the drawing rail: tools, count and the two destructive actions',
     summary: `Renders the vocabulary a host injected — it authors no tool of its own — plus the drawing

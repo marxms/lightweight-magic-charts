@@ -39,10 +39,11 @@ const REFERENCE = join(LIB_ROOT, 'docs', 'reference');
 const INDEX = join(REFERENCE, '_index.md');
 const TREE = join(REFERENCE, 'component-tree.md');
 
-/** The nine modules that declare a props interface, and therefore owe a derived prop table. */
+/** The ten modules that declare a props interface, and therefore owe a derived prop table. */
 const WITH_PROPS = [
   'react/CompactCell.md',
   'react/DensityControls.md',
+  'react/DensityLegend.md',
   'react/DrawingToolbar.md',
   'react/SeriesMenu.md',
   'react/surface/ChartSurface.md',

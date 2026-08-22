@@ -137,9 +137,15 @@ const SYMBOLS_AT_CUTOVER = 13;
  * `absolute` the cut is on the cell's own weight instead of on its share of a peak. The bytes are
  * the branch in `draw()` and the second arm of `clampDensityTuning`. The relative rule is still the
  * default, and a relative tuning still clamps to exactly the two members it always had.
+ * RE-PINNED 2026-08-21, entry 105296 -> 106245 (+949 B) and ChartWorkspace 96025 -> 96076 (+51 B):
+ * the same phase, the legend — `DensityLegend` publishes the ramp with its top end labelled by a
+ * string the host formatted, because a colour scale with no number on it is decoration. The entry
+ * pays for the component; the composed root pays only for the two words that entered the label
+ * contract, since the host mounts the legend itself. The largest item of the phase, and it still
+ * sits 9384 B under the ceiling this phase raised once.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 105296,
+  '*': 106245,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -152,7 +158,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 96025,
+  ChartWorkspace: 96076,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

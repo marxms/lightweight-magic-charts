@@ -8,6 +8,7 @@
 import type { PriceAlert } from '../../alerts/priceAlerts';
 import type { CompactCellLabels } from '../CompactCell';
 import type { DensityControlLabels } from '../DensityControls';
+import type { DensityLegendLabels } from '../DensityLegend';
 import type { DrawingToolbarLabels } from '../DrawingToolbar';
 import type { SeriesMenuLabels } from '../SeriesMenu';
 import type { WorkspaceTabsBarLabels } from '../WorkspaceTabsBar';
@@ -123,6 +124,7 @@ export interface WorkspaceChromeLabels {
   readonly drawingToolbar: DrawingToolbarLabels;
   readonly compactCell: CompactCellLabels;
   readonly density: DensityControlLabels;
+  readonly densityLegend: DensityLegendLabels;
 }
 
 /**
@@ -272,6 +274,10 @@ export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
       reset: 'default',
       group: 'Density field',
       readout: (gamma) => `γ ${decimal(locale, gamma, 1)}`,
+    },
+    densityLegend: {
+      group: 'Density scale',
+      empty: 'none',
     },
   };
 }
