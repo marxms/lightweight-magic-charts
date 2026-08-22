@@ -143,9 +143,15 @@ const SYMBOLS_AT_CUTOVER = 13;
  * pays for the component; the composed root pays only for the two words that entered the label
  * contract, since the host mounts the legend itself. The largest item of the phase, and it still
  * sits 9384 B under the ceiling this phase raised once.
+ * RE-PINNED 2026-08-21, entry 106245 -> 106257 (+12 B) and ChartWorkspace 96076 -> 96088 (+12 B):
+ * the same phase, the reach — `useOverlayFields` takes the `DensityScale` and passes it on. Every
+ * byte of the mode above was unreachable through the drop-in until this: the hook consumers mount
+ * called `toDensityColumns` with one argument, so the mode shipped, could not be asked for, and no
+ * gate saw it. The bytes are the argument and the effect dependency that re-attacks the columns when
+ * only the scale moves. The smallest item of the phase, and the one that makes the rest reachable.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 106245,
+  '*': 106257,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -158,7 +164,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 96076,
+  ChartWorkspace: 96088,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
