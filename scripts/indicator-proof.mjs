@@ -81,6 +81,7 @@ const CATALOGUE = read('../example/indicators/manifest.json');
 const MANIFEST = CATALOGUE.indicators;
 const FINGERPRINTS = read('../example/indicators/fingerprints.json');
 const RENAMES = read('../example/indicators/renames.json');
+const WITHDRAWALS = read('../example/indicators/withdrawals.json');
 const VALUE_CHANGES = read('../example/indicators/value-changes.json');
 const PACKAGE = read('../package.json');
 const INERT = read('./indicator-proof/INERT_INPUTS.json');
@@ -757,7 +758,7 @@ check(
   const onFile = VALUE_CHANGES.changes ?? [];
   const encoding = { committed: committedEncoding, derived: VALUE_ENCODING.id };
   const vendor = { committed: pinOf(FINGERPRINTS.vendor), derived: pinOf(declared) };
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted, vendor, renames: RENAMES.renames ?? [] });
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted, vendor, renames: RENAMES.renames ?? [], withdrawn: WITHDRAWALS.withdrawals ?? [] });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -776,7 +777,7 @@ check(
     const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
     /** The pin is HELD in every direction below: this clause is about the declaration, not the release. */
     const PIN = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
-    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [] });
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [], withdrawn: [] });
     const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why, encoding: HELD.derived });
     const silent = judge();
     const correct = judge(entry(A, B));
@@ -786,8 +787,8 @@ check(
     // forging a sha256, and it reaches the same place through the sanctioned regeneration command —
     // so the committed MANIFEST decides which of the two an absent digest is. Both directions are
     // asserted: a proof that vanished is refused, an indicator that genuinely appeared is not.
-    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [] });
-    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD, vendor: PIN, renames: [] });
+    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN, renames: [], withdrawn: [] });
+    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD, vendor: PIN, renames: [], withdrawn: [] });
     // AND THE THIRD PAIR, WHICH IS THE ONE THE DIGESTS CANNOT TELL APART AT ALL. Re-spelling how a
     // reading is written moves EVERY digest in the file at once while no indicator computes anything
     // different — so declaring it per id would be three hundred false statements, and waving it
@@ -799,7 +800,7 @@ check(
     // Re-derived under the spelling on file, this run says what the file already says — so no value
     // moved and the only thing being judged here is the identity. That the SAME re-spelling with a
     // value moved underneath it is refused is the clause after this one; the two do not overlap.
-    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A }, vendor: PIN, renames: [] });
+    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A }, vendor: PIN, renames: [], withdrawn: [] });
     const respelling = (from, to, why) => ({ from, to, reason: why });
     const encodingReason = 'the digest is quantised so that a platform re-rounding a transcendental cannot move it';
     const respeltSilently = respell();
@@ -861,6 +862,7 @@ check(
       underCommitted,
       vendor: { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' },
       renames: [],
+      withdrawn: [],
     });
     /** Nothing moved: this run, spelled the old way, is what the file already says. */
     const honest = judge({ wma: X, sma: Y });
@@ -907,7 +909,7 @@ check(
     const renamed = [{ from: 'wma', to: 'wma-weighted', reason: 'the vendor renamed it in 0.5.1' }];
     const twice = [...renamed, { from: 'wma-weighted', to: 'weighted-ma', reason: 'and again in 0.6.0' }];
     const judge = ({ committed = was, derived, renames, offered = ['wma'] }) => valueLedgerFaults({
-      committed, derived, ledger: { changes: [], encodings: [] }, offered, encoding: HELD, vendor: PIN, renames,
+      committed, derived, ledger: { changes: [], encodings: [] }, offered, encoding: HELD, vendor: PIN, renames, withdrawn: [],
     });
     const held = { 'wma-weighted': { values: X, confirmsWithinBars: 0 } };
     const moved = { 'wma-weighted': { values: Z, confirmsWithinBars: 0 } };
@@ -938,6 +940,73 @@ check(
     );
   }
 
+  // AND A SIGNED WITHDRAWAL RETIRES THE ROW, NEVER THE ARITHMETIC BEHIND IT.
+  //
+  // `withdrawals.json` is the sanctioned command for making a row leave the catalogue, and the
+  // generator obeys it by taking the id out of the manifest AND its entry out of the fingerprints —
+  // the exact pair of deletions the rules above read as "genuinely new", performed by the build
+  // instead of by hand. MEASURED in two runs with no digit typed anywhere: `wma` made to emit no
+  // plots was refused, the withdrawal was signed in one ordinary sentence and 309 rows were written;
+  // the id then came back with its arithmetic multiplied by 1.0001 and arrived as a DEBUT — 310
+  // offered, `--check` exit 0, this script 38/38, ZERO value declarations, and 042a185abf7c… on file
+  // where 164192aca8f9… had been. The control with the arithmetic untouched restores the digest byte
+  // for byte, so the channel launders rather than drifts. The signature therefore carries the digest
+  // the row left at, taken at the one moment it is still on file and checked against it, and an id
+  // that returns is read through this ledger before it is read as new.
+  {
+    const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
+    const PIN = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
+    const [X, Z] = ['1', '3'].map((ch) => ch.repeat(64));
+    const was = { wma: { values: X, confirmsWithinBars: 0 } };
+    const reason = 'the vendor stopped drawing it and no chart in the host loses a line it was showing';
+    const signature = (values) => [{ id: 'wma', reason, measuredAt: '0.5.0', values, encoding: HELD.committed }];
+    const judge = ({ committed = was, derived, offered, withdrawn, changes = [], renames = [] }) => valueLedgerFaults({
+      committed, derived, ledger: { changes, encodings: [] }, offered, encoding: HELD, vendor: PIN, renames, withdrawn,
+    });
+    /** THE RUN THAT WITHDRAWS: the row is no longer derived and its digest is about to leave with it. */
+    const leaving = (withdrawn) => judge({ derived: {}, offered: ['wma'], withdrawn });
+    const leftUnrecorded = leaving([{ id: 'wma', reason, measuredAt: '0.5.0' }]);
+    const leftRecorded = leaving(signature(X));
+    const leftMisstated = leaving(signature(Z));
+    /** AND THE RUN THAT RESTORES IT ONE COMMIT LATER: no entry on file, nothing offering the id. */
+    const back = (values) => ({ committed: {}, derived: { wma: { values, confirmsWithinBars: 0 } }, offered: [] });
+    const returnedTampered = judge({ ...back(Z), withdrawn: signature(X) });
+    const returnedAsItLeft = judge({ ...back(X), withdrawn: signature(X) });
+    const declaration = { id: 'wma', from: X, to: Z, reason: 'the vendor corrected the weighting so the newest bar carries the heaviest one', encoding: HELD.committed };
+    const returnedDeclared = judge({ ...back(Z), withdrawn: signature(X), changes: [declaration] });
+    /** AND THE RENAME WORN OVER THE WITHDRAWAL, which is the two costumes combined. */
+    const renamedBack = judge({
+      committed: {},
+      derived: { 'wma-weighted': { values: Z, confirmsWithinBars: 0 } },
+      offered: [],
+      withdrawn: signature(X),
+      renames: [{ from: 'wma', to: 'wma-weighted', reason: 'the vendor renamed it in 0.5.1' }],
+    });
+    /** And an id nothing ever withdrew is still a debut, with nothing to answer to. */
+    const debut = judge({ ...back(Z), withdrawn: [] });
+    /** And a caller that does not hand the list over is refused, never assumed to be holding none. */
+    const unnamed = valueLedgerFaults({ ...back(Z), ledger: { changes: [], encodings: [] }, encoding: HELD, vendor: PIN, renames: [] });
+    const names = (list, fault, id) => list.some((f) => f.id === id && f.fault === fault);
+    const verdicts = [
+      names(leftUnrecorded, 'withdrawal-without-a-value', 'wma'),
+      leftRecorded.length === 0,
+      names(leftMisstated, 'withdrawal-without-a-value', 'wma'),
+      names(returnedTampered, 'undeclared-return', 'wma'),
+      returnedAsItLeft.length === 0,
+      returnedDeclared.length === 0,
+      names(renamedBack, 'undeclared-return', 'wma-weighted'),
+      debut.length === 0,
+      unnamed.some((f) => f.fault === 'unreadable'),
+    ];
+    check(
+      'catalogue.a-signed-withdrawal-does-not-buy-a-debut',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? 'a withdrawal signed without the digest the row is leaving at is refused ON THE RUN THAT WRITES IT, which is the last moment the value is readable at all; the same withdrawal WITH the digest passes and the row leaves; a signature stating a digest the file never held is refused like any other wrong `from`; the row restored one commit later with different arithmetic is named and refused, because an id this ledger knows is not a debut; restored computing what it left computing it passes and declares nothing, which is what a return is; restored differently WITH a declaration passes; a declared rename worn over the withdrawal is refused under the NEW id, because the signature travels to wherever the renames land it; an id nothing withdrew is still genuinely new; and a caller that does not hand the ledger over is refused rather than assumed to have none'
+        : `left-unrecorded→red ${verdicts[0]}, left-recorded→green ${verdicts[1]}, left-misstated→red ${verdicts[2]}, returned-tampered→red-and-named ${verdicts[3]}, returned-as-it-left→green ${verdicts[4]}, returned-declared→green ${verdicts[5]}, renamed-over-the-withdrawal→red-under-the-new-id ${verdicts[6]}, genuine-debut→green ${verdicts[7]}, ledger-not-named→red ${verdicts[8]}`,
+    );
+  }
+
   // AND THE TWO CHANGES THAT MOVE EVERY DIGEST AT ONCE ARRIVE ONE AT A TIME.
   //
   // The clause above compares each id under the spelling on file, which rests on ONE thing nothing
@@ -963,6 +1032,7 @@ check(
       underCommitted: respelt ? { wma: X } : undefined,
       vendor,
       renames: [],
+      withdrawn: [],
     });
     const RESPELT = { encoding: { committed: HELD, derived: MOVED }, respelt: true };
     const SPELT = { encoding: { committed: HELD, derived: HELD }, respelt: false };
@@ -971,7 +1041,7 @@ check(
     const together = judge({ ...RESPELT, vendor: BUMPED });
     const respellingAlone = judge({ ...RESPELT, vendor: SAME });
     const releaseAlone = judge({ ...SPELT, vendor: BUMPED });
-    const unnamed = valueLedgerFaults({ committed: was, derived: was, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: SPELT.encoding, renames: [] });
+    const unnamed = valueLedgerFaults({ committed: was, derived: was, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: SPELT.encoding, renames: [], withdrawn: [] });
     const verdicts = [
       together.some((f) => f.fault === 'release-with-respelling'),
       respellingAlone.length === 0,

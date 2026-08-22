@@ -66,14 +66,67 @@
  * only spelling the two ends of the move share. A committed identity nothing can re-derive is
  * REFUSED rather than waved through: an unaddressable spelling is the amnesty by another name.
  *
+ * AND A SIGNED WITHDRAWAL DOES NOT BUY A DEBUT. The rule two paragraphs up reads "an id the
+ * committed manifest does not offer is genuinely new", and `withdrawals.json` is a SANCTIONED
+ * command for making that sentence false: sign the loss of a row and the generator itself takes the
+ * id out of the manifest AND its entry out of the fingerprints — the same pair of deletions the
+ * paragraph below prices at a hand-edit, performed here by the build. MEASURED, in two runs with no
+ * digit typed by hand: `wma` made to emit no plots was refused, the withdrawal was signed in one
+ * ordinary sentence, 309 rows were written and `entries.wma` left the file with the row; the id then
+ * came back with its arithmetic multiplied by 1.0001 and arrived as a DEBUT — 310 offered,
+ * `--check` exit 0, the proof 38/38, ZERO value declarations, and 042a185abf7c… on file where
+ * 164192aca8f9… had been. The control with the arithmetic untouched restores the digest byte for
+ * byte, so this is a laundering channel and not instability.
+ *
+ * What closes it is what a withdrawal already IS: a human signing, at the one moment the digest is
+ * still on file, that losing the row is acceptable. So the signature carries the digest — `values`
+ * and the `encoding` it was taken under, checked against the entry that is about to leave — and an
+ * id that returns is read through this ledger BEFORE it is read as new. Back at the same digest is
+ * a row that came back as it left and declares nothing; anything else is a value that moved and is
+ * named with both ends. The digest could not simply be left in `fingerprints.json` as a tombstone
+ * instead: a withdrawn row is one this generator CANNOT compute, so its digest can never be
+ * re-derived under a later spelling, and an entry frozen in an old spelling inside a file whose
+ * header declares the new one is a false statement in the artefact. It belongs in the append-only
+ * ledger where the loss was signed, beside the `measuredAt` already frozen there for that reason.
+ *
  * It does NOT make a hand-forged `fingerprints.json` impossible — a digest typed in by hand to match
  * a hand-patched vendor agrees with itself, and in a repository diff exactly ONE committed file
  * moves. What that costs is the doctrine at the top of the file being edited, which names this rule
  * and the declaration it wants, and a reviewer reading a digest change with nothing beside it. The
- * same holds for deleting the indicator from the manifest AND the fingerprints in one edit, which
- * offers it back as new at the price of moving a whole catalogue entry. Both are the trust boundary
- * `renames.json` and `size-budget.json` already sit on. Overclaiming here would be the defect this
- * file exists to catch.
+ * same holds for deleting the indicator from the manifest AND the fingerprints in one edit — and
+ * that sentence alone USED TO BE the whole of the disclosure here, which was incomplete: the
+ * withdrawal ledger reached the same place through sanctioned commands with nothing edited by hand,
+ * and that path is closed above. What is left of it is the hand-edit proper, now across THREE
+ * committed files rather than two, because the withdrawal's own `values` has to be moved with them.
+ *
+ * AND THREE EDGES ARE NAMED RATHER THAN CLAIMED SHUT. A row that leaves and comes back under a
+ * DIFFERENT id with no rename recorded is a genuine debut and is treated as one: the withdrawal
+ * travels to wherever `renames.json` lands its id, so a DECLARED rename cannot be worn over a
+ * withdrawal, but an undeclared one is a name nothing has ever fingerprinted — priced, as above, at
+ * moving a whole catalogue entry. A withdrawal signed under a spelling the file has since left can
+ * be compared with nothing, so the return is REFUSED rather than waved through, and the way out is a
+ * declaration naming the digest it comes back at, exactly as for a fingerprint that vanished. And
+ * the SETTLE WINDOW a withdrawn row left at is not carried: a return computing the same values in a
+ * different number of bars is not named here. Each of these is the trust boundary `renames.json` and
+ * `size-budget.json` already sit on.
+ *
+ * AND ONE DOOR OF THE SAME FAMILY IS STILL OPEN — MEASURED, NOT GUESSED. A withdrawal is asked for
+ * only when the row is still IN the library and a rule in the generator turned it down. A row the
+ * vendor removed from the library outright is explained in `renames.json` — where the digest travels
+ * with the id — or in `scripts/indicator-proof/DEFECT_LEDGER.json`, which asks for no digest at all.
+ * MEASURED on this tree: `wma` spliced out of the registry and recorded there with `excludes: true`
+ * wrote 309 rows and dropped `entries.wma` with exit 0; deleting that one defect entry and letting
+ * the id return with its arithmetic multiplied by 1.0001 wrote 310 with `--check` exit 0, the proof
+ * green, ZERO value declarations and 042a185abf7c… on file. Closing it is a decision about which
+ * ledger owns the loss of a DIGEST as against the loss of a ROW, and `withdrawals.json` deliberately
+ * leaves a vanished id to the ledger that already owns it — asserted, at
+ * `test/manifestChannels.spec.ts:286` — so it is the owner's call and not this file's to make
+ * quietly. Recorded here so it stays a decision rather than an oversight. One step further out, all
+ * of these ledgers are append-only BY DOCTRINE and not by mechanism: deleting a signature is as
+ * available as deleting a digest, and costs the same reviewer's glance at a diff that removes a line
+ * from a file whose own text says nothing is ever removed from it.
+ *
+ * Overclaiming here would be the defect this file exists to catch.
  */
 
 /** A digest is a sha256 in lower-case hex, and anything else is a typo before it is a declaration. */
@@ -138,8 +191,14 @@ function landingOf(renames) {
  * both follow their id to wherever the recorded renames land it, so an indicator that was renamed
  * and rewritten in one release answers for the value under its new name instead of arriving as a
  * debut with nothing to answer to.
+ *
+ * `withdrawn` is `withdrawals.json`'s own list, and it is read for the same reason one level along:
+ * a signed withdrawal is the one sanctioned command that takes an id out of the committed manifest
+ * AND its digest out of the fingerprints, which is exactly the shape "genuinely new" is read off.
+ * An id this list names is a row the catalogue KNOWS and stopped offering, never a debut, and the
+ * `values` signed with it is the digest it left at.
  */
-export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted, vendor, renames }) {
+export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted, vendor, renames, withdrawn }) {
   const changes = Array.isArray(ledger?.changes) ? ledger.changes : null;
   if (changes === null) {
     return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `changes` array' }];
@@ -160,6 +219,9 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
   if (!Array.isArray(renames)) {
     return [{ id: '—', fault: 'unreadable', detail: 'the caller did not hand over the recorded renames, and an id that was renamed arrives looking exactly like a debut — which is a value with no old digest to answer to' }];
   }
+  if (!Array.isArray(withdrawn)) {
+    return [{ id: '—', fault: 'unreadable', detail: 'the caller did not hand over the signed withdrawals, and a row the catalogue signed away is the one id the committed manifest stops offering ON PURPOSE — without the list it comes back indistinguishable from an indicator that never existed' }];
+  }
   /* ---- THE FILE IS READ THROUGH THE RENAME TABLE, BEFORE ANY OF IT IS JUDGED ------------------- *
    * A rename is a claim about the NAME. It resolves the vanished id one block up in the generator
    * and it says nothing whatever about the arithmetic — so the digest travels with the id, and so
@@ -175,6 +237,17 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
   committed = inherited;
   const offers = new Set();
   for (const id of offered) { offers.add(id); offers.add(lands(id)); }
+  /* ---- AND THROUGH THE WITHDRAWAL LEDGER, WHICH IS WHERE A KNOWN ID GOES TO STOP BEING OFFERED - *
+   * Keyed by where the renames land it, for the same reason the digest is: otherwise a withdrawal
+   * signed for `wma` says nothing about the `wma-weighted` that comes back, and the rename would be
+   * a costume over the withdrawal instead of a claim about the name. Last entry wins — the file is
+   * append-only and a row withdrawn twice leaves two signatures, of which only the newest describes
+   * the digest that left.                                                                        */
+  const signedOff = new Map();
+  for (const row of withdrawn) {
+    if (typeof row?.id !== 'string' || row.id === '') continue;
+    signedOff.set(lands(row.id), row);
+  }
   const sameEncoding = encoding.committed === encoding.derived;
 
   const faults = [];
@@ -301,6 +374,21 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
     }
   }
 
+  /* ---- AND A DIGEST DOES NOT LEAVE THE FILE WITHOUT SAYING WHAT IT WAS ------------------------- *
+   * This is the run in which the row stops being derived and its entry is about to be dropped from
+   * `fingerprints.json` by the generator itself — the only moment the value is still readable, and
+   * therefore the only moment it can be written down for free. The withdrawal is already a human
+   * signature that losing the row is acceptable; the digest rides along with it, checked against the
+   * entry leaving rather than taken on trust, so a signature cannot state a value the file never
+   * held. One run later there is nothing left to check and this clause goes quiet by itself.     */
+  for (const [id, signed] of signedOff) {
+    const was = committed[id];
+    if (was === undefined) continue;
+    if (comparable[id] !== undefined) continue;
+    if (HEX64.test(signed.values ?? '') && signed.values === was.values && signed.encoding === comparison) continue;
+    say(id, 'withdrawal-without-a-value', `the row is leaving the catalogue and its digest leaves \`fingerprints.json\` with it, so this signature is the last place the value is written down — record it beside the reason as \`"values": "${was.values}", "encoding": "${comparison}"\`. Without it the id comes back as a debut, and a debut has no old value to answer to`);
+  }
+
   /* ---- then every digest that moved, against what was declared for it ------ *
    * READ IN THE SPELLING THE FILE IS WRITTEN IN. `comparable` is this run's own computations under
    * the COMMITTED identity, which on an ordinary run is `derived` itself and on a re-spelling run is
@@ -313,7 +401,22 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
       // but "new" is a claim the committed manifest can check. An id it still OFFERS had a digest
       // and no longer has one, which is a proof that was deleted, and deleting it is exactly what
       // gets a moved number through the sanctioned regeneration command.
-      if (!offers.has(id)) continue;
+      if (!offers.has(id)) {
+        // AND AN ID THE CATALOGUE SIGNED AWAY IS NOT NEW EITHER. A withdrawal removes the row from
+        // the committed manifest ON PURPOSE, which is the very shape "genuinely new" is read off —
+        // so the sanctioned command hands back, for the price of one signed sentence, the debut the
+        // rules above spend a rename table and a manifest lookup refusing. It left at a digest and
+        // that digest is signed here: the same one back is a row that returned as it left, and
+        // anything else is a value that moved while nobody was offering it.
+        const signed = signedOff.get(id);
+        if (signed === undefined) continue;
+        if (signed.encoding === comparison && signed.values === row.values) continue;
+        const declaredBack = changes.some((entry) => entry?.id === id && entry.encoding === comparison && entry.to === row.values);
+        if (!declaredBack) {
+          say(id, 'undeclared-return', `it left the catalogue on a signed withdrawal at ${short(signed.values)} under \`${signed.encoding}\` and comes back deriving ${short(row.values)}${under} — a withdrawal retires the ROW and never the arithmetic behind it, so declare the move to ${row.values} under \`${comparison}\` like any other, or bring it back computing what it left computing`);
+        }
+        continue;
+      }
       const restated = changes.some((entry) => entry?.id === id && entry.encoding === comparison && entry.to === row.values);
       if (!restated) {
         say(id, 'vanished-fingerprint', `the committed manifest offers it and no digest is on file for it — an entry that was there and is gone is not a new indicator; restore it, or declare the move to ${short(row.values)}${under} like any other`);
@@ -366,6 +469,14 @@ export function valueLedgerRefusal(faults, ledgerPath) {
     'which is append-only. A digest that is ABSENT is not a new indicator either: while the committed',
     'manifest still offers the id, the entry was deleted rather than born, and deleting it is the',
     'cheapest way past this rule. A wrong number only gets through a red build.',
+    '',
+    'A row the catalogue SIGNED AWAY is not a new indicator when it comes back. A withdrawal takes the',
+    'id out of the committed manifest and its digest out of the fingerprints — by sanctioned command,',
+    'with nothing hand-edited — which is exactly the shape a debut has. So the signature in',
+    'example/indicators/withdrawals.json carries the digest the row left at and the spelling it was',
+    'taken under, and a return that derives anything else is a value that moved with nobody offering',
+    'it. Measured: withdraw, restore with the arithmetic multiplied by 1.0001, and the tampered digest',
+    'was written with 310 offered, --check exit 0 and zero declarations.',
     '',
     'If what changed is the ENCODING rather than any value — every digest in the file moving at once,',
     'with no indicator computing anything different — that is declared ONCE, in the same file\'s',
