@@ -1897,3 +1897,20 @@ describe('a value edited while the history is still loading', () => {
     expect(study).toEqual([{ time: 2000, value: BARS[1].close }]);
   });
 });
+
+/**
+ * The composition's own centred row, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. This is the header strip that carries the symbol,
+ * the interval, the grid controls and the primary actions; `flex-wrap` is what keeps it from
+ * clipping them, and it has to stay declared after the pair and before the padding.
+ */
+describe('the centred row inside the composed root', () => {
+  it('serialises the header strip exactly as it did before', () => {
+    const view = render(<ChartWorkspace {...minimalProps(fakePort())} />);
+    const header = view.container.querySelector('[role="tabpanel"] > div');
+    expect(header?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 0px 4px 4px;',
+    );
+  });
+});

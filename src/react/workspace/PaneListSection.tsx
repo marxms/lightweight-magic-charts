@@ -7,6 +7,7 @@ import type { CSSProperties, DragEvent as ReactDragEvent, ReactElement } from 'r
 
 import type { PaneConfig } from '../../pane/budget';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
+import { CENTER_ROW } from '../theme';
 import { useWorkspaceSetup, useWorkspaceSetupWriter } from './setupContext';
 
 /** The set element the platform already has, stripped of the chrome it paints by default. */
@@ -16,8 +17,7 @@ const LIST: CSSProperties = { ...BARE_SET, display: 'flex', flexDirection: 'colu
 
 const ROW: CSSProperties = {
   ...BARE_SET,
-  display: 'flex',
-  alignItems: 'center',
+  ...CENTER_ROW,
   gap: 8,
   cursor: 'grab',
 };

@@ -111,12 +111,15 @@ T14 → T15 → T16
 - Skill: NONE
 
 **Done when**:
-- [ ] Rendered output is unchanged, asserted
-- [ ] `size-budget.json` re-pinned DOWN with the measured number and a written reason
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] Rendered output is unchanged, asserted
+- [x] `size-budget.json` re-pinned DOWN with the measured number and a written reason
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **-280 B** (entry 104992 -> 104712), not the -283 the design estimated.
+Landed in `src/react/theme.ts` as `CENTER_ROW`, not in `primitives.tsx`: the eleven sites are style
+declarations across nine files, and `theme.ts` is the leaf every one of them can already reach.
 
 ---
 

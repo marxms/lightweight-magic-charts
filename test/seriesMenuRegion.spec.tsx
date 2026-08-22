@@ -287,3 +287,33 @@ describe('the pointer leaving the menu', () => {
     expect(overlay()).toBeNull();
   });
 });
+
+/**
+ * The panel's two centred rows, serialised as they were before the shared value.
+ *
+ * Both strings were captured from the tree BEFORE the collapse. The chip is the interesting one:
+ * it overrides `gap` where the fieldset takes the declaration's own, so a shared value spread after
+ * the override would silently restore 4px on a chip that asked for 2.
+ */
+describe('the centred row inside the studies panel', () => {
+  it('serialises the panel fieldset exactly as it did before', () => {
+    render(<Harness start={['alpha']} />);
+    fireEvent.click(trigger());
+    const fieldset = screen.getByTestId('workspace-active-alpha').parentElement;
+    expect(fieldset?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 0px;' +
+        ' padding: 4px 8px; background: rgb(11, 14, 19);' +
+        ' border: 1px solid rgba(255,255,255,0.14); color: rgb(184, 188, 196);' +
+        ' font-family: Inter, system-ui, sans-serif; font-size: 11px;',
+    );
+  });
+
+  it('serialises an active chip exactly as it did before, override and all', () => {
+    render(<Harness start={['alpha']} />);
+    fireEvent.click(trigger());
+    expect(screen.getByTestId('workspace-active-alpha').getAttribute('style')).toBe(
+      'display: flex; align-items: center; flex-wrap: wrap; gap: 2px;' +
+        ' border: 1px solid rgba(255,255,255,0.14); border-radius: 4px;',
+    );
+  });
+});

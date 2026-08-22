@@ -7,7 +7,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactElement }
 
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
-import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
+import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
 
 /** What the bar needs to draw one tab. The setup itself never reaches this component. */
 export interface WorkspaceTabsBarItem {
@@ -180,8 +180,7 @@ export function WorkspaceTabsBar({
             role="presentation"
             data-testid={`${testIdPrefix}-tab-${index}`}
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              ...CENTER_ROW,
               borderBottom: `2px solid ${index === activeIndex ? theme.accent : 'transparent'}`,
               background: index === activeIndex ? theme.accentFill : 'transparent',
             }}
@@ -293,7 +292,7 @@ export function WorkspaceTabsBar({
       </button>
 
       {(onExport !== undefined || onImportFile !== undefined) && (
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+        <span style={{ marginLeft: 'auto', ...CENTER_ROW, gap: 2 }}>
           {onExport !== undefined && (
             <button
               type="button"

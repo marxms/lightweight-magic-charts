@@ -3,6 +3,8 @@
  * See docs/explanation/react.md#why-a-token-object-and-not-a-styling-library
  */
 
+export const CENTER_ROW = { display: 'flex', alignItems: 'center' } as const;
+
 export interface WorkspaceTheme {
   readonly background: string;
   readonly text: string;

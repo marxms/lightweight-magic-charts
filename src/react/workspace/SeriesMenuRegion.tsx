@@ -15,6 +15,7 @@ import type { ResolvedSourceView } from '../../indicator/resolution';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
 import type { StudiesPanelLabels } from '../chrome/labels';
 import { useHoverDismiss } from '../hoverIntent';
+import { CENTER_ROW } from '../theme';
 import { SeriesMenu } from '../SeriesMenu';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 
@@ -34,7 +35,7 @@ export interface SeriesMenuRegionProps {
 }
 
 const OVERLAY: CSSProperties = { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 };
-const ROW: CSSProperties = { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 };
+const ROW: CSSProperties = { ...CENTER_ROW, flexWrap: 'wrap', gap: 4 };
 
 /**
  * What the panel says about a source drawn incompletely, or not at all.

@@ -338,3 +338,28 @@ describe('CompactCell — the theme comes from the mounted chrome, never from a 
     expect(DEFAULT_WORKSPACE_THEME.text).not.toBe(CANARY.text);
   });
 });
+
+/**
+ * The cell's two centred rows, serialised as they were before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. The radio group is the one whose declaration is
+ * nothing but the shared pair and a gap, so a spread that dropped a property would leave it
+ * unlaid-out with every other assertion in this file still green.
+ */
+describe('the centred row inside the cell', () => {
+  it('serialises the cell header exactly as it did before', async () => {
+    const { view } = await mount();
+    const head = view.container.querySelector('[data-compact-cell] > div');
+    expect(head?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; gap: 6px; padding: 3px 8px;' +
+        ' border-bottom: 1px solid rgba(255,255,255,0.14); font-size: 10.5px;',
+    );
+  });
+
+  it('serialises the timeframe group exactly as it did before', async () => {
+    const { view } = await mount();
+    expect(view.container.querySelector('[role="radiogroup"]')?.getAttribute('style')).toBe(
+      'display: flex; align-items: center; gap: 6px;',
+    );
+  });
+});

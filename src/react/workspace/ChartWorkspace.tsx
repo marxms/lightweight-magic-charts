@@ -29,6 +29,7 @@ import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeCon
 import type { WorkspaceChromeProviderProps, WorkspaceSection } from '../chrome/ChromeContext';
 import { duplicateStudyNotice, laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
 import { studyIdentity } from '../SeriesMenu';
+import { CENTER_ROW } from '../theme';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 import type { PaneView, SeriesReader } from '../surface/ChartSurface';
 import { CanvasRow } from './CanvasRow';
@@ -162,9 +163,7 @@ const SHELL: CSSProperties = {
   ...COLUMN, flex: 'none', position: 'relative', outline: 'none',
   border: 'none', margin: 0, padding: 0, minInlineSize: 0,
 };
-const HEADER: CSSProperties = {
-  display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, padding: '0 4px 4px',
-};
+const HEADER: CSSProperties = { ...CENTER_ROW, flexWrap: 'wrap', gap: 4, padding: '0 4px 4px' };
 
 /** Editing keys are never hijacked from a field somebody is typing in. */
 function isTextEntry(target: EventTarget | null): boolean {

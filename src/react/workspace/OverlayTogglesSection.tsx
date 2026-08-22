@@ -11,12 +11,12 @@ import { memo } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
+import { CENTER_ROW } from '../theme';
 import { DensityControls } from '../DensityControls';
 import { useWorkspaceSetup, useWorkspaceSetupWriter } from './setupContext';
 
 const ROW: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
+  ...CENTER_ROW,
   flexWrap: 'wrap',
   gap: 8,
 };

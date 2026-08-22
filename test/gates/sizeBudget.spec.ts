@@ -156,13 +156,21 @@ const SYMBOLS_AT_CUTOVER = 13;
  * into `laneOrder`'s deduplication. The label member is optional with a default, and the contract's
  * member count moves 85 -> 86 in the same commit. Estimated +175 B, measured +147. Still spent from
  * the 484 B the two factories gave back: the entry sits 315 B below where this feature found it.
+ * RE-PINNED DOWN 2026-08-21, entry 104992 -> 104712 (-280 B) and ChartWorkspace 95648 -> 95364
+ * (-284 B): the two properties every centred row opens with became one shared value. Eleven
+ * declarations across nine files repeated them, and each site now spreads the value at the POSITION
+ * the pair already held — React writes inline styles in insertion order, so the serialised
+ * attribute is what has to stay equal, not the set of properties. All twelve affected elements are
+ * pinned as text, captured BEFORE the collapse. Its own candidate in its own commit. Estimated
+ * -283 B, measured -280 B; the measurement is written down. The two rows disagree by four bytes and
+ * are recorded as measured: they are taken over different graphs.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104992,
+  '*': 104712,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -175,7 +183,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95648,
+  ChartWorkspace: 95364,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

@@ -6,7 +6,7 @@ import { memo } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 
 import type { NoticeSeverity, NoticeProps } from './slots';
-import type { WorkspaceTheme } from '../theme';
+import { CENTER_ROW, type WorkspaceTheme } from '../theme';
 import { IconButton } from './IconButton';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './labels';
 import { Text } from './primitives';
@@ -22,8 +22,7 @@ function liveRoleOf(severity: NoticeSeverity): 'alert' | 'status' {
 
 function panelStyle(theme: WorkspaceTheme, severity: NoticeSeverity): CSSProperties {
   return {
-    display: 'flex',
-    alignItems: 'center',
+    ...CENTER_ROW,
     gap: 8,
     padding: '6px 10px',
     borderRadius: 4,

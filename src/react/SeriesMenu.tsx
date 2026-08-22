@@ -16,7 +16,7 @@ import type { WorkspaceSection } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
 import { useHoverIntent } from './hoverIntent';
-import { DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
+import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
 
 export interface SeriesCatalogueEntry {
   /** The instance the host built. Handed straight back on assignment, so no lookup table is needed. */
@@ -195,7 +195,7 @@ export function SeriesMenu({
         maxHeight: 420,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
+      <div style={{ ...CENTER_ROW, gap: 10, padding: 8 }}>
         <strong style={{ fontSize: 11.5 }}>{labels.title}</strong>
         <input
           type="search"
