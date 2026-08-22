@@ -4,6 +4,83 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.2 — 2026-08-22
+
+The host can now adopt a third-party indicator catalogue, and the chart draws every channel that
+catalogue emits. The library still ships no indicator, names none, and carries no runtime dependency:
+what changed is that the arithmetic and the vocabulary can arrive from outside and be drawn whole,
+and that a study's settings survive the tab they were typed into.
+
+### Breaking
+
+- **`ResolutionPolicy.plotsPerLane` is gone**, and with it the ceiling on how many lines a study may
+  draw. It was a third number mirroring a resource the package does not own: the lane width belongs to
+  `WorkspaceLanes.plots` and the over-price width to the host's own price `PaneSpec`, and the policy
+  number agreed with neither. Measured on a 320-entry catalogue, 543 of 1048 plots never reached the
+  screen — 431 of them by the over-price slot, not by this number. A host passing it should delete the
+  property; the widths it wants are the two it already declares.
+- **`ResolvedSourceView.truncated` and `StudiesPanelLabels.truncated` are gone.** The count was not
+  merely unused — it was **wrong**: blind to the over-price cut, it reported two lines lost while four
+  were missing, and the panel printed "3 of 5 lines" beside a chart drawing one. Nothing that is
+  drawn is cut any more, so there is no honest number to report; a host that wants to know what a
+  ceiling of its own cost can derive it as `ids.length - views.length`, which counts a repeated id
+  alongside the cut.
+
+### Fixed
+
+- **Picking a study lights its chip.** The menu compared the pressed state against
+  `provider.id` while the pick stored `entry.label`, so the two never agreed and a chosen study looked
+  unselectable. Every part worked; the composition did not. The suite passed over it because the menu
+  was only ever mounted alone, with provider ids fed in by hand.
+- **A study draws every line it computes.** Ichimoku drew one of five, and the two that fell were the
+  Kumo boundaries — the cloud the indicator is named for could not appear even in outline. The
+  resource now follows what the catalogue declares rather than one number written for all studies.
+- **Candlestick pattern markers reach the bars.** `setMarkers` was optional on the port and the call
+  was swallowed: the base library carries the member on its marker plugin, not on the series, so
+  nothing was ever placed. It survived review because the repository's own test double implemented a
+  member the real object lacks — the test passed against a stand-in more capable than the original.
+
+### Added
+
+- **A study is identified by something that is not on screen.** `SeriesCatalogueEntry.id` is optional
+  and falls back to the label, so a catalogue written before this keeps resolving; `studyIdentity` is
+  published so a host and the menu cannot disagree about what a study is. Two entries resolving to one
+  identity are refused through the notice channel rather than silently dropped by the deduplication.
+- **A tab remembers what a study was set to.** `WorkspaceSetup.studySettings` holds one opaque value
+  per study and `WorkspaceSetupPolicy.coerceStudySettings` reads it back, both optional.
+  `StudySettings` is `unknown` **on purpose**: the package cannot read a member of it without a
+  narrowing it is forbidden to write, so "stored and never interpreted" is enforced by the compiler
+  rather than by care. Values survive a tab switch, a duplicate, an export and a re-import, and
+  `useWorkspaceSetup` and `useWorkspaceSetupWriter` are published so a host section can write them.
+- **`studies.resolve` may receive the settings.** A third parameter, optional, so a host's existing
+  two-parameter resolver stays assignable — and without it an edited value could not redraw, because
+  the memo that guards the resolution cannot see a change it is not given.
+- **An overlay may name the scale it reads.** `Overlay.anchor` binds a host's canvas primitive to a
+  study's own series, which is how a band between two lines is drawn at all: the base library has no
+  band series, and the published overlay seam already draws with a price-to-pixel projection. The
+  package draws the ground and the host annotates over it.
+- **A point may carry its own colour.** `Point.color` is optional and changes nothing about what a
+  point means — a point with no value is still a declared gap. Measured on the adopted catalogue, 147
+  of 320 indicators emit coloured points, and every one of them was being discarded.
+
+### Verification
+
+- **`npm run proof`** is a new gate with its own CI job. It answers for somebody else's arithmetic:
+  every offered indicator is proven to draw, to be deterministic, to be pure, to sit on the scale it
+  declares and to offer only controls that move the drawing — and every control held back carries a
+  written reason. **Parameterisation is proven exhaustively.** Numerical correctness is not uniform,
+  and the seal says so per indicator rather than implying otherwise.
+- **A vendor release cannot change a number in silence.** Digests are taken over a per-series quantum
+  rather than raw floats, because `Math.exp`, `Math.log`, `Math.pow` and `Math.atan` are
+  implementation-approximated in ECMAScript and differ between V8 builds — measured at 1.5 ULP across
+  two platforms, amplified to 1.68e-12 by a rate-of-change indicator. Every encoding the catalogue has
+  ever committed under stays addressable, so a digest is compared under the encoding it was committed
+  under, and a value that moved beneath a re-spelling, a rename or a signed withdrawal is still
+  refused until someone writes down why.
+- **The boundary gate reads `import()`.** A dynamic import of a banned package used to pass the suite;
+  the guard now fails CLOSED, so a specifier it cannot read as a literal is itself a violation — for
+  `require()` on the same terms.
+
 ## 0.3.1 — 2026-08-22
 
 Four seams that shipped open in 0.3.0, found by an adversarial review of the diff before merge and
