@@ -29,7 +29,7 @@ import { WorkspaceChromeProvider, useWorkspaceChrome } from '../chrome/ChromeCon
 import type { WorkspaceChromeProviderProps, WorkspaceSection } from '../chrome/ChromeContext';
 import { duplicateStudyNotice, laneNotice, resolveWorkspaceLabels } from '../chrome/labels';
 import { studyIdentity } from '../SeriesMenu';
-import { CENTER_ROW } from '../theme';
+import { CENTER_ROW, STACK } from '../theme';
 import type { SeriesCatalogueEntry } from '../SeriesMenu';
 import type { PaneView, SeriesReader } from '../surface/ChartSurface';
 import { CanvasRow } from './CanvasRow';
@@ -154,7 +154,7 @@ const DEFAULT_CONVENTION: PriceScaleConvention = {
   upColor: '#26a69a', downColor: '#ef5350', encodeDirectionBy: ['color', 'position'],
 };
 
-const COLUMN: CSSProperties = { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 };
+const COLUMN: CSSProperties = { ...STACK, flex: 1, minHeight: 0 };
 /**
  * The overlay anchor: the studies menu positions against THIS box, never against the viewport.
  * See docs/explanation/react-workspace.md#the-shell-is-a-stripped-fieldset

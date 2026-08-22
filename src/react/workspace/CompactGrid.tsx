@@ -10,6 +10,7 @@ import type { ChartEngine } from '../../port/chartApi';
 import type { HistoryPort, LivePort } from '../../port/ports';
 import { CompactCell } from '../CompactCell';
 import { useWorkspaceChrome } from '../chrome/ChromeContext';
+import { STACK } from '../theme';
 import { useWorkspaceSetup, useWorkspaceSetupWriter } from './setupContext';
 
 /** Which market the cells draw, and what they draw it with. All of it the host's. */
@@ -35,8 +36,7 @@ export interface CompactGridProps {
 /** `width`, never `flex`: a basis of zero shrinks by zero and this column kept 0 px.
  * See docs/explanation/react-workspace.md#the-elastic-columns-ask-for-the-row-the-same-way */
 const COLUMN: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
+  ...STACK,
   width: '100%',
   minWidth: 0,
 };

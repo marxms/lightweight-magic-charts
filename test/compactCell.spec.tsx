@@ -363,3 +363,20 @@ describe('the centred row inside the cell', () => {
     );
   });
 });
+
+/**
+ * The cell's own column stack, serialised as it was before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. `flex: 1` and the two minimums are what let a cell
+ * shrink inside the grid row, and they have to keep declaring themselves AFTER the direction.
+ */
+describe('the column stack inside the cell', () => {
+  it('serialises the cell root exactly as it did before', async () => {
+    const { view } = await mount();
+    expect(view.container.querySelector('[data-compact-cell]')?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0;' +
+        ' border-left: 1px solid rgba(255,255,255,0.14);' +
+        ' font-family: Inter, system-ui, sans-serif; color: rgb(184, 188, 196);',
+    );
+  });
+});

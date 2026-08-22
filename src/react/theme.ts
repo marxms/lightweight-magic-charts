@@ -5,6 +5,8 @@
 
 export const CENTER_ROW = { display: 'flex', alignItems: 'center' } as const;
 
+export const STACK = { display: 'flex', flexDirection: 'column' } as const;
+
 export interface WorkspaceTheme {
   readonly background: string;
   readonly text: string;

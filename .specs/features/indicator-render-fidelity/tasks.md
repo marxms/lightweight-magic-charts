@@ -136,12 +136,14 @@ declarations across nine files, and `theme.ts` is the leaf every one of them can
 - Skill: NONE
 
 **Done when**:
-- [ ] Rendered output is unchanged, asserted
-- [ ] Re-pinned DOWN separately from T1 — one measured candidate per re-pin
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] Rendered output is unchanged, asserted
+- [x] Re-pinned DOWN separately from T1 — one measured candidate per re-pin
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **-148 B** (entry 104712 -> 104564), against the -145 estimated. Six
+sites, `STACK` beside `CENTER_ROW` in `src/react/theme.ts`.
 
 ---
 

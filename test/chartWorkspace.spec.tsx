@@ -1914,3 +1914,28 @@ describe('the centred row inside the composed root', () => {
     );
   });
 });
+
+/**
+ * The composition's two column stacks, serialised as they were before the shared value.
+ *
+ * Captured from the tree BEFORE the collapse. The shell spreads the panel's own declaration and
+ * then overrides `flex`, so the two strings have to differ in exactly that property and nowhere
+ * else — a shared value spread after the override would put `flex: 1` back on the shell and the
+ * whole workspace would start stretching inside its host.
+ *
+ * DECLARED BLIND SPOT: `border: none` on the shell. It is in the declaration and in neither pin,
+ * because jsdom does not serialise it — the same blind spot `seriesMenuRailStyle.spec.tsx` measured
+ * and wrote down.
+ */
+describe('the column stack inside the composed root', () => {
+  it('serialises the shell and the tab panel exactly as they did before', () => {
+    const view = render(<ChartWorkspace {...minimalProps(fakePort())} />);
+    expect(view.container.firstElementChild?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; position: relative;' +
+        ' outline: none; margin: 0px; padding: 0px; min-inline-size: 0; height: 480px;',
+    );
+    expect(view.container.querySelector('[role="tabpanel"]')?.getAttribute('style')).toBe(
+      'display: flex; flex-direction: column; flex: 1; min-height: 0;',
+    );
+  });
+});

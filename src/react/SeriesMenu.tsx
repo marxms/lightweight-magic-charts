@@ -16,7 +16,7 @@ import type { WorkspaceSection } from './chrome/ChromeContext';
 import { DEFAULT_WORKSPACE_CHROME_LABELS } from './chrome/labels';
 import { nextRovingIndex } from './chrome/rovingFocus';
 import { useHoverIntent } from './hoverIntent';
-import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, type WorkspaceTheme } from './theme';
+import { CENTER_ROW, DEFAULT_WORKSPACE_THEME, STACK, type WorkspaceTheme } from './theme';
 
 export interface SeriesCatalogueEntry {
   /** The instance the host built. Handed straight back on assignment, so no lookup table is needed. */
@@ -186,8 +186,7 @@ export function SeriesMenu({
     <div
       data-testid={testIdPrefix}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        ...STACK,
         background: theme.surface,
         color: theme.text,
         fontFamily: theme.fontFamily,

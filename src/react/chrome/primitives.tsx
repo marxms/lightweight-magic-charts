@@ -7,7 +7,7 @@
 import { memo } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 
-import type { WorkspaceTheme } from '../theme';
+import { STACK, type WorkspaceTheme } from '../theme';
 
 export interface BoxProps {
   readonly theme: WorkspaceTheme;
@@ -62,7 +62,7 @@ export const Column = memo(function Column({ children, gap, align, style, testId
   return (
     <div
       data-testid={testId}
-      style={{ display: 'flex', flexDirection: 'column', gap, alignItems: align, ...style }}
+      style={{ ...STACK, gap, alignItems: align, ...style }}
     >
       {children}
     </div>

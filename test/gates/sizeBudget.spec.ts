@@ -164,13 +164,19 @@ const SYMBOLS_AT_CUTOVER = 13;
  * pinned as text, captured BEFORE the collapse. Its own candidate in its own commit. Estimated
  * -283 B, measured -280 B; the measurement is written down. The two rows disagree by four bytes and
  * are recorded as measured: they are taken over different graphs.
+ * RE-PINNED DOWN 2026-08-21, entry 104712 -> 104564 (-148 B) and ChartWorkspace 95364 -> 95219
+ * (-145 B): the column stack became one shared value, spread in FRONT of whatever each of the six
+ * declarations followed it with. The `Column` primitive is what makes the position a correctness
+ * question: its declaration ends with the caller's own `...style`, so a value spread last would
+ * overrule every caller. Its own candidate in its own commit. Estimated -145 B, measured -148 B on
+ * the entry and -145 B on the composed root.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104712,
+  '*': 104564,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -183,7 +189,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95364,
+  ChartWorkspace: 95219,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
