@@ -214,13 +214,20 @@ const SYMBOLS_AT_CUTOVER = 13;
  * baseline is empty and shrink-only, so a member of `SurfaceData` may not exist for one commit
  * without the socket that fills it. Measured on the REAL engine in a browser: 17,274 and 9,974
  * marker pixels where there were 0 and 0, and taking the adapter out puts both back to 0.
+ * RE-PINNED 2026-08-21, entry 104287 -> 104450 (+163 B), ChartWorkspace 94987 -> 95150 and
+ * ChartSurface 23946 -> 24067: a bar the study colours is coloured. `SurfaceData.barColors` rides
+ * the payload the candles were already written with, and the `WorkspaceStudies.barColors` channel
+ * shares the commit for the same `socketParity` reason as the markers. `barcolor()` is GLOBAL in
+ * PineScript, which is why it is ONE array and not a map per study: 23 of the 52 emitters are drawn
+ * in a lane of their own and still repaint the price. Read off the bitmap on the real engine:
+ * 1,865 candle pixels in the study's own colour where there were 0.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104287,
+  '*': 104450,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -232,8 +239,8 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   PaneStack: 2714,
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
-  ChartSurface: 23946,
-  ChartWorkspace: 94987,
+  ChartSurface: 24067,
+  ChartWorkspace: 95150,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

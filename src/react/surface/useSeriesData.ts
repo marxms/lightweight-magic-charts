@@ -36,6 +36,8 @@ export interface SeriesDataInput {
   readonly priceMarkers?: readonly SeriesMarkerPoint[];
   /** Marks on a COMPUTED series, by `seriesStyleKey`. See docs/explanation/react-surface.md#a-study-marks-its-own-series */
   readonly seriesMarkers?: ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
+  /** One colour per bar, positionally. See docs/explanation/react-surface.md#a-bar-the-study-colours */
+  readonly barColors?: readonly (string | null)[];
   /** The dataset's IDENTITY: changed = dataset replaced, and the scale is redone once. */
   readonly datasetId?: string;
   readonly autoFit?: boolean;
@@ -61,6 +63,7 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     seriesStyles,
     priceMarkers,
     seriesMarkers,
+    barColors,
     datasetId,
     autoFit,
     futureBars,
@@ -92,13 +95,17 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     // library's payload, so overlays, providers and the legend keep reading real bars with no guard
     // of their own. See docs/explanation/domain.md#the-future-room-is-whitespace-not-candles
     handles.candle?.setData([
-      ...bars.map((bar) => ({
-        time: bar.time,
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close,
-      })),
+      ...bars.map((bar, at) => {
+        const color = barColors?.[at] ?? null;
+        return {
+          time: bar.time,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          ...(color === null ? {} : { color, borderColor: color, wickColor: color }),
+        };
+      }),
       ...futureTail(bars, futureBarCount(futureBars, bars.length)),
     ]);
 
@@ -146,7 +153,7 @@ export function useSeriesData(handles: ChartHandles | null, input: SeriesDataInp
     // all of it is the right picture.
     // See docs/explanation/react-surface.md#framing-is-fitcontent-and-nothing-after-it
     scale.fitContent();
-  }, [bars, dataPanes, handles, readingsByPane, upColor, downColor, datasetId, autoFit, futureBars]);
+  }, [bars, barColors, dataPanes, handles, readingsByPane, upColor, downColor, datasetId, autoFit, futureBars]);
 
   /** THE SHAPE PAIR — which of the two members is on screen. Applied to the PAIR only.
    * See docs/explanation/react-surface.md#the-shape-pair-applies-to-the-pair-only */

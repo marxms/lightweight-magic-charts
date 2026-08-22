@@ -3,6 +3,7 @@ import type { Bar, SeriesCatalogueEntry, StudySettings } from 'lightweight-magic
 import { useMemo, useRef, useState, type ReactElement } from 'react';
 
 import { bandChannel } from './bandOverlay';
+import { barColourChannel } from './barColours';
 import { demoSetupPolicy } from './catalogue';
 import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
@@ -68,6 +69,7 @@ export function App({ indicators }: AppProps): ReactElement {
    */
   const bands = useMemo(() => bandChannel(STUDY_CAPACITY), []);
   const marks = useMemo(() => markChannel(), []);
+  const hues = useMemo(() => barColourChannel(), []);
   const offered = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const catalogue = useMemo(
     () => demoSetupPolicy([...offered], indicators?.coerceStudySettingsFor()),
@@ -97,6 +99,7 @@ export function App({ indicators }: AppProps): ReactElement {
         const vendor = indicators?.sourceLookupFor(library, settings, rows, (pass) => {
           bands.record(pass);
           marks.record(pass);
+          hues.record(pass);
         });
         const resolution = resolveSources(
           ids,
@@ -111,6 +114,7 @@ export function App({ indicators }: AppProps): ReactElement {
       },
       overlays: bands.overlays,
       markers: marks.map,
+      barColors: hues.colours,
       capacity: STUDY_CAPACITY,
       // Without lanes there is nowhere for an own-pane study to go, and picking one would look
       // like nothing happening.
@@ -118,7 +122,7 @@ export function App({ indicators }: AppProps): ReactElement {
     }),
     // `library` is a dependency because the arithmetic arriving has to invalidate the memo the
     // composition holds — otherwise the study stays a name with no line under it.
-    [bands, entries, indicators, library, marks, offered, rows, widths.ownPane],
+    [bands, entries, hues, indicators, library, marks, offered, rows, widths.ownPane],
   );
 
   return (

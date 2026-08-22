@@ -758,6 +758,47 @@ describe('B8 — pattern marks on the price series', () => {
   });
 });
 
+describe('BAR-01/02 — a bar the study colours is coloured', () => {
+  const candlePayload = (recording: Recording): ReadonlyArray<Record<string, unknown>> =>
+    (recording.series.find((record) => record.shape === 'candlestick')?.data ??
+      []) as unknown as ReadonlyArray<Record<string, unknown>>;
+
+  it('paints the bar in the colour it was given, body, border and wick together', () => {
+    // The base library takes `color`, `borderColor` and `wickColor` per item — measured in the
+    // installed `.d.ts` — so a bar recoloured in the body and outlined in the convention would read
+    // as a different bar than the one the study named.
+    const written = candlePayload(mount({ barColors: ['#9c27b0', null] }));
+
+    expect(written[0]).toMatchObject({ color: '#9c27b0', borderColor: '#9c27b0', wickColor: '#9c27b0' });
+    // CONTROL POSITIVE: `null` is "the convention decides", never "paint it nothing". A build that
+    // wrote the key anyway would blank every bar the study had no opinion about.
+    expect(written[1]).not.toHaveProperty('color');
+    expect(written[1]).toMatchObject({ open: 105, close: 115 });
+  });
+
+  it('leaves every bar to the convention when the host declares no colours at all', () => {
+    const written = candlePayload(mount());
+
+    expect(written.every((point) => !('color' in point))).toBe(true);
+    // And the whitespace tail is still there and still uncoloured: the map only walks real bars.
+    expect(written.length).toBeGreaterThan(BARS.length);
+  });
+
+  it('BAR-02 — a colour changes nothing about what a POINT means: a gap stays a gap', () => {
+    // The reader answers `null` for the second bar of `a`, and that is a declared absence. Colouring
+    // the candles must not make it a reading, and a coloured bar must not invent one either.
+    const gapped: SeriesReader = (_pane, spec) => (String(spec.id) === 'a' ? [55.4, null] : []);
+    const recording = mount({ barColors: ['#9c27b0', '#9c27b0'], read: gapped });
+    const study = recording.series.find((record) => record.options.color === '#ffb74d');
+    const points = (study?.data ?? []) as unknown as ReadonlyArray<Record<string, unknown>>;
+
+    expect(points).toHaveLength(1);
+    expect(points[0]).toMatchObject({ value: 55.4 });
+    // And the candles still carry the colour, so the two channels are independent rather than one.
+    expect(candlePayload(recording)[1]).toMatchObject({ color: '#9c27b0' });
+  });
+});
+
 describe('B1/B2 — the drawing seam', () => {
   interface BindingLog {
     hosts: DrawingSurfaceHost[];

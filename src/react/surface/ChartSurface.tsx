@@ -59,6 +59,7 @@ export interface SurfaceData {
   readonly seriesStyles?: Readonly<Record<string, SeriesShape>>;
   readonly priceMarkers?: readonly SeriesMarkerPoint[];
   readonly seriesMarkers?: ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
+  readonly barColors?: readonly (string | null)[];
   /** The bar set's IDENTITY: what tells "another market" from "one more bar".
    * See docs/explanation/react-surface.md#dataset-identity */
   readonly datasetId?: string;
@@ -148,7 +149,7 @@ export function ChartSurface({
 }: ChartSurfaceProps): ReactElement {
   // DESTRUCTURED AT THE DOOR: the FIELDS go into every dependency list, never the groups.
   // See docs/explanation/react-surface.md#destructured-at-the-door
-  const { bars, panes, read, pricePane, priceCaption, seriesStyles, priceMarkers, seriesMarkers } = data;
+  const { bars, panes, read, pricePane, priceCaption, seriesStyles, priceMarkers, seriesMarkers, barColors } = data;
   const { datasetId, autoFit, futureBars } = data;
   const { heightPx, budget = DEFAULT_BUDGET, onLayout } = layout;
   const { label, describedBy } = a11y;
@@ -221,6 +222,7 @@ export function ChartSurface({
     seriesStyles,
     priceMarkers,
     seriesMarkers,
+    barColors,
     datasetId,
     autoFit,
     futureBars,

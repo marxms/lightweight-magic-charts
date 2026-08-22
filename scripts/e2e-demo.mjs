@@ -1397,6 +1397,36 @@ async function sceneMarksReachTheBars(browser, base) {
   await page.close();
 }
 
+// ---------------------------------------------------------------------------------------------
+// Scene 18 — THE COLOURED BAR. 52 offered indicators repaint the candles with `barcolor()` and
+// 45,209 of those colours had nowhere to land: `Point` carries none and `SeriesSpec.color` is one
+// colour for a whole series. Read off the bitmap, because a candle painted the wrong colour renders
+// exactly as well as one painted the right one.
+// ---------------------------------------------------------------------------------------------
+const BAR_PAINT = [156, 39, 176]; // buying-selling-volume paints its own #9C27B0
+
+async function sceneBarsAreRecoloured(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const before = await hueCount(page, surface, BAR_PAINT, 2);
+  check('barcolor.none-before-the-pick', before === 0, `bars in the study's colour before the pick: ${before}`);
+
+  await openStudies(page);
+  await pickStudy(page, 'Volume', 'buying-selling-volume');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const after = await hueCount(page, surface, BAR_PAINT, 2);
+  check(
+    'barcolor.candles-take-the-colour',
+    after > 0,
+    `bars in the study's colour after picking "Buying/Selling Volume": ${after} — it is drawn in a LANE and still repaints the price, which is what barcolor() means`,
+  );
+
+  reportConsole('barcolor.console-clean', console_);
+  await page.close();
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -1432,6 +1462,7 @@ try {
   await sceneEditedInputRedraws(browser, base);
   await sceneCloudIsShaded(browser, base);
   await sceneMarksReachTheBars(browser, base);
+  await sceneBarsAreRecoloured(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

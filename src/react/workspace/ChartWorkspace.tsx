@@ -127,6 +127,8 @@ export interface WorkspaceStudies {
   readonly overlays?: readonly Overlay[];
   /** Marks on the drawn lines, by `seriesStyleKey`, minted from what the resolve produced. */
   readonly markers?: (resolution: SourceResolution) => ReadonlyMap<string, readonly SeriesMarkerPoint[]>;
+  /** One colour per bar for the CANDLES, minted from the same resolve. `null` keeps the convention. */
+  readonly barColors?: (resolution: SourceResolution) => readonly (string | null)[];
 }
 
 export interface ChartWorkspaceProps {
@@ -329,7 +331,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                   seriesStyles: setup.seriesStyles as Readonly<Record<string, SeriesShape>>,
                   autoFit: setup.autoFit, datasetId: `${data.symbol}·${timeframe}`,
                   futureBars: data.futureBars,
-                  priceMarkers: data.marks?.(bars, active), seriesMarkers: resolved === undefined ? undefined : studies.markers?.(resolved),
+                  priceMarkers: data.marks?.(bars, active), seriesMarkers: resolved === undefined ? undefined : studies.markers?.(resolved), barColors: resolved === undefined ? undefined : studies.barColors?.(resolved),
                 }}
                 layout={{ heightPx: surfacePx }}
                 a11y={{ label: labels.canvas(data.symbol), describedBy: footerId }}

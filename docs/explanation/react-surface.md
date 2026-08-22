@@ -662,6 +662,21 @@ series.
 
 Pattern marks ride the candle series. An absent prop means the feature is unused, never a clear.
 
+### A bar the study colours
+
+`barColors` is one colour per bar, positionally, and it recolours the CANDLES. That is what
+PineScript's `barcolor()` does: it is global to the chart, not local to the study's own line, and 23
+of the 52 offered indicators that emit it are drawn in a lane of their own while still recolouring
+the price. `CandlestickData` in `lightweight-charts` already carries `color`, `borderColor` and
+`wickColor` per item, so the colour rides the payload the candles were already written with.
+
+`null` means "this bar keeps the convention" and never "paint it nothing", so the array can be
+sparse without the host having to repeat the up and down colours it never chose. The whitespace tail
+never receives a colour, because the map only walks the real bars.
+
+ONE ARRAY, NOT A MAP PER STUDY. With six studies chosen, two of them can colour the same bar, and
+which one wins is the host's vocabulary rather than this package's. Taking one array says so.
+
 ### A study marks its own series
 
 `seriesMarkers` is keyed by `seriesStyleKey`, so a study's arrows and dots land on the study's own

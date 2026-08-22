@@ -471,13 +471,34 @@ baseline is empty and shrink-only, so they could not have been split.
 - Skill: NONE
 
 **Done when**:
-- [ ] A bar the manifest says is coloured is drawn in that colour, read from the canvas
-- [ ] A point with no value is still a declared gap — the colour changes nothing about what a point means
-- [ ] The `socketParity` ledger moves in the same commit
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] A bar the manifest says is coloured is drawn in that colour, read from the canvas
+- [x] A point with no value is still a declared gap — the colour changes nothing about what a point means
+- [x] The `socketParity` ledger moves in the same commit
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — measured **+163 B** (entry 104287 -> **104450**), against +118 in the design and
++126 in the review: both priced the socket alone and this is the socket plus the channel that fills
+it, which `socketParity` will not let land separately. `ChartWorkspace` 95150, `ChartSurface`
+**24067**, `ChartWorkspace.tsx` **349** of 350. e2e 79 -> **82**.
+
+Read off the bitmap: **1,865 candle pixels** in `buying-selling-volume`'s own `#9C27B0` where there
+were **0**. It is drawn in a lane of its own and still repaints the price, which is what
+`barcolor()` means and why the channel is ONE array against the bars rather than a map per study.
+
+**Two deviations, both reasoned.**
+- The channel lives in `WorkspaceStudies`, not in `WorkspaceDataSource` where the review put it.
+  The values are a function of the RESOLUTION — which study landed where, and what it computed —
+  and `WorkspaceDataSource` is assembled before any resolve exists. Putting it there would make the
+  host rebuild the lane mapping from outside, which is the class of bug the phase-1 design measured
+  in `studyIdentity`.
+- BAR-02 is asserted at the unit layer, not on the canvas: the clause is about what a POINT means,
+  and a declared gap is an absence of ink. `test/chartSurface.spec.tsx` reads the payload and finds
+  one plotted point where the reader answered `[55.4, null]`, with the candles still carrying the
+  colour — the two channels independent rather than one.
+
+**The comment budget is at zero.** `1820/9100 = 0.20000` exactly, repository-wide.
 
 ---
 
