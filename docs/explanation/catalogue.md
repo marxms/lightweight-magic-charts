@@ -117,9 +117,9 @@ legend, never an error.
 occupies it, and a lane with nothing in it is never visible — so this text is what the consumer wants
 read in the one case neither of those holds.
 
-`plots` is the companion ceiling: how many lines the lane can draw. Above it a study is truncated, and
-the consumer is the one who says so. `bind` is what the consumer needs to remember about each line,
-keyed by the field just minted.
+`plots` is how many lines the lane is built to hold — a RESOURCE the consumer mints at creation, not
+a policy the resolver applies. `bind` is what the consumer needs to remember about each line, keyed
+by the field just minted.
 
 ### The palette does not rise
 
@@ -210,9 +210,13 @@ library declines to make it silently.
 `ResolutionPolicy` is what the resolver is allowed to assume, as data rather than as constants
 compiled into it.
 
-The counts are a RESOURCE the consumer owns, for the reason above: how many lanes exist is a decision
-about the consumer's chart. `lanes` and `plotsPerLane` therefore have no default, because there is
-none to have.
+The count is a RESOURCE the consumer owns, for the reason above: how many lanes exist is a decision
+about the consumer's chart. `lanes` therefore has no default, because there is none to have.
+
+There is NO companion ceiling on lines per lane. There was one, and it was a defect: one number
+written by the host for every study at once cut 89 of 320 offered indicators, and the Ichimoku Cloud
+lost exactly the two plots that ARE the cloud. How many lines a study has is a property of the
+study, so the resolver takes it from the study.
 
 The two ratios are CALIBRATION: `priceNeighbourhood` is how many times away from the price level a
 line may sit and still be drawn over it, and `warmUpShare` is the share of the window a warm-up may

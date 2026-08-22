@@ -47,7 +47,6 @@ const ROW: CSSProperties = { ...CENTER_ROW, flexWrap: 'wrap', gap: 4 };
 function noteOf(view: ResolvedSourceView, labels: StudiesPanelLabels): string {
   if (view.availability === 'empty') return labels.noData;
   if (view.availability === 'warmup') return labels.warmUp(view.warmUpBars, view.windowBars);
-  if (view.truncated > 0) return labels.truncated(view.drawn, view.drawn + view.truncated);
   return '';
 }
 

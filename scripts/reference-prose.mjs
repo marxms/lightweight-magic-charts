@@ -57,11 +57,11 @@ export const renamed = relabelled(pane, new Map([['close', 'Fechamento']]), 'Pre
   'catalogue/sources': {
     title: 'what may be plotted, and how much room the plotting gets',
     summary: `A \`PlottableSource\` is one authored thing a reader can pick: an id, a label, where it
-wants to be drawn, and a function returning its series. \`resolutionPolicy\` fills in the limits —
-how many lanes exist and how many plots fit in one — from the two numbers a host actually knows.`,
+wants to be drawn, and a function returning its series. \`resolutionPolicy\` fills in the one limit
+the host owns — how many lanes exist — and calibrates the two ratios it does not.`,
     example: `import { resolutionPolicy, type ResolutionPolicy } from 'lightweight-magic-charts';
 
-export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3, plotsPerLane: 4 });`,
+export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3 });`,
   },
 
   'domain/format': {

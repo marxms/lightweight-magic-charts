@@ -1009,7 +1009,7 @@ const STUDIES: NonNullable<ChartWorkspaceProps['studies']> = {
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 };
 
 /** A pane whose one series is named the way a live tip names its readings. */
@@ -1141,7 +1141,7 @@ const identifiedStudies = (label: string): NonNullable<ChartWorkspaceProps['stud
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 });
 
 /** The catalogue chip for the entry above, by the test id it has always had: the PROVIDER's id. */
@@ -1281,7 +1281,7 @@ const pairedStudies = (twin: boolean): NonNullable<ChartWorkspaceProps['studies'
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, ANY_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, ANY_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 });
 
 const activeStudies = (): HTMLElement[] => screen.getAllByTestId(/^workspace-active-/);
@@ -1427,7 +1427,7 @@ const THREE_STUDIES: NonNullable<ChartWorkspaceProps['studies']> = {
   capacity: 2,
   lanes: { plots: 2, colors: LANE_COLOURS, heightPx: 90 },
   resolve: (ids, bars) =>
-    resolveSources(ids, THREE_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 })),
+    resolveSources(ids, THREE_LOOKUP, bars, resolutionPolicy({ lanes: 2 })),
 };
 
 /** Two panes, one series each, DECLARED WITH DIFFERENT SHAPES — or the picker separates nothing. */
@@ -1646,7 +1646,7 @@ const STUDY_ID = 'study.moving-average';
  * mounted below as well, because "compiles" and "still draws" are two claims.
  */
 const twoParameterResolve: NonNullable<ChartWorkspaceProps['studies']>['resolve'] = (ids, bars) =>
-  resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+  resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
 
 const recordingStudies = (
   calls: ResolveCall[],
@@ -1655,7 +1655,7 @@ const recordingStudies = (
   ...identifiedStudies(label),
   resolve: (ids, bars, settings) => {
     calls.push({ ids, barCount: bars.length, settings });
-    return resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+    return resolveSources(ids, IDENTIFIED_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
   },
 });
 
@@ -1829,7 +1829,7 @@ describe('a value edited while the history is still loading', () => {
       ...identifiedStudies('Moving average'),
       resolve: (ids, bars, settings) => {
         calls.push({ ids, barCount: bars.length, settings });
-        return resolveSources(ids, WARMING_LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+        return resolveSources(ids, WARMING_LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
       },
     };
     const ledger = noLedger();

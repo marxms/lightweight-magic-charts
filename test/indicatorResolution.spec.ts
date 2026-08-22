@@ -15,7 +15,7 @@ import type { Bar, Point } from '../src/domain/types';
  * observable.
  */
 
-const POLICY = resolutionPolicy({ lanes: 4, plotsPerLane: 4 });
+const POLICY = resolutionPolicy({ lanes: 4 });
 
 const bar = (time: number, close: number): Bar =>
   ({ time, open: close, high: close, low: close, close }) as unknown as Bar;
@@ -79,7 +79,7 @@ describe('laneOrder — the list sanitised against the RESOURCE', () => {
  * because the number a host divides by comes out of `views`.
  */
 describe('LANE-02 — views.length IS the resolved count, so the cut is derivable', () => {
-  const THREE_LANES = resolutionPolicy({ lanes: 3, plotsPerLane: 4 });
+  const THREE_LANES = resolutionPolicy({ lanes: 3 });
   const lookupOf = (ids: readonly string[]): SourceLookup => scanLookup(ids.map((id) => source({ id })));
 
   it('seven ids against three lanes resolve THREE, and the host reads a cut of four', () => {
@@ -267,22 +267,79 @@ describe('LMC-18 — the key is the SERIES identity minted by the lib', () => {
     expect(resolution.activePaneIds.size).toBe(0);
   });
 
-  it('the policy is DATA: another plot ceiling changes the truncation, not the module', () => {
+  /**
+   * LINES-01, LINES-02 — REPLACES the clause that asserted the opposite.
+   *
+   * The test that stood here pinned the truncation: three plots against `plotsPerLane: 2` resolved
+   * `drawn: 2, truncated: 1`. That was the behaviour the spec now forbids, so the assertion is
+   * rewritten rather than relaxed — the number it demands is five where it used to demand two, and
+   * the old shape cannot pass it.
+   */
+  it('resolves EVERY live line of a study wider than the old ceiling of three', () => {
+    const lookup = scanLookup([
+      source({
+        id: 'ichimoku',
+        series: () => [
+          plot('conversion', (i) => i),
+          plot('base', (i) => i + 1),
+          plot('lagging', (i) => i + 2),
+          plot('spanA', (i) => i + 3),
+          plot('spanB', (i) => i + 4),
+        ],
+      }),
+    ]);
+    const resolution = resolveSources(['ichimoku'], lookup, BARS, POLICY);
+
+    expect(resolution.views[0].drawn).toBe(5);
+    // COUNTED IS NOT DRAWN. `drawn` is a number and a number can be right while the line it counts
+    // has no identity to be drawn under, which is the exact shape of the defect being removed: the
+    // panel said three while one was on screen. So every plot is also demanded by identity, in the
+    // readings and in the legend.
+    const fields = [0, 1, 2, 3, 4].map((plot) => seriesId(laneSeriesId(0, plot)));
+    expect(fields.filter((field) => resolution.readings.has(field))).toEqual(fields);
+    expect(fields.map((field) => resolution.labels.get(field))).toEqual([
+      'conversion',
+      'base',
+      'lagging',
+      'spanA',
+      'spanB',
+    ]);
+  });
+
+  it('takes the count from EACH study, so two studies of different widths both resolve whole', () => {
+    // LINES-02. One study resolving fully proves nothing about a per-study count: a ceiling of five
+    // would pass the clause above and cut the eight-plot study below. Two widths in ONE resolution
+    // is what separates "the count comes from the study" from "the ceiling happens to be generous".
+    const lookup = scanLookup([
+      source({ id: 'two', series: () => [plot('t1', (i) => i), plot('t2', (i) => i)] }),
+      source({
+        id: 'eight',
+        series: () => Array.from({ length: 8 }, (_unused, n) => plot(`e${n}`, (i) => i + n)),
+      }),
+    ]);
+    const resolution = resolveSources(['two', 'eight'], lookup, BARS, POLICY);
+
+    expect(resolution.views.map((view) => view.drawn)).toEqual([2, 8]);
+    expect(resolution.readings.has(seriesId(laneSeriesId(1, 7)))).toBe(true);
+    expect(resolution.readings.has(seriesId(laneSeriesId(0, 2)))).toBe(false);
+  });
+
+  it('still refuses a DEAD line, which is the one cut that was never the ceiling', () => {
+    // The ceiling is gone and the dead-line filter is not: a plot that produces no finite value in
+    // this window occupies neither lane nor legend, and `drawn` counts what LIVES. Without this the
+    // deletion would read as "draw everything declared", which is a different and wrong rule — and
+    // measured, 133 of 1048 declared plots are dead in a 240-bar window.
     const lookup = scanLookup([
       source({
         id: 'a',
-        series: () => [plot('p1', () => 1), plot('p2', () => 2), plot('p3', () => 3)],
+        series: () => [plot('live', (i) => i), plot('dead', () => null), plot('alsoLive', (i) => i)],
       }),
     ]);
-    expect(resolveSources(['a'], lookup, BARS, POLICY).views[0]).toMatchObject({
-      drawn: 3,
-      truncated: 0,
-    });
-    const tight = resolutionPolicy({ lanes: 4, plotsPerLane: 2 });
-    expect(resolveSources(['a'], lookup, BARS, tight).views[0]).toMatchObject({
-      drawn: 2,
-      truncated: 1,
-    });
+    const resolution = resolveSources(['a'], lookup, BARS, POLICY);
+
+    expect(resolution.views[0].drawn).toBe(2);
+    expect(resolution.labels.get(seriesId(laneSeriesId(0, 1)))).toBe('alsoLive');
+    expect(resolution.readings.has(seriesId(laneSeriesId(0, 2)))).toBe(false);
   });
 
   it('the guide only comes out when the source has a lane of its own to mark it on', () => {

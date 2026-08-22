@@ -90,7 +90,6 @@ export interface StudiesPanelLabels {
   readonly down: (name: string) => string;
   readonly noData: string;
   readonly warmUp: (warmUpBars: number, windowBars: number) => string;
-  readonly truncated: (drawn: number, total: number) => string;
 }
 
 /** The whole contract, grouped by the component that speaks each group.
@@ -237,7 +236,6 @@ export function workspaceChromeLabels(locale?: string): WorkspaceChromeLabels {
       noData: 'no data in this window',
       warmUp: (warmUpBars, windowBars) =>
         `warms up after ${warmUpBars} of ${plural(locale, windowBars, 'bar', 'bars')}`,
-      truncated: (drawn, total) => `${drawn} of ${plural(locale, total, 'line', 'lines')}`,
     },
     seriesMenu: {
       title: 'Series',

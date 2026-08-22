@@ -142,7 +142,6 @@ export const resolve = (ids: readonly string[], bars: readonly Bar[]): SourceRes
       label: id,
       overlay: true,
       drawn: bars.length,
-      truncated: 0,
       availability: bars.length === 0 ? 'empty' : 'ok',
       warmUpBars: 20,
       windowBars: bars.length,

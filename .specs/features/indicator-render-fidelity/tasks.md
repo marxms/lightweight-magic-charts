@@ -209,14 +209,23 @@ all; `test/scopeDeferral.spec.ts` closes that.
 - Skill: NONE
 
 **Done when**:
-- [ ] A study wider than the old ceiling resolves every live line
-- [ ] The removed member is gone from the derived reference, regenerated in the same commit
-- [ ] The two now-false comments are deleted in the same commit — measured, this buys comment slack rather than spending it
-- [ ] `size-budget.json` re-pinned DOWN, entry and `ChartWorkspace` together
-- [ ] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
+- [x] A study wider than the old ceiling resolves every live line
+- [x] The removed member is gone from the derived reference, regenerated in the same commit
+- [x] The two now-false comments are deleted in the same commit — measured, this buys comment slack rather than spending it
+- [x] `size-budget.json` re-pinned DOWN, entry and `ChartWorkspace` together
+- [x] Gate check passes: `npm run build && npm test && node scripts/size-gate.mjs`
 
 **Tests**: unit
 **Gate**: build
+**Status**: DONE — measured **-216 B** (entry 104092 -> 103876) and comment slack 1 -> **2**, so the
+deletion bought budget as predicted. LINES-01 and LINES-02 close here. LINES-04 does NOT: removing
+the cut leaves the package with no place that can under-draw a study, so the only refusal point left
+is the manifest generator, which is T14 — recorded as PARTIAL in `spec.md`.
+
+**OPEN, and outside this task's `Where`**: the package now resolves every live line, but
+`example/panes.ts` still mints ONE over-price slot per lane and `WorkspaceLanes.plots` is still one
+number for every lane. A resolved line with no series id to be drawn under is still not on screen.
+No task in this file names that host-side widening; T16 cannot read five lines without it.
 
 ---
 

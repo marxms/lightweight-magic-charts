@@ -22,7 +22,7 @@ export const resolved = resolveSources(['sma.20'], lookup, bars, policy);
 
 ## Exports
 
-- **`ResolvedSourceView`** · type · `interface ResolvedSourceView { id: string; lane: number; paneId: string; label: string | null; overlay: boolean; drawn: number; truncated: number; guide?: number | undefined; availability: IndicatorAvailability; warmUpBars: number; windowBars: number }`
+- **`ResolvedSourceView`** · type · `interface ResolvedSourceView { id: string; lane: number; paneId: string; label: string | null; overlay: boolean; drawn: number; guide?: number | undefined; availability: IndicatorAvailability; warmUpBars: number; windowBars: number }`
 - **`resolveSources`** · value · `(active: readonly string[], lookup: SourceLookup, bars: readonly Bar[], policy: ResolutionPolicy) => SourceResolution`
 - **`SourceResolution`** · type · `interface SourceResolution { views: readonly ResolvedSourceView[]; readings: ReadonlyMap<SeriesId, readonly Reading[]>; labels: ReadonlyMap<SeriesId, string>; activePaneIds: ReadonlySet<string> }`
 

@@ -28,10 +28,8 @@ export interface ResolvedSourceView {
   readonly label: string | null;
   /** Drawn over the price action instead of in its own lane. MEASURED, not merely declared. */
   readonly overlay: boolean;
-  /** Lines actually drawn. With `truncated` it forms the "4 of 7" a panel can show. */
+  /** Lines drawn: every plot of this source that produced a finite value in this window. */
   readonly drawn: number;
-  /** Lines that did not fit the lane. Declared, never discarded in silence. */
-  readonly truncated: number;
   /** The source's neutral guide, when it has a lane of its own to mark it against. */
   readonly guide?: number;
   readonly availability: IndicatorAvailability;
@@ -89,7 +87,6 @@ export function resolveSources(
           label: source?.label ?? null,
           overlay: source?.placement === 'over-price',
           drawn: 0,
-          truncated: 0,
           // Nothing was MEASURED, so nothing is asserted: `'ok'` is the absence of a diagnosis.
           availability: 'ok',
           warmUpBars: 0,
@@ -112,7 +109,7 @@ export function resolveSources(
   const views = ordered.map((id, lane): ResolvedSourceView => {
     const paneId = lanePaneId(lane);
     const source = lookup(id);
-    const unknown = { id, lane, paneId, drawn: 0, truncated: 0, warmUpBars: 0, windowBars: bars.length } as const;
+    const unknown = { id, lane, paneId, drawn: 0, warmUpBars: 0, windowBars: bars.length } as const;
     if (source === undefined) {
       return { ...unknown, label: null, overlay: false, availability: 'empty' };
     }
@@ -136,7 +133,6 @@ export function resolveSources(
     const alive = computed.flatMap((item) =>
       item.values?.some((value) => value !== null) === true ? [{ ...item, values: item.values }] : [],
     );
-    const drawn = alive.slice(0, policy.plotsPerLane);
 
     // The placement is a REQUEST; the scale is the FACT. See docs/explanation/indicator.md#the-scale-is-the-fact
     const offScale =
@@ -148,17 +144,17 @@ export function resolveSources(
     const fieldOf = (plot: number): SeriesId =>
       seriesId(overlay ? priceOverlaySeriesId(lane, plot) : laneSeriesId(lane, plot));
 
-    drawn.forEach((item, at) => {
+    alive.forEach((item, at) => {
       const field = fieldOf(at);
       labels.set(field, item.plot.spec.label);
       readings.set(field, item.values);
     });
 
-    if (!overlay && drawn.length > 0) activePaneIds.add(paneId);
+    if (!overlay && alive.length > 0) activePaneIds.add(paneId);
 
     // The lines that exist stay drawn even at `'warmup'`: real measurements are not rubbish.
     const warmUpBars = firstReadingAt(
-      drawn.map((item) => item.values),
+      alive.map((item) => item.values),
       bars.length,
     );
 
@@ -168,11 +164,10 @@ export function resolveSources(
       paneId,
       label: source.label,
       overlay,
-      drawn: drawn.length,
-      truncated: alive.length - drawn.length,
+      drawn: alive.length,
       // A guide only means anything against the source's OWN axis.
       ...(overlay || source.guide === undefined ? {} : { guide: source.guide }),
-      availability: availabilityOf(drawn.length, warmUpBars, bars.length, policy.warmUpShare),
+      availability: availabilityOf(alive.length, warmUpBars, bars.length, policy.warmUpShare),
       warmUpBars,
       windowBars: bars.length,
     };

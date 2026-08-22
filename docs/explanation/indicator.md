@@ -236,8 +236,10 @@ Many sources declare CONDITIONAL plots, and they arrive as a whole series of not
 visible. That produced rows of labels with no value beside them; worse, the dead ones consumed the
 lane's line budget and pushed out lines that DO have data.
 
-So `alive` filters to plots with at least one non-null reading before `policy.plotsPerLane` is
-applied, and `truncated` reports how many live lines did not fit.
+So `alive` filters to plots with at least one non-null reading, and `drawn` is its length: every
+line the study computes in this window and no other. Nothing is cut here. A ceiling on lines per
+lane used to be applied at this point — one number the host wrote for every study at once — and it
+truncated 89 of 320 offered indicators without any of them being able to say so.
 
 ### The scale is the fact
 

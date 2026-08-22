@@ -26,7 +26,6 @@ export type SourceLookup = (id: string) => PlottableSource | undefined;
 /** What the resolver may assume. See docs/explanation/catalogue.md#the-policy-is-data-not-constants */
 export interface ResolutionPolicy {
   readonly lanes: number;
-  readonly plotsPerLane: number;
   readonly priceNeighbourhood: number;
   readonly warmUpShare: number;
 }
@@ -35,13 +34,12 @@ export interface ResolutionPolicy {
 export const CALIBRATED_PRICE_NEIGHBOURHOOD = 3;
 export const CALIBRATED_WARM_UP_SHARE = 0.5;
 
-export type ResolutionPolicyOptions = Pick<ResolutionPolicy, 'lanes' | 'plotsPerLane'> &
-  Partial<Omit<ResolutionPolicy, 'lanes' | 'plotsPerLane'>>;
+export type ResolutionPolicyOptions = Pick<ResolutionPolicy, 'lanes'> &
+  Partial<Omit<ResolutionPolicy, 'lanes'>>;
 
 export function resolutionPolicy(options: ResolutionPolicyOptions): ResolutionPolicy {
   return {
     lanes: options.lanes,
-    plotsPerLane: options.plotsPerLane,
     priceNeighbourhood: options.priceNeighbourhood ?? CALIBRATED_PRICE_NEIGHBOURHOOD,
     warmUpShare: options.warmUpShare ?? CALIBRATED_WARM_UP_SHARE,
   };

@@ -136,7 +136,7 @@ const studies = (calls: ResolveCall[]): NonNullable<ChartWorkspaceProps['studies
   lanes: { plots: 2, colors: ['#f5a623', '#4c9aff'], heightPx: 90 },
   resolve: (ids, bars, settings) => {
     calls.push({ settings });
-    return resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2, plotsPerLane: 2 }));
+    return resolveSources(ids, LOOKUP, bars, resolutionPolicy({ lanes: 2 }));
   },
 });
 

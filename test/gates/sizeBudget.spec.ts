@@ -183,13 +183,18 @@ const SYMBOLS_AT_CUTOVER = 13;
  * every affected element is pinned pressed AND resting, with the colours written out as jsdom
  * serialises them rather than read back from the theme. Its own candidate in its own commit. The
  * design named five sites and estimated -203 B; the pair is at SIX and measures -275 B.
+ * RE-PINNED DOWN 2026-08-21, entry 104092 -> 103876 (-216 B) and ChartWorkspace 94748 -> 94640
+ * (-108 B): the line ceiling left the package. `plotsPerLane`, `ResolvedSourceView.truncated`, the
+ * label and the branch that read it are gone, and `drawn` is every live line. The member was
+ * removed for LYING and not for being dead: measured on 0.2.1 the Ichimoku draws ONE line while
+ * the panel reads three of five. Estimated -212 B, measured -216 B.
  * RE-PINNED 2026-08-14, and the two raises are the only ones this file has taken: the compact grid
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104092,
+  '*': 103876,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -202,7 +207,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 94748,
+  ChartWorkspace: 94640,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

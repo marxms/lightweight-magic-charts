@@ -15,7 +15,6 @@ import type { PaneView } from '../surface/ChartSurface';
 
 /** The lane calibration, the consumer's. See docs/explanation/react-workspace.md#no-default-palette */
 export interface WorkspaceLanes {
-  /** Lines a lane can draw. Above it a study is truncated, and the resolution says by how much. */
   readonly plots: number;
   readonly colors: readonly string[];
   readonly heightPx?: number;

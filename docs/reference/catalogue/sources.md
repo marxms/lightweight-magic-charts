@@ -5,15 +5,15 @@
 # `catalogue/sources`
 
 A `PlottableSource` is one authored thing a reader can pick: an id, a label, where it
-wants to be drawn, and a function returning its series. `resolutionPolicy` fills in the limits —
-how many lanes exist and how many plots fit in one — from the two numbers a host actually knows.
+wants to be drawn, and a function returning its series. `resolutionPolicy` fills in the one limit
+the host owns — how many lanes exist — and calibrates the two ratios it does not.
 
 ## Example
 
 ```ts
 import { resolutionPolicy, type ResolutionPolicy } from 'lightweight-magic-charts';
 
-export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3, plotsPerLane: 4 });
+export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3 });
 ```
 
 ## Exports
@@ -22,8 +22,8 @@ export const policy: ResolutionPolicy = resolutionPolicy({ lanes: 3, plotsPerLan
 - **`PlottableSource`** · type · `interface PlottableSource { id: string; label: string; placement: PlacementRequest; guide?: number | undefined; series: () => readonly PlottedSeries[] }`
 - **`PlottedSeries`** · type · `interface PlottedSeries { spec: SeriesSpec; provider: SeriesProvider }`
 - **`resolutionPolicy`** · value · `(options: ResolutionPolicyOptions) => ResolutionPolicy`
-- **`ResolutionPolicy`** · type · `interface ResolutionPolicy { lanes: number; plotsPerLane: number; priceNeighbourhood: number; warmUpShare: number }`
-- **`ResolutionPolicyOptions`** · type · `type ResolutionPolicyOptions = Pick<ResolutionPolicy, 'lanes' | 'plotsPerLane'> & Partial<Omit<ResolutionPolicy, 'lanes' | 'plotsPerLane'>>`
+- **`ResolutionPolicy`** · type · `interface ResolutionPolicy { lanes: number; priceNeighbourhood: number; warmUpShare: number }`
+- **`ResolutionPolicyOptions`** · type · `type ResolutionPolicyOptions = Pick<ResolutionPolicy, 'lanes'> & Partial<Omit<ResolutionPolicy, 'lanes'>>`
 - **`SourceLookup`** · type · `type SourceLookup = (id: string) => PlottableSource | undefined`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under

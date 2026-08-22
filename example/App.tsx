@@ -40,7 +40,7 @@ import { STUDY_PARAM_SECTIONS } from './studyForm';
  * a visitor pick six studies and silently resolved the first two. The two numbers are one number,
  * so they are written as one.
  */
-const POLICY = resolutionPolicy({ lanes: STUDY_CAPACITY, plotsPerLane: 3 });
+const POLICY = resolutionPolicy({ lanes: STUDY_CAPACITY });
 
 export interface AppProps {
   /** `null` when the catalogue could not be fetched. The page still draws. */

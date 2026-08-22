@@ -57,7 +57,7 @@ describe('the default the package ships', () => {
     // EIGHTY-SIX since a pick that repeats an identity got a sentence. The member is OPTIONAL on
     // its group — a host that typed the whole of `notices` by hand must still compile — and this
     // count is exactly what stops "optional" from quietly meaning "absent from the default too".
-    expect(said.length).toBe(86);
+    expect(said.length).toBe(85);
     expect(said.filter(([, value]) => value === undefined || value === null)).toEqual([]);
     expect(said.filter(([, value]) => spoken(value).trim().length === 0)).toEqual([]);
   });

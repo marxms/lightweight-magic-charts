@@ -207,10 +207,10 @@ in the manifest and nothing failed on it.
 | FILL-04 | P1: The cloud that is the indicator | - | Pending |
 | FILL-05 | P1: The cloud that is the indicator | - | Pending |
 | FILL-06 | P1: The cloud that is the indicator | - | Pending |
-| LINES-01 | P1: A study's line count is the study's | - | Pending |
-| LINES-02 | P1: A study's line count is the study's | - | Pending |
+| LINES-01 | P1: A study's line count is the study's | T5 | Done |
+| LINES-02 | P1: A study's line count is the study's | T5 | Done |
 | LINES-03 | P1: A study's line count is the study's | - | Pending |
-| LINES-04 | P1: A study's line count is the study's | - | Pending |
+| LINES-04 | P1: A study's line count is the study's | T5, T14 | Partial |
 | POINT-01 | P1: The colour a point carries | - | Pending |
 | POINT-02 | P1: The colour a point carries | - | Pending |
 | POINT-03 | P1: The colour a point carries | - | Pending |
@@ -224,7 +224,11 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 22 total, 0 mapped to tasks, 22 unmapped ⚠️ (Tasks phase not yet run)
+**Coverage:** 22 total, 3 mapped to tasks, 19 unmapped
+
+LINES-04 is PARTIAL by measurement, not by omission: T5 removed the only place inside the package
+where a study's lines could be cut, so the clause has no producer left there. The single point that
+can still refuse to offer a row is the manifest generator, which is T14.
 
 ---
 
