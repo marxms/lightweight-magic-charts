@@ -30,7 +30,8 @@ export interface DensitySlice {
   readonly samples: readonly DensitySample[];
 }
 
-/** Which peak normalises a cell. Omitted: per column. Under `global`, absent `peak` = the run's max. */
+/** Which peak normalises a cell. Omitted: per column. Under `global`, absent `peak` = the run's max.
+ * See docs/explanation/overlays.md#why-a-per-column-scale-makes-accumulation-unrepresentable */
 export interface DensityScale {
   readonly mode: 'column' | 'global';
   readonly peak?: number;

@@ -1,5 +1,6 @@
 /**
  * The colour ramp, read back: what the top of the scale is worth, in the host's own unit.
+ * See docs/explanation/overlays.md#the-legend-takes-a-string-never-a-number
  */
 import type { CSSProperties, ReactElement } from 'react';
 
@@ -75,7 +76,7 @@ export function DensityLegend({
           backgroundColor: theme.control,
         }}
       >
-        {/* Sampled swatches rather than a CSS gradient: the ramp's alpha needs a surface under it. */}
+        {/* Swatches, not a CSS gradient: the ramp's alpha needs a surface under it. */}
         {sampled.map((share) => (
           <span key={share} style={{ flex: 1, backgroundColor: ramp(share, gamma) }} />
         ))}

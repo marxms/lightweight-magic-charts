@@ -4,6 +4,37 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 — 2026-08-21
+
+A density map normalised per column cannot show accumulation. A bin whose absolute magnitude never
+moves gets dimmer as some other bin in a later column grows, so the reader is told a level is
+emptying while nothing has been taken out of it. The defect had been asleep: measured against the
+producer this package was written for, `799` of `799` slices arrived with their largest sample at
+exactly `1.0`, already normalised, and dividing by `1.0` destroys nothing. A producer that starts
+sending absolute magnitude wakes it in full.
+
+### Added
+
+- **`DensityScale`, and a second argument on `toDensityColumns`.** `{ mode: 'global', peak }` hands
+  every column the same peak, so a constant magnitude paints a constant colour; with no `peak` the
+  largest weight across every slice is used. `draw()` is untouched — it already divided by
+  `column.peak`. Omitting the argument returns exactly what `0.2.1` returns, asserted against a
+  literal rather than promised, which is what makes this additive.
+- **`floorMode` on `DensityTuning`.** A floor stated as a share of the column's own peak is circular
+  once the peak is shared. Under `'absolute'` the cut is on the cell's weight, so one threshold
+  suppresses one magnitude in every column — the control other liquidation maps expose as a
+  liquidity threshold. The relative rule stays the default, and a relative tuning still clamps to
+  exactly the two members it always had.
+- **`DensityLegend`.** A colour ramp with no number on it is decoration. The legend labels the top of
+  the ramp with a string the host has ALREADY FORMATTED: this package does not learn the unit, so a
+  legend in dollars, in contracts or in bars is the caller's decision. Labels, theme and ramp are
+  slots with the package's own defaults, and its two words joined the label contract.
+
+### Changed
+
+- **`DENSITY_TUNING_BOUNDS` is keyed by the two NUMERIC knobs** rather than by `keyof DensityTuning`.
+  `floorMode` selects a rule and not a value, so it has no minimum, maximum or step to declare.
+
 ## 0.2.1 — 2026-08-20
 
 The magnet shipped as a mode the user controls, and the cursor was never told. With the magnet off

@@ -25,7 +25,7 @@ const absoluteFloor = (value: number): number => (Number.isFinite(value) ? Math.
 /** Any tuning, made representable. A restored file is untrusted input like any other. */
 export function clampDensityTuning(tuning: DensityTuning): DensityTuning {
   const gamma = clampTo(DENSITY_TUNING_BOUNDS.gamma, tuning.gamma, DEFAULT_DENSITY_TUNING.gamma);
-  // Zero, never the relative default: an unreadable absolute floor must hide nothing, not everything.
+  // Zero, never the relative default. See docs/explanation/overlays.md#why-an-absolute-floor-exists
   if (tuning.floorMode === 'absolute') {
     return { floor: absoluteFloor(tuning.floor), gamma, floorMode: 'absolute' };
   }
