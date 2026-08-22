@@ -54,7 +54,7 @@ describe('the default the package ships', () => {
     const said = leaves(DEFAULT_WORKSPACE_CHROME_LABELS);
     // The count is stated so that a member added to the interface and forgotten in the default
     // fails here rather than in somebody's product. `filled` cannot invent what was never written.
-    expect(said.length).toBe(85);
+    expect(said.length).toBe(87);
     expect(said.filter(([, value]) => value === undefined || value === null)).toEqual([]);
     expect(said.filter(([, value]) => spoken(value).trim().length === 0)).toEqual([]);
   });

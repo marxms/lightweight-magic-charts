@@ -4,7 +4,7 @@
 
 # Reference
 
-The public entry exports **295 symbols** — 106 values and 189 types — across **51 modules**.
+The public entry exports **300 symbols** — 108 values and 192 types — across **52 modules**.
 
 This page is the map. Each module has its own page carrying what it is for, an example that is
 compiled by a gate, its prop table where it declares one, and every symbol it exports with the
@@ -76,7 +76,7 @@ whole and on its own, so nothing is stitched in behind it.
 
 | Module | Exports | What it holds |
 | --- | --- | --- |
-| [`overlays/densityField`](overlays/densityField.md) | 11 (4 value) | the liquidation heatmap, from slices to columns to paint |
+| [`overlays/densityField`](overlays/densityField.md) | 12 (4 value) | the liquidation heatmap, from slices to columns to paint |
 | [`overlays/densityTuning`](overlays/densityTuning.md) | 3 (2 value) | the two knobs on the heatmap, and their bounds |
 | [`overlays/troughProfile`](overlays/troughProfile.md) | 9 (4 value) | the volume profile drawn beside the price scale |
 
@@ -104,6 +104,7 @@ whole and on its own, so nothing is stitched in behind it.
 | [`react/chrome/labels`](react/chrome/labels.md) | 15 (2 value) | every sentence the composition can say, in one channel |
 | [`react/CompactCell`](react/CompactCell.md) | 4 (2 value) | one small chart in a grid cell |
 | [`react/DensityControls`](react/DensityControls.md) | 4 (2 value) | the floor and boost controls for the heatmap |
+| [`react/DensityLegend`](react/DensityLegend.md) | 4 (2 value) | the colour scale of the heatmap, read back in the host's unit |
 | [`react/DrawingToolbar`](react/DrawingToolbar.md) | 5 (2 value) | the drawing rail: tools, count and the two destructive actions |
 | [`react/drawingToolBuckets`](react/drawingToolBuckets.md) | 2 (0 value) | grouping a long tool list into a browsable panel |
 | [`react/hoverIntent`](react/hoverIntent.md) | 6 (4 value) | opening on hover without opening on a passing pointer |

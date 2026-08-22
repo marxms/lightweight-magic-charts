@@ -57,6 +57,41 @@ at a price boundary) would otherwise either shrink every band or inflate it, and
 measurement the data never made. Slices with no positive weight are dropped rather than emitted
 empty, and the result is sorted by time so the renderer's neighbour-sharing holds.
 
+### Why a per-column scale makes accumulation unrepresentable
+
+`toDensityColumns` normalises each cell against `column.peak`, and until the scale argument existed
+that peak was always the column's own. The consequence is not a matter of taste. Under a per-column
+scale a bin whose absolute magnitude never moves gets DIMMER as some other bin in a later column
+grows: the reader is told a level is emptying while nothing has been taken out of it, which is the
+one thing a density map exists to show and the one thing this shape cannot represent.
+
+It went unnoticed for as long as it did because the defect was ASLEEP. Measured against the producer
+this package was written for, `799` of `799` slices arrived with their largest sample at exactly
+`1.0` — the producer had already normalised each slice before sending it. With every column peaking
+at `1.0` the per-column division is the identity, and the identity destroys nothing.
+
+What wakes it is the producer emitting an absolute magnitude instead of a per-slice ratio. The moment
+the host stops pre-normalising, the division stops being the identity and the defect arrives in full.
+A producer that publishes ONE peak for the whole window is what `{ mode: 'global', peak }` is for:
+every column divides by the same number, so a constant magnitude paints a constant colour.
+
+`draw()` was not touched. It already computed `weight / column.peak`; what changed is that every
+column can now be handed the same peak. Omitting `scale` returns exactly what the previous version
+returned, which is what makes the addition additive rather than a quiet change of behaviour.
+
+### The legend takes a string, never a number
+
+A colour ramp with no number on it is decoration: the reader sees that one cell is brighter than
+another and has no way to learn what either one holds. `DensityLegend` labels the top of the ramp,
+and the label arrives from the host ALREADY FORMATTED — the component takes a string. This package
+has no opinion about the unit, in the same way it has none about what a slice measures. A legend in
+dollars, in contracts or in bars is the caller's decision, and a currency prop here would be the
+library learning a domain that is not its own.
+
+The bar is painted as sampled swatches rather than as a CSS gradient. The ramp carries most of its
+signal in the alpha channel, so it needs a surface underneath, and a strip of swatches over the
+theme's control colour is the same reading with something to composite against.
+
 ### useBitmapSpace is not a hook
 
 The `biome-ignore` on the draw call answers a FALSE POSITIVE, and the reason stays written at the
@@ -83,6 +118,21 @@ the possibility instead of documenting it.
 It sits beside the overlay rather than inside it because it is a rule about the VALUE, not about
 drawing: the control that produces a tuning and the store that restores one both need it, and
 neither of them draws anything.
+
+### Why an absolute floor exists
+
+`floor` was a share of the column's own peak, and under a shared scale that is circular: it asks how
+a cell compares to whatever else happens to be in its column, which says nothing about the magnitude
+the cell holds. `floorMode: 'absolute'` moves the cut onto the weight itself, so one threshold
+suppresses one magnitude in every column. It is the control other liquidation maps expose as a
+liquidity threshold, and the relative rule stays the default, so nothing a host already stored
+changes meaning under it.
+
+The bounds do not follow it across. Zero to `0.4` is the range of a SHARE; an absolute floor is in
+the host's own unit and this package cannot know whether five thousand is large there. So the
+absolute branch clamps to non-negative and sends an unreadable value to zero — a broken threshold has
+to hide nothing rather than hide everything, which is the direction that leaves the defect visible
+instead of leaving a blank screen.
 
 ### Why the type is re-exported
 

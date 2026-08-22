@@ -229,6 +229,7 @@ export type {
   DensityFrameStats,
   DensityRamp,
   DensitySample,
+  DensityScale,
   DensitySlice,
   DensityTuning,
 } from './overlays/densityField';
@@ -343,6 +344,9 @@ export { carryReadings } from './domain/readings';
 
 export type { DensityControlLabels, DensityControlsProps } from './react/DensityControls';
 export { DEFAULT_DENSITY_CONTROL_LABELS, DensityControls } from './react/DensityControls';
+
+export type { DensityLegendLabels, DensityLegendProps } from './react/DensityLegend';
+export { DEFAULT_DENSITY_LEGEND_LABELS, DensityLegend } from './react/DensityLegend';
 
 export type {
   DrawingTool,

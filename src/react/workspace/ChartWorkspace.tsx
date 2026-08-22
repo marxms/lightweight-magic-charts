@@ -16,7 +16,7 @@ import { readingWithTip } from '../../indicator/liveTip';
 import type { ResolvedSourceView, SourceResolution } from '../../indicator/resolution';
 import type { StackApplication } from '../../layout/application';
 import { PRICE_PANE_ID } from '../../layout/computeLayout';
-import type { DensitySlice } from '../../overlays/densityField';
+import type { DensityScale, DensitySlice } from '../../overlays/densityField';
 import { mintedPaneSpec } from '../../pane/budget';
 import type { ChartEngine, SeriesMarkerPoint, SeriesShape } from '../../port/chartApi';
 import type { LiveTip } from '../../port/frames';
@@ -80,6 +80,8 @@ export interface WorkspaceDataSource {
   readonly onTimeframeRequest?: (timeframe: string) => void;
   /** The field drawn BEHIND the price action, already adapted. Absent, the map draws nothing. */
   readonly density?: readonly DensitySlice[];
+  /** Which peak that field normalises against. Absent, each column's own, which is the old rule. */
+  readonly densityScale?: DensityScale;
   /** Marks on the price series, minted from the bars this package seeded and the patterns switched on. */
   readonly marks?: (bars: readonly Bar[], active: readonly string[]) => readonly SeriesMarkerPoint[];
   /** What the load delivered, ALREADY formatted — it is a sentence, not a structure to render. */
@@ -342,6 +344,7 @@ function WorkspaceBody({ of, tabs, act, active, notice }: WorkspaceBodyProps): R
                   port: data.port, barCount: data.barCount ?? 0,
                 }}
                 fields={{ tuning: setup.density, density: data.density,
+                  scale: data.densityScale,
                   showDensity: setup.showDensity, showProfile: setup.showProfile }}
                 snapThresholdPx={of.drawing?.snapThresholdPx}
                 onLane={(state) => {
