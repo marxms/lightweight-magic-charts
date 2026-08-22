@@ -30,10 +30,9 @@ export interface DensitySlice {
   readonly samples: readonly DensitySample[];
 }
 
-/** Which peak a cell is normalised against. Omitting it keeps the per-column behaviour. */
+/** Which peak normalises a cell. Omitted: per column. Under `global`, absent `peak` = the run's max. */
 export interface DensityScale {
   readonly mode: 'column' | 'global';
-  /** Only in `global`: the peak to use. Absent means the largest weight across every slice. */
   readonly peak?: number;
 }
 
@@ -42,10 +41,12 @@ export interface DensityScale {
  * See docs/explanation/overlays.md#why-faint-clusters-were-invisible
  */
 export interface DensityTuning {
-  /** 0..1 — share of the column peak below which a cell draws nothing. */
+  /** Share of the peak below which a cell draws nothing — or a weight, under an absolute floor. */
   readonly floor: number;
   /** Transfer-curve exponent. Below 1 lifts faint cells; above 1 suppresses them. */
   readonly gamma: number;
+  /** How `floor` reads. Absent means `relative`, a share of the peak, which is the published rule. */
+  readonly floorMode?: 'relative' | 'absolute';
 }
 
 export const DEFAULT_DENSITY_TUNING: DensityTuning = { floor: 0.05, gamma: 1.5 };
@@ -162,6 +163,8 @@ export class DensityFieldOverlay implements Overlay {
       return;
     }
     const { floor, gamma } = this.tuning;
+    // A share of the peak says nothing about the magnitude a cell holds; absolute cuts on the weight.
+    const absolute = this.tuning.floorMode === 'absolute';
     // The cache lives for ONE draw, so a tuning change can never be served a stale colour.
     const cache = new Map<number, string>();
     const colour = (bucket: number): string => {
@@ -211,7 +214,7 @@ export class DensityFieldOverlay implements Overlay {
         let lastOffset = -1;
         for (const band of bands) {
           const normalised = column.peak > 0 ? band.cell.weight / column.peak : 0;
-          const below = normalised < floor;
+          const below = absolute ? band.cell.weight < floor : normalised < floor;
           if (below) skipped += 1;
           const stop = below ? 'rgba(0,0,0,0)' : colour(Math.round(normalised * RAMP_BUCKETS));
           // Two stops per cell — its top and its bottom. See docs/explanation/overlays.md#two-stops-per-cell

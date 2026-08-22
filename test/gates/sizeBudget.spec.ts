@@ -132,9 +132,14 @@ const SYMBOLS_AT_CUTOVER = 13;
  * scale makes accumulation unrepresentable: a bin whose absolute magnitude never moves darkens on
  * its own as some other column grows. The bytes are the walk that finds the peak and the branch that selects it; `draw()`
  * is untouched, and omitting the argument returns what 0.2.1 publishes.
+ * RE-PINNED 2026-08-21, entry 105117 -> 105296 (+179 B) and ChartWorkspace 95846 -> 96025 (+179 B):
+ * the same phase, the floor half — `DensityTuning` gained an optional `floorMode`, and under
+ * `absolute` the cut is on the cell's own weight instead of on its share of a peak. The bytes are
+ * the branch in `draw()` and the second arm of `clampDensityTuning`. The relative rule is still the
+ * default, and a relative tuning still clamps to exactly the two members it always had.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 105117,
+  '*': 105296,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -147,7 +152,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 95846,
+  ChartWorkspace: 96025,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

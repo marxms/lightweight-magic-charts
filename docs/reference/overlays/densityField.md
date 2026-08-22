@@ -30,7 +30,7 @@ export const columns: readonly DensityColumn[] = toDensityColumns(slices);
 - **`DensitySample`** · type · `interface DensitySample { price: number; weight: number }`
 - **`DensityScale`** · type · `interface DensityScale { mode: 'column' | 'global'; peak?: number | undefined }`
 - **`DensitySlice`** · type · `interface DensitySlice { time: UtcSeconds; samples: readonly DensitySample[] }`
-- **`DensityTuning`** · type · `interface DensityTuning { floor: number; gamma: number }`
+- **`DensityTuning`** · type · `interface DensityTuning { floor: number; gamma: number; floorMode?: 'relative' | 'absolute' | undefined }`
 - **`toDensityColumns`** · value · `(slices: readonly DensitySlice[], scale?: DensityScale) => readonly DensityColumn[]`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under

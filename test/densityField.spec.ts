@@ -14,7 +14,9 @@ import {
   toDensityColumns,
   type DensityColumn,
   type DensitySlice,
+  type DensityTuning,
 } from '../src/overlays/densityField';
+import { clampDensityTuning } from '../src/overlays/densityTuning';
 import { PRICE_ORIGIN, RecordingContext, alphaOf, fakeProjection, fakeTarget } from './renderFakes';
 
 const slice = (time: number, samples: Array<[number, number]>): DensitySlice => ({
@@ -314,5 +316,94 @@ describe('LIQ-04, LIQ-05 — column scale and global scale', () => {
     );
     expect(columns.map((c) => c.time as number)).toEqual([10, 30]);
     expect(columns.map((c) => c.cells.length)).toEqual([1, 1]);
+  });
+});
+
+/**
+ * LIQ-06 — the floor, stated in the host's own unit instead of as a share of a peak.
+ *
+ * A floor relative to the column's own peak is circular under a shared scale: it says nothing about
+ * the magnitude a cell holds, only about how that cell compares to whatever else happens to be in
+ * the column. The relative rule stays the default; the absolute one is the opt-in.
+ */
+describe('LIQ-06 — a relative floor and an absolute one', () => {
+  /** Peaks of 4 and 8, with a constant 2 in both. The bin at 110 is the constant one. */
+  const twoPeaks = (): readonly DensityColumn[] =>
+    toDensityColumns([slice(10, [[100, 4], [110, 2]]), slice(20, [[100, 8], [110, 2]])]);
+
+  interface Painted {
+    readonly skipped: number;
+    readonly columns: readonly (readonly string[])[];
+  }
+
+  const paint = (tuning: DensityTuning): Painted => {
+    const overlay = new DensityFieldOverlay();
+    overlay.setTuning(tuning);
+    overlay.setColumns(twoPeaks());
+    const ctx = new RecordingContext();
+    overlay.draw(fakeTarget(ctx, { widthPx: 400, heightPx: 200 }), fakeProjection({ barSpacing: 4 }));
+    return {
+      skipped: overlay.frameStats().skipped,
+      columns: ctx.recordedGradients().map((g) => g.stops.map(([, colour]) => colour)),
+    };
+  };
+
+  const CLEAR = 'rgba(0,0,0,0)';
+
+  it('leaves the relative tuning exactly two knobs — no mode is written where none was asked for', () => {
+    // The default has to stay byte-for-byte what a host already stores, or every restored file
+    // starts carrying a member the version that wrote it never had.
+    const clamped = clampDensityTuning({ floor: 0.2, gamma: 1.2 });
+    expect(Object.keys(clamped)).toEqual(['floor', 'gamma']);
+    expect(clamped.floorMode).toBeUndefined();
+  });
+
+  it('keeps the absolute mode through the clamp, and does NOT force it into the relative bound', () => {
+    // 0.4 is the ceiling of a SHARE. An absolute floor is a weight in the host's unit, and clamping
+    // 5 000 down to 0.4 would silently turn "hide anything under five thousand" into "hide almost
+    // nothing", which is the failure that looks like working software.
+    expect(clampDensityTuning({ floor: 5000, gamma: 1.5, floorMode: 'absolute' })).toEqual({
+      floor: 5000,
+      gamma: 1.5,
+      floorMode: 'absolute',
+    });
+  });
+
+  it('sends a negative or unreadable absolute floor to zero, so a broken threshold hides nothing', () => {
+    for (const floor of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(clampDensityTuning({ floor, gamma: 1.5, floorMode: 'absolute' }).floor).toBe(0);
+    }
+    // And gamma is still bounded on this path — the absolute branch is not an exit from the clamp.
+    expect(clampDensityTuning({ floor: 1, gamma: 99, floorMode: 'absolute' }).gamma).toBe(2.5);
+  });
+
+  it('without a mode, the floor is a SHARE of the column peak — which cuts unevenly', () => {
+    // The published rule, kept as the default. A constant 2 is half of one column's peak and a
+    // quarter of the other's, so the same magnitude survives in one column and vanishes in the next.
+    const painted = paint({ floor: 0.4, gamma: 1 });
+    expect(painted.skipped).toBe(1);
+    expect(painted.columns[0]).not.toContain(CLEAR);
+    expect(painted.columns[1]).toContain(CLEAR);
+  });
+
+  it('under an absolute floor the SAME magnitude is cut in every column, whatever its peak', () => {
+    const painted = paint({ floor: 3, gamma: 1, floorMode: 'absolute' });
+    expect(painted.skipped).toBe(2);
+    // The constant bin at 110 is the first two stops of each column; the growing bin is the last.
+    for (const stops of painted.columns) expect(stops).toEqual([CLEAR, CLEAR, expect.not.stringMatching(/^rgba\(0,0,0,0\)$/)]);
+  });
+
+  it('cuts strictly BELOW the value, so a cell sitting exactly on the floor still draws', () => {
+    expect(paint({ floor: 2, gamma: 1, floorMode: 'absolute' }).skipped).toBe(0);
+    expect(paint({ floor: 2.0001, gamma: 1, floorMode: 'absolute' }).skipped).toBe(2);
+  });
+
+  it('a value far outside the relative bound survives the clamp AND reaches the paint', () => {
+    // The two halves joined: the clamp keeps 5, and 5 is what the renderer cuts on. Either half
+    // alone would pass while the other quietly dropped the number.
+    const painted = paint(clampDensityTuning({ floor: 5, gamma: 1, floorMode: 'absolute' }));
+    expect(painted.skipped).toBe(3);
+    expect(painted.columns[0]).toEqual([CLEAR, CLEAR, CLEAR]);
+    expect(painted.columns[1][2]).not.toBe(CLEAR);
   });
 });
