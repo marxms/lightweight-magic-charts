@@ -103,6 +103,17 @@ T13 → T14 → T15
 T15 → T16 → T17
 ```
 
+### Phase 10: The four gaps the Verifier measured
+
+Written after `.specs/features/indicator-render-fidelity/validation.md` returned FAIL on four
+surviving mutants. Every one of them is an EVIDENCE gap, not a behaviour gap: the shipped chart is
+right and four of the things it does can be deleted with every gate green. The order is a chain
+because each fix is committed onto a green tree, not because one needs another's code.
+
+```
+T17 → T18 → T19 → T20 → T21 → T22 → T23 → T24
+```
+
 ---
 
 ## Task Breakdown
@@ -766,3 +777,47 @@ payloads on a mounted workspace with a counting engine.
 
 **A host that hands over inline prop groups is beyond what the composition can fix** — `resolved` is
 a function of the `studies` object it was given. That is documented rather than asserted.
+
+---
+
+### T18: The marker sensor counts a hue only markers can write
+
+**What**: Repoint `marks.reach-the-bars` at a study whose marker colours appear in no other channel of its own result, so deleting the marker plugin takes the count to zero again.
+**Where**: `scripts/e2e-demo.mjs`
+**Depends on**: T17
+**Reuses**: `hueCount`, `pickStudy`, and `SeriesMenu`'s own `domId` narrowing
+**Requirement**: MARK-01
+
+**Tools**:
+- MCP: NONE
+- Skill: `ecc:e2e-testing`
+
+**Done when**:
+- [x] The study the scene drives is chosen by MEASUREMENT over every marker-emitting row, not by taste
+- [x] Deleting `withMarkers` from `example/engine.ts` turns `npm run e2e` red
+- [x] Deleting `alignColors` from `src/indicator/availability.ts` leaves the marker scene GREEN, so the point-colour channel cannot satisfy it
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: e2e
+**Gate**: full
+**Status**: DONE — 0 B. `scripts/e2e-demo.mjs` is not in the bundle; entry still **104853 / 104853**.
+
+**The disarming is reproduced, then removed.** The scene drove `realtime-volume-bars`, which emits
+`#00FF00`/`#FF0000` TWICE: once as markers and once as `plots.plot0`/`plots.plot1` point colours —
+measured on the vendor result, `plot0` entirely `#00FF00` and `plot1` entirely `#FF0000`. From T13,
+when point colours started drawing, `up > 0 && down > 0` could no longer fall to zero, and T11's own
+deletion control had stopped being red without anybody re-running it.
+
+**The replacement was measured, not chosen.** All 72 marker-emitting rows were computed at their own
+defaults over the proof's fixture, every colour string in the result was collected with `markers`
+excluded, and the marker colours were intersected against it and against the host's two palettes.
+SIX rows come back clean; `t3-psar` is the one with the most drawable marks — 259, `arrowUp`
+`#00E676` below the bar and `arrowDown` `#FFEB3B` above it — and it is the strongest of the six for
+this clause because it DOES emit point colours (`#EF5350`, `#64B5F6`), so the control below is not
+vacuous.
+
+**Both directions are measured on the real bitmap.**
+- Baseline: `up 393, down 426` against `0, 0` before the pick.
+- `return created;` in `example/engine.ts:124` (the T11 control): **up 0, down 0 — RED, 95/96.**
+- `alignColors` returning `null` (sensor M1): **up 392, down 426 — GREEN, 96/96.** The one pixel is
+  antialias; the point-colour channel writes neither hue.

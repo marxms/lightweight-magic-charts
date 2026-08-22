@@ -111,7 +111,9 @@ async function openStudies(page) {
 }
 
 async function pickStudy(page, category, entryId) {
-  await page.locator(`[data-testid="workspace-catalogue-category-${category}"]`).click();
+  // `SeriesMenu`'s own `domId` narrowing: a category is the host's string and may hold a space.
+  const chip = category.replace(/[^a-zA-Z0-9]+/g, '-');
+  await page.locator(`[data-testid="workspace-catalogue-category-${chip}"]`).click();
   await page.waitForTimeout(150);
   await page.locator(`[data-testid="workspace-catalogue-entry-${entryId}"]`).click();
   await page.waitForTimeout(200);
@@ -1415,9 +1417,20 @@ async function sceneCloudIsShaded(browser, base) {
 // 0.2.1's candlestick pattern marks are the same no-op. Counted here on the REAL engine and off the
 // real bitmap, because a repository fake that implements what the base library lacks is exactly how
 // this survived.
+//
+// THE STUDY IS CHOSEN SO THAT ONLY THE MARKER CHANNEL CAN WRITE THESE TWO HUES, and that is the
+// whole point of the scene. It used to read `realtime-volume-bars` at #00FF00/#FF0000, and that
+// study emits the SAME two hues twice: once as markers and once as `plots.plot0`/`plots.plot1`
+// point colours. The moment per-bar point colours started drawing, the count stopped being able to
+// fall to zero, and deleting the marker plugin outright left this scene green. Measured over all 72
+// marker-emitting rows at their own defaults: `t3-psar` is one of six whose marker colours appear
+// nowhere else in its own result — its point colours are #EF5350 and #64B5F6, its `barColors` are
+// neither of these two, and its 259 marks are `arrowUp` #00E676 below the bar and `arrowDown`
+// #FFEB3B above it. Nothing else on this page paints either hue, which `marks.none-before-the-pick`
+// measures rather than assumes.
 // ---------------------------------------------------------------------------------------------
-const MARK_UP = [0, 255, 0]; // realtime-volume-bars paints its own #00FF00 and #FF0000
-const MARK_DOWN = [255, 0, 0];
+const MARK_UP = [0, 230, 118]; // t3-psar's arrowUp, #00E676 — its markers and nothing else
+const MARK_DOWN = [255, 235, 59]; // its arrowDown, #FFEB3B
 
 async function sceneMarksReachTheBars(browser, base) {
   const { page, console_ } = await freshPage(browser, base);
@@ -1432,7 +1445,7 @@ async function sceneMarksReachTheBars(browser, base) {
   );
 
   await openStudies(page);
-  await pickStudy(page, 'Volume', 'realtime-volume-bars');
+  await pickStudy(page, 'Moving Averages', 't3-psar');
   await page.waitForTimeout(SETTLE_MS);
 
   const up = await hueCount(page, surface, MARK_UP, 2);
@@ -1440,7 +1453,7 @@ async function sceneMarksReachTheBars(browser, base) {
   check(
     'marks.reach-the-bars',
     up > 0 && down > 0,
-    `marker pixels after picking "Realtime Volume Bars": up ${up}, down ${down} — the manifest says it emits one per bar`,
+    `marker pixels after picking "T3 PSAR": up ${up}, down ${down} — two hues this study writes from its marker channel alone, so removing the marker plugin takes both to zero`,
   );
 
   reportConsole('marks.console-clean', console_);
