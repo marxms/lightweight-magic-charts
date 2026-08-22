@@ -1064,3 +1064,44 @@ catalogue scale would not have.
 
 **The old numbers were also stale**: the clause carried `915 live of 1048 declared, 133 dead across
 32 rows`, measured over 320 rows before T15 withdrew ten. Re-read off the proof's own output.
+
+---
+
+### T24: The two edge cases with no evidence get some
+
+**What**: Assert the z-order tie across redraws, and record in `spec.md` where every listed edge case is asserted and what discriminates it.
+**Where**: `test/overlayBridge.spec.ts`
+**Depends on**: T23
+**Reuses**: `SpyOverlay`, `attachOverlay` and the attachment fake already in the suite
+**Requirement**: FILL-03, MARK-01
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Two overlays that tie on z-order are asserted to draw in the same order over three redraws, with a positive control that the sort does move something
+- [x] Each of the five listed edge cases carries a `file:line` and the mutation that kills it, in `spec.md`
+- [x] Gate check passes: `npm test`
+
+**Tests**: unit
+**Gate**: quick
+**Status**: DONE — 0 B; entry **104853 / 104853**. `npm test` **1477 -> 1478**.
+
+**`spec.md:194` had no test anywhere.** The Verifier searched `test/` and found nothing asserting
+that two overlays sharing `'behind'` keep their order.
+
+**What the repository owns was separated from what it delegates.** The base library sorts pane views
+with `Array.prototype.sort`, which the language specification requires to be STABLE, so a tie keeps
+input order. That is the base library's property; the test models it and says so rather than
+re-implementing it. What this repository owns is the two things that let a stable sort survive a
+frame: every primitive answering the SAME layer on every call, and `paneViews()` handing back the
+same objects each time. Neither was asserted before.
+
+**Measured by mutation**: rebuilding the view array on every `paneViews()` call → **2 red**; a
+`zOrder()` that answers a different layer on a later frame → **1 red**. The `'ahead'` overlay is the
+positive control — without it a modelled sort that never moved anything would satisfy the case.
+
+**The second edge case, `spec.md:195`, was closed in T19** by implementing it: `markOf` now drops a
+mark whose time is not a bar of the window the study was computed over. Recorded in the table rather
+than left to a reader to find.

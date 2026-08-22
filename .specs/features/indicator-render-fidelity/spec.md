@@ -196,6 +196,24 @@ in the manifest and nothing failed on it.
 - WHEN an indicator emits a marker on a bar outside the loaded window THEN that marker SHALL be dropped without affecting the rest
 - WHEN the entry bundle is measured after this feature THEN it SHALL remain below `PROVISIONAL_ENTRY_LIMIT`
 
+**Where each one is asserted.** Two of these had no evidence anywhere when the Verifier looked, and
+neither is left implicit now.
+
+| Edge case | Asserted at | Discriminated by |
+| --- | --- | --- |
+| a non-finite bound interrupts the fill | `test/bandOverlay.spec.ts:123` — two of four bars painted, control at `:133` painting all four | spanning the gap kills 2 |
+| the lane grows rather than the study being cut | `test/hostSlots.spec.ts:131-152`, two planted positive controls | truncating at three lines takes the e2e to 93/96, Leading Span A and B reading 0 px |
+| two overlays tying on z-order keep their order across redraws | `test/overlayBridge.spec.ts` — three frames, the tie asserted real, an `'ahead'` overlay as the control that the modelled sort does move | rebuilding `paneViews()` per call kills 2; a z-order that varies between frames kills 1 |
+| a marker outside the loaded window is dropped without affecting the rest | `test/studyMarks.spec.ts` — a mark between two loaded bars and one beyond the last, three neighbours untouched, plus a positive control on a window that holds all five | removing the membership test kills 3 |
+| the entry stays below `PROVISIONAL_ENTRY_LIMIT` | `test/gates/sizeBudget.spec.ts:557` | measured 104853 against a ceiling of 104994 |
+
+The z-order row delegates one half deliberately: the base library sorts pane views with
+`Array.prototype.sort`, which the language specification requires to be stable, so a tie keeps input
+order. That is its property and it is modelled in the test rather than re-implemented. What this
+repository owns, and what the test asserts, is the two things that let a stable sort survive a frame
+— every primitive answering the same layer on every call, and `paneViews()` handing back the same
+objects each time.
+
 ---
 
 ## Requirement Traceability
