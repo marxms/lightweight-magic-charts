@@ -8,7 +8,7 @@
  */
 import { createHash } from 'node:crypto';
 
-import { encodeSeries } from './value-encoding.mjs';
+import { encodeSeries, encodeSeriesUnquantised } from './value-encoding.mjs';
 
 export const MANIFEST_PATHS = {
   manifest: 'example/indicators/manifest.json',
@@ -234,15 +234,38 @@ export function vendorPin(packageJson) {
 export function digestOf(entry, plotIds, bars) {
   let result;
   try { result = entry.calculate(bars, entry.defaultInputs); } catch { return 'threw'; }
+  return digestOfResult(result, plotIds, encodeSeries);
+}
+
+/** The digest of a result already computed, spelled by whichever encoder is handed in. */
+export function digestOfResult(result, plotIds, encode) {
   const hash = createHash('sha256');
   for (const key of plotIds) {
-    const { scale, tokens } = encodeSeries((result.plots?.[key] ?? []).map((point) => point?.value));
+    const { scale, tokens } = encode((result.plots?.[key] ?? []).map((point) => point?.value));
     if (scale !== null) hash.update(`${key}:scale:${scale}\n`);
     for (const [index, token] of tokens.entries()) {
       if (token !== null) hash.update(`${key}:${index}:${token}\n`);
     }
   }
   return hash.digest('hex');
+}
+
+/**
+ * BOTH SPELLINGS OF ONE COMPUTATION, from a single `calculate`.
+ *
+ * `values` is the digest the catalogue commits. `unquantised` is the same readings spelled the way
+ * they were spelled before `value-encoding.mjs` quantised them, and it exists for exactly one
+ * caller: the sensor that perturbs the implementation-approximated Math functions and has to show
+ * that the quantum is what holds the digest still. A sensor whose control it cannot compute is a
+ * sensor that proves the perturbation was too small to matter.
+ */
+export function digestPairOf(entry, plotIds, bars) {
+  let result;
+  try { result = entry.calculate(bars, entry.defaultInputs); } catch { return { values: 'threw', unquantised: 'threw' }; }
+  return {
+    values: digestOfResult(result, plotIds, encodeSeries),
+    unquantised: digestOfResult(result, plotIds, encodeSeriesUnquantised),
+  };
 }
 
 /**

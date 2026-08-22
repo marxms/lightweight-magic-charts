@@ -91,9 +91,10 @@ jobs:
   # this job and this job does not imply it.
   #
   # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
-  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 115.6 s on
-  # this runner against 11 s on the author's machine — a 10x gap that is the runner's, not the
-  # suite's, and the reason the timeout below has room in it.
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 122.2 s on
+  # a linux/amd64 Node 22 container against 11.7 s on the author's macOS/arm64 machine — a 10x gap
+  # that is the runner's, not the suite's, and the reason the timeout below has room in it. 115.6 s
+  # of that was there before the platform sensor below; the sensor costs one extra pass, 6.6 s.
   #
   # ONE NODE, AND THE REASON WAS WRONG UNTIL IT WAS FIXED. This comment used to say that none of what
   # the job measures varies by Node runtime. It did: the digests were taken over raw doubles, and
@@ -103,8 +104,10 @@ jobs:
   # largest disagreement of 3.304e-16 relative. A single-Node job is what kept that invisible until
   # a contributor on another machine hit it. `value-encoding.mjs` now quantises each reading against
   # its own series before digesting — measured at 2^-36 of the series scale, no digest of the 310
-  # moves under a 1, 2, 4, 8, 16 or 64 ULP perturbation of those eight — so one Node is enough
-  # BECAUSE of that encoding rather than in spite of the question.
+  # moves under a 1, 2, 4, 8, 16 or 64 ULP perturbation of those eight — and
+  # `catalogue.the-digest-survives-a-platform-re-rounding-a-transcendental` asserts that here, on
+  # whatever machine runs it, by nudging those eight one ULP and re-deriving. So one Node is enough
+  # BECAUSE of the encoding and the clause that watches it, rather than in spite of the question.
   #
   # It does NOT build. It reads `example/indicators/manifest.json` and the vendor directly; nothing
   # under `src/` is involved, and `test/boundary.spec.ts` is what keeps it that way.

@@ -143,3 +143,20 @@ export function encodeSeries(values) {
     }),
   };
 }
+
+/**
+ * THE NEGATIVE CONTROL, AND NOT AN ENCODER. Nothing digests with this.
+ *
+ * It spells a reading the way `v1` spelled it — verbatim, every bit of the double — and exists for
+ * one caller: the sensor in `indicator-proof.mjs` that perturbs the implementation-approximated
+ * eight and has to show the QUANTUM is what holds the digest still. Without it the sensor proves
+ * nothing, because a green result would be equally explained by a perturbation too small to reach
+ * any reading at all. Measured with it: the same 1-ULP perturbation moves 14 of the 310 unquantised
+ * digests and 0 of the quantised ones.
+ */
+export function encodeSeriesUnquantised(values) {
+  return {
+    scale: null,
+    tokens: values.map((value) => (typeof value === 'number' && Number.isFinite(value) ? `${value === 0 ? 0 : value}` : null)),
+  };
+}

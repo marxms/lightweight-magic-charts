@@ -70,8 +70,8 @@ import * as counter from './indicator-proof/counter-impl.mjs';
 import { loadAdapter } from './indicator-proof/adapter-source.mjs';
 import { loadOracle } from './indicator-proof/oracle-source.mjs';
 import { PINNED, sealOf, tallyOf } from './indicator-proof/seal.mjs';
-import { EXCLUSION_MEASUREMENTS, channelsOf, digestOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
-import { UNVERSIONED_ENCODING, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
+import { EXCLUSION_MEASUREMENTS, channelsOf, digestPairOf, refusalsOf, settleWithinBars, vendorPin, widthsOf } from './indicator-proof/manifest-shape.mjs';
+import { IMPLEMENTATION_APPROXIMATED, UNVERSIONED_ENCODING, VALUE_ENCODING } from './indicator-proof/value-encoding.mjs';
 import { valueLedgerFaults } from './indicator-proof/value-ledger.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -628,9 +628,12 @@ check(
   const uncovered = [];
   /** What this run computes, in the shape the fingerprint file holds — the ledger judges the pair. */
   const derived = {};
+  /** The same readings spelled WITHOUT the quantum, kept for the sensor below. Costs no extra run. */
+  const unquantisedNow = {};
   for (const row of MANIFEST) {
     const entry = byId.get(row.id);
-    const values = digestOf(entry, row.plotIds, BARS_A);
+    const { values, unquantised } = digestPairOf(entry, row.plotIds, BARS_A);
+    unquantisedNow[row.id] = unquantised;
     const settle = settleWithinBars(entry, row.plotIds, BARS_A);
     derived[row.id] = { values, confirmsWithinBars: settle };
     const committed = FINGERPRINTS.entries?.[row.id];
@@ -648,6 +651,63 @@ check(
       ? `${MANIFEST.length} digests of computed values re-derived and identical, settle windows included — ${MANIFEST.filter((r) => r.confirmsWithinBars > 0).length} entries restate a closed bar, none by more than ${Math.max(...MANIFEST.map((r) => r.confirmsWithinBars))} bars`
       : [...drifted, ...uncovered.map((id) => `${id} is offered with no fingerprint`), ...extra.map((id) => `${id} has a fingerprint and is not offered`)].join('; '),
   );
+
+  // AND THE DIGEST HAS TO SURVIVE THE PLATFORM IT IS TAKEN ON — the sensor that was missing.
+  //
+  // The clause above compares this run's digests against the committed ones and says nothing about
+  // WHY they agree. They agreed here and disagreed on the CI runner: `npm run proof` reported 31/33
+  // on linux/amd64/Node 22 against 33/33 on macOS/arm64/Node 25, over the same pinned vendor and the
+  // same fixture, because ECMAScript leaves `Math.exp`, `pow`, `log`, `log10`, `sin`, `cos`, `atan`
+  // and `acos` implementation-approximated — only `sqrt` is required exact by IEEE 754 — and the
+  // vendor calls those eight 66 times. A digest of a raw double is a digest of the platform.
+  //
+  // So the platform is SIMULATED rather than waited for: every one of the eight is wrapped to return
+  // its own result nudged by one unit in the last place, which is exactly the freedom the language
+  // grants an implementation, and the digests are re-derived under it. This runs anywhere, so the
+  // machine that would have caught the defect is whichever one a contributor happens to own.
+  //
+  // AND IT DISCRIMINATES, because a green result on its own is equally well explained by a
+  // perturbation too small to reach any reading. The SAME perturbed computation is spelled a second
+  // time without the quantum — `encodeSeriesUnquantised`, the negative control — and that spelling
+  // has to move. If it did not, this clause would be passing over a nudge that changed nothing.
+  {
+    const originals = new Map(IMPLEMENTATION_APPROXIMATED.map((name) => [name, Math[name]]));
+    const bits = new DataView(new ArrayBuffer(8));
+    /** One unit in the last place, away from zero — the whole of what "approximated" is allowed to mean. */
+    const nudge = (x) => {
+      if (!Number.isFinite(x) || x === 0) return x;
+      bits.setFloat64(0, x);
+      bits.setBigUint64(0, bits.getBigUint64(0) + (x > 0 ? 1n : -1n));
+      const moved = bits.getFloat64(0);
+      return Number.isFinite(moved) ? moved : x;
+    };
+
+    const held = [];
+    const movedUnquantised = [];
+    try {
+      for (const name of IMPLEMENTATION_APPROXIMATED) {
+        const original = originals.get(name);
+        Math[name] = (...args) => nudge(original(...args));
+      }
+      for (const row of MANIFEST) {
+        const under = digestPairOf(byId.get(row.id), row.plotIds, BARS_A);
+        if (under.values !== derived[row.id].values) held.push(row.id);
+        if (under.unquantised !== unquantisedNow[row.id]) movedUnquantised.push(row.id);
+      }
+    } finally {
+      for (const [name, original] of originals) Math[name] = original;
+    }
+
+    check(
+      'catalogue.the-digest-survives-a-platform-re-rounding-a-transcendental',
+      held.length === 0 && movedUnquantised.length > 0,
+      held.length === 0 && movedUnquantised.length > 0
+        ? `all ${MANIFEST.length} digests are byte-identical with ${IMPLEMENTATION_APPROXIMATED.length} implementation-approximated Math functions each returning its result one ULP out, and the SAME perturbed run moves ${movedUnquantised.length} of them without the quantum (${movedUnquantised.slice(0, 4).join(', ')}…) — so the encoding is what holds them still, not a nudge too small to reach a reading. Math.sqrt is left alone: IEEE 754 requires it exact`
+        : held.length > 0
+          ? `${held.length} digest(s) moved under a one-ULP nudge, so the committed catalogue is a digest of this machine as much as of the arithmetic: ${held.slice(0, 8).join(', ')}`
+          : 'the perturbation moved nothing at all, quantised or not — a sensor that cannot reach a reading proves nothing about the encoding that survives it',
+    );
+  }
 
   const measured = EXCLUSION_MEASUREMENTS(DEFECTS);
   const named = CATALOGUE.exclusions ?? [];
