@@ -91,8 +91,12 @@ const short = (digest) => `${String(digest).slice(0, 12)}…`;
  * It is required exactly when the two identities differ, and a caller that cannot produce it (no
  * encoder is registered for the committed identity) says so with `null` and is refused — never
  * silently compared under the current spelling, which is how a re-spelling became an amnesty.
+ *
+ * `vendor` is `{ committed, derived }` — the pin the committed digests were taken under and the one
+ * this run computes against, `version/peerVersion` each. It is what says whether a re-spelling
+ * arrived alone or with a release, and the two may not arrive together.
  */
-export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted }) {
+export function valueLedgerFaults({ committed, derived, ledger, offered, encoding, underCommitted, vendor }) {
   const changes = Array.isArray(ledger?.changes) ? ledger.changes : null;
   if (changes === null) {
     return [{ id: '—', fault: 'unreadable', detail: 'the ledger carries no `changes` array' }];
@@ -106,6 +110,9 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
   }
   if (typeof encoding?.committed !== 'string' || typeof encoding?.derived !== 'string') {
     return [{ id: '—', fault: 'unreadable', detail: 'the caller did not name the encoding the committed digests were written under and the one this run writes, and without both a re-spelling is indistinguishable from three hundred values moving' }];
+  }
+  if (typeof vendor?.committed !== 'string' || typeof vendor?.derived !== 'string') {
+    return [{ id: '—', fault: 'unreadable', detail: 'the caller did not name the vendor pin the committed digests were taken under and the one this run computes against, and a re-spelling that arrives with a release is the one shape in which every digest in the file moves for two reasons at once' }];
   }
   const offers = new Set(offered);
   const sameEncoding = encoding.committed === encoding.derived;
@@ -149,6 +156,22 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
     if (!declared) {
       say('—', 'undeclared-encoding', `the committed digests were written under \`${encoding.committed}\` and this run writes \`${encoding.derived}\`, and nothing in the chain says why — a re-spelling moves every digest in the file at once, which is the cheapest way there is to make three hundred changed values look like one refactor`);
     }
+  }
+
+  /* ---- AND A RELEASE DOES NOT ARRIVE WEARING A RE-SPELLING ------------------------------------- *
+   * The block below re-derives every id under the committed spelling and compares it, so a value
+   * that moved is named whether or not the identity moved with it. That defence rests on ONE thing
+   * the file cannot check: that the encoder registered under the old identity still spells the way
+   * that identity spelled. Nothing else in the tree can confirm it, and a release is exactly the
+   * moment somebody is editing both.
+   *
+   * So the two are kept apart, and the cost is one extra commit in the life of the catalogue. It is
+   * also what a reviewer needs: in a run that does both, EVERY digest in the file moves anyway, and
+   * a tampered one is invisible in the diff — which is how the measured laundering passed review in
+   * the first place. `fingerprints.json` has always carried the pin it was written under and nothing
+   * ever read it; this reads it.                                                                  */
+  if (!sameEncoding && vendor.committed !== vendor.derived) {
+    say('—', 'release-with-respelling', `the committed digests were taken under vendor ${vendor.committed} and this run computes against ${vendor.derived}, and the same run re-spells them from \`${encoding.committed}\` to \`${encoding.derived}\` — a release and a re-spelling may not arrive together, because the re-spelling moves every digest in the file at once and a value the release moved is then invisible in the diff. Take the release first and declare what its values did; re-spell in the commit after it, where every digest moves for exactly one reason`);
   }
 
   /* ---- AND A DECLARED RE-SPELLING STILL ANSWERS FOR EVERY VALUE UNDERNEATH IT ------------------ *

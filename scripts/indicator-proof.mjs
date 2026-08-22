@@ -623,6 +623,9 @@ check(
         : `manifest says ${pinned?.version}/${pinned?.peer?.version}, package.json says ${declared.version}/${declared.peer.version}, installed is ${installed}/${peerInstalled}`,
   );
   if (declared === null) declared = { name: 'lightweight-charts-indicators', version: installed, peer: { name: 'oakscriptjs', version: peerInstalled } };
+  /** The pin as one string, the way the clause above already prints it. `fingerprints.json` has
+   *  always carried the one it was written under; the ledger below is the first thing to read it. */
+  const pinOf = (v) => `${v?.version}/${v?.peer?.version}`;
 
   const drifted = [];
   const uncovered = [];
@@ -753,7 +756,8 @@ check(
   // what moved it.
   const onFile = VALUE_CHANGES.changes ?? [];
   const encoding = { committed: committedEncoding, derived: VALUE_ENCODING.id };
-  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted });
+  const vendor = { committed: pinOf(FINGERPRINTS.vendor), derived: pinOf(declared) };
+  const faults = valueLedgerFaults({ committed: FINGERPRINTS.entries ?? {}, derived, ledger: VALUE_CHANGES, offered: MANIFEST.map((row) => row.id), encoding, underCommitted, vendor });
   check(
     'catalogue.every-value-that-moved-carries-a-DECLARATION',
     faults.length === 0 && typeof VALUE_CHANGES.why === 'string' && typeof VALUE_CHANGES.form === 'string',
@@ -770,7 +774,9 @@ check(
     const now = { wma: { values: B, confirmsWithinBars: 0 } };
     const reason = 'the vendor corrected the weighting so the newest bar carries the heaviest one';
     const HELD = { committed: 'spelling/v1', derived: 'spelling/v1' };
-    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD });
+    /** The pin is HELD in every direction below: this clause is about the declaration, not the release. */
+    const PIN = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
+    const judge = (...changes) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes, encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN });
     const entry = (from, to, why = reason) => ({ id: 'wma', from, to, reason: why, encoding: HELD.derived });
     const silent = judge();
     const correct = judge(entry(A, B));
@@ -780,8 +786,8 @@ check(
     // forging a sha256, and it reaches the same place through the sanctioned regeneration command —
     // so the committed MANIFEST decides which of the two an absent digest is. Both directions are
     // asserted: a proof that vanished is refused, an indicator that genuinely appeared is not.
-    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD });
-    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD });
+    const deleted = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: HELD, vendor: PIN });
+    const debut = valueLedgerFaults({ committed: {}, derived: now, ledger: { changes: [], encodings: [] }, offered: [], encoding: HELD, vendor: PIN });
     // AND THE THIRD PAIR, WHICH IS THE ONE THE DIGESTS CANNOT TELL APART AT ALL. Re-spelling how a
     // reading is written moves EVERY digest in the file at once while no indicator computes anything
     // different — so declaring it per id would be three hundred false statements, and waving it
@@ -793,7 +799,7 @@ check(
     // Re-derived under the spelling on file, this run says what the file already says — so no value
     // moved and the only thing being judged here is the identity. That the SAME re-spelling with a
     // value moved underneath it is refused is the clause after this one; the two do not overlap.
-    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A } });
+    const respell = (...encodings) => valueLedgerFaults({ committed: was, derived: now, ledger: { changes: [], encodings }, offered: ['wma'], encoding: RESPELT, underCommitted: { wma: A }, vendor: PIN });
     const respelling = (from, to, why) => ({ from, to, reason: why });
     const encodingReason = 'the digest is quantised so that a platform re-rounding a transcendental cannot move it';
     const respeltSilently = respell();
@@ -853,6 +859,7 @@ check(
       offered: ['wma', 'sma'],
       encoding: { committed: HELD, derived: MOVED },
       underCommitted,
+      vendor: { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' },
     });
     /** Nothing moved: this run, spelled the old way, is what the file already says. */
     const honest = judge({ wma: X, sma: Y });
@@ -877,6 +884,54 @@ check(
       verdicts.every(Boolean)
         ? 'a re-spelling in which no value moved passes and rewrites the file as before; the SAME re-spelling with one indicator\'s arithmetic moved underneath it is refused, naming that id and only that id, because every id is re-derived under the identity the committed file carries and compared there; the same move WITH a declaration written in the spelling the two ends share passes; the same declaration written in the spelling this run moves TO is refused, because neither of its digests is on file in that spelling; and a committed identity `ENCODERS` no longer answers to is refused outright rather than compared under this run\'s spelling, which would restore the amnesty in full'
         : `honest-respelling→green ${verdicts[0]}, tampered-under-respelling→red-and-named ${verdicts[1]}, declared-in-the-old-spelling→green ${verdicts[2]}, declared-in-the-new-spelling→red ${verdicts[3]}, unaddressable-spelling→red ${verdicts[4]}`,
+    );
+  }
+
+  // AND THE TWO CHANGES THAT MOVE EVERY DIGEST AT ONCE ARRIVE ONE AT A TIME.
+  //
+  // The clause above compares each id under the spelling on file, which rests on ONE thing nothing
+  // in the tree can confirm: that the encoder registered under the old identity still spells the way
+  // that identity spelled. A vendor release is exactly the moment somebody is editing both. And it
+  // is what a reviewer needs either way — in a run that bumps AND re-spells, every digest in the
+  // file moves anyway and the tampered one is invisible in the diff, which is how the measured
+  // laundering would have passed review. `fingerprints.json` has always carried the pin it was
+  // written under; nothing read it until now. The cost is one extra commit in the life of the
+  // catalogue, and only when both land together.
+  {
+    const HELD = 'spelling/v1';
+    const MOVED = 'spelling/v2';
+    const [X, N] = ['1', '7'].map((ch) => ch.repeat(64));
+    const was = { wma: { values: X, confirmsWithinBars: 0 } };
+    const respelling = { from: HELD, to: MOVED, reason: 'the digest is quantised so that a platform re-rounding a transcendental cannot move it' };
+    const judge = ({ encoding, vendor, respelt }) => valueLedgerFaults({
+      committed: was,
+      derived: { wma: { values: respelt ? N : X, confirmsWithinBars: 0 } },
+      ledger: { changes: [], encodings: respelt ? [respelling] : [] },
+      offered: ['wma'],
+      encoding,
+      underCommitted: respelt ? { wma: X } : undefined,
+      vendor,
+    });
+    const RESPELT = { encoding: { committed: HELD, derived: MOVED }, respelt: true };
+    const SPELT = { encoding: { committed: HELD, derived: HELD }, respelt: false };
+    const SAME = { committed: '0.5.0/0.5.0', derived: '0.5.0/0.5.0' };
+    const BUMPED = { committed: '0.5.0/0.5.0', derived: '0.5.1/0.5.0' };
+    const together = judge({ ...RESPELT, vendor: BUMPED });
+    const respellingAlone = judge({ ...RESPELT, vendor: SAME });
+    const releaseAlone = judge({ ...SPELT, vendor: BUMPED });
+    const unnamed = valueLedgerFaults({ committed: was, derived: was, ledger: { changes: [], encodings: [] }, offered: ['wma'], encoding: SPELT.encoding });
+    const verdicts = [
+      together.some((f) => f.fault === 'release-with-respelling'),
+      respellingAlone.length === 0,
+      releaseAlone.length === 0,
+      unnamed.some((f) => f.fault === 'unreadable'),
+    ];
+    check(
+      'catalogue.a-release-and-a-re-spelling-cannot-arrive-together',
+      verdicts.every(Boolean),
+      verdicts.every(Boolean)
+        ? 'a run that moves the vendor pin AND re-spells the digest is refused outright, naming both moves — the one shape in which every digest in the file changes for two reasons at once, so a value the release moved cannot be read out of the diff; a re-spelling under a held pin passes, a release under a held spelling passes and answers to the per-id rule as always, and a caller that does not name the pin the committed digests were taken under is refused rather than assumed to be holding it'
+        : `both-together→red ${verdicts[0]}, respelling-alone→green ${verdicts[1]}, release-alone→green ${verdicts[2]}, pin-not-named→red ${verdicts[3]}`,
     );
   }
 
