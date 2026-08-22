@@ -193,6 +193,7 @@ in the manifest and nothing failed on it.
 - IF a fill bound resolves to a non-finite value on some bars THEN the fill SHALL be interrupted there rather than spanning the gap
 - WHEN a study with more lines than the lane can show is drawn THEN the lane SHALL grow rather than the study being cut
 - IF two overlays claim the same z-order THEN the order SHALL be stable across redraws
+- WHEN the host supplies its own overlays alongside the package's field overlays THEN the package's fields SHALL be composed FIRST, so a host overlay tying with a field on z-order paints over it and never under it
 - WHEN an indicator emits a marker on a bar outside the loaded window THEN that marker SHALL be dropped without affecting the rest
 - WHEN the entry bundle is measured after this feature THEN it SHALL remain below `PROVISIONAL_ENTRY_LIMIT`
 
@@ -206,6 +207,7 @@ neither is left implicit now.
 | two overlays tying on z-order keep their order across redraws | `test/overlayBridge.spec.ts` — three frames, the tie asserted real, an `'ahead'` overlay as the control that the modelled sort does move | rebuilding `paneViews()` per call kills 2; a z-order that varies between frames kills 1 |
 | a marker outside the loaded window is dropped without affecting the rest | `test/studyMarks.spec.ts` — a mark between two loaded bars and one beyond the last, three neighbours untouched, plus a positive control on a window that holds all five | removing the membership test kills 3 |
 | the entry stays below `PROVISIONAL_ENTRY_LIMIT` | `test/gates/sizeBudget.spec.ts:557` | measured 104853 against a ceiling of 104994 |
+| the package's fields are composed before the host's own overlays | `test/canvasSurface.spec.tsx` — the two attach to the same anchor, both answer `'behind'`, and the field is attached first | swapping the two halves of the composition kills 1 |
 
 The z-order row delegates one half deliberately: the base library sorts pane views with
 `Array.prototype.sort`, which the language specification requires to be stable, so a tie keeps input
@@ -213,6 +215,20 @@ order. That is its property and it is modelled in the test rather than re-implem
 repository owns, and what the test asserts, is the two things that let a stable sort survive a frame
 — every primitive answering the same layer on every call, and `paneViews()` handing back the same
 objects each time.
+
+**And the composition row decides what the tie row leaves open.** The tie row fixes only that an
+order, once chosen, survives a redraw; it never said WHICH order. Both halves land on the same
+anchor — the density field names nothing and a host overlay that names nothing falls through to the
+pane-zero anchor (`src/react/surface/ChartSurface.tsx:242`) — and both answer `'behind'`
+(`src/overlays/densityField.ts:134`, `BandFillOverlay`), so they tie, and the order they were
+composed in is the only thing that decides which paints over which.
+
+**The package draws the ground; the host annotates on it.** A density field is a full-pane gradient
+and a host's overlay is a statement about a particular study, so a field painted last would cover
+the annotation the host explicitly asked for — and the host would have no way to fix it, because the
+array it hands in is the whole of what it controls. The package composing itself first is therefore
+not a preference but the only order that keeps the host's own overlays usable. Fixed at
+`src/react/workspace/CanvasSurface.tsx:74` as `[...fielded, ...own]`.
 
 ---
 
