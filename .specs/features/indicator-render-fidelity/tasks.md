@@ -821,3 +821,62 @@ vacuous.
 - `return created;` in `example/engine.ts:124` (the T11 control): **up 0, down 0 — RED, 95/96.**
 - `alignColors` returning `null` (sensor M1): **up 392, down 426 — GREEN, 96/96.** The one pixel is
   antialias; the point-colour channel writes neither hue.
+
+---
+
+### T19: The marker narrowing gets the suite it never had
+
+**What**: Write `test/studyMarks.spec.ts` over every rule `example/studyMarks.ts` declares, and implement the one rule the spec asks for and the module never had — a mark whose bar the chart does not hold.
+**Where**: `test/studyMarks.spec.ts`, `example/studyMarks.ts`
+**Depends on**: T18
+**Reuses**: `StudyPass.grid`, which already carries the window the vendor computed against
+**Requirement**: MARK-01, MARK-02
+
+**Tools**:
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+- [x] Every rule `markOf` and `markChannel` declare is asserted, each with the neighbour that is KEPT beside the mark that is refused
+- [x] Deleting any one of those rules turns `npm test` red — measured, rule by rule
+- [x] A mark whose time is not a bar of the loaded window is dropped with its neighbours intact, closing the edge case at `spec.md:195`
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
+
+**Tests**: unit
+**Gate**: full
+**Status**: DONE — 0 B in `src/`; entry **104853 / 104853**. `npm test` **119 -> 120 suites, 1449 ->
+1470 tests**. The comment gate walks `src/` only, so the new docblocks cost none of the one line of
+slack.
+
+**The module had no test file at all.** The Verifier deleted the whole of `markOf` — shape
+allow-list, position allow-list, required colour, non-finite time — and measured 1449/1449 and 96/96.
+The e2e can see that SOME marks drew; every rule about WHICH ones is decided here and was decided by
+nothing.
+
+**Each rule was proved to discriminate, one at a time.** 21 cases; the number of them that go red
+when a rule is removed:
+
+| Rule removed | red |
+| --- | --- |
+| the whole narrowing, kept compiling | **6** |
+| shape allow-list | 2 |
+| position allow-list | 1 |
+| a colour that is the empty string | 1 |
+| the loaded-window membership | 3 |
+| `text` dropped when empty | 1 |
+| the cache on resolution identity | 1 |
+| `marks.length === 0` skipped rather than written | 1 |
+| an over-price study keyed to its lane instead | 1 |
+| an own-pane study keyed to the price pane instead | 2 |
+
+**The window rule is the edge case at `spec.md:195`, and it was not implemented.** It is now, from
+`StudyPass.grid` — the bars the vendor computed against — because the base library places a mark by
+looking its time up in the series' own data, so a time nothing holds has no coordinate. Measured
+over all 72 marker-emitting rows at their own defaults, **0 of 10,103 marks** fall outside the
+window, so the clause is asserted with synthetic marks and carries a positive control: the same five
+marks against a window that DOES hold those bars are all kept.
+
+**`Number.isFinite` was removed as subsumed, not weakened.** A set of bar times holds neither `NaN`
+nor `Infinity`, so once membership decides the question the finiteness test is a second asking of it
+— and the suite could not tell the two clauses apart. The behaviour is unchanged and still asserted:
+a `NaN` time is dropped, and removing the membership test is what turns that case red.

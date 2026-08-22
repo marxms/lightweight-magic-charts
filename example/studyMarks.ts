@@ -41,10 +41,23 @@ interface VendorMarker {
 
 const EMPTY: ReadonlyMap<string, readonly SeriesMarkerPoint[]> = new Map();
 
-/** One vendor mark, narrowed — or `null` when the base library has no shape to draw it as. */
-function markOf(raw: VendorMarker): SeriesMarkerPoint | null {
+/**
+ * One vendor mark, narrowed — or `null` when nothing on this chart can carry it.
+ *
+ * `loaded` is the window the study was computed over, and a mark whose bar is not in it is dropped
+ * here rather than handed on: the base library places a mark by looking its time up in the series'
+ * own data, so a time nothing holds is a mark with no coordinate. Measured across all 72
+ * marker-emitting rows at their own defaults — 10,103 marks — this vendor produces ZERO of them and
+ * zero non-finite times, so the clause is asserted with synthetic marks in `test/studyMarks.spec.ts`
+ * rather than left to a catalogue that cannot exercise it.
+ *
+ * MEMBERSHIP SUBSUMES FINITENESS. `Number.isFinite` used to stand here as its own clause; a set of
+ * bar times holds neither `NaN` nor `Infinity`, so it was a second test of the same question and
+ * the suite could not tell the two apart. The `typeof` guard stays because it is what types `time`.
+ */
+function markOf(raw: VendorMarker, loaded: ReadonlySet<number>): SeriesMarkerPoint | null {
   const { time, position, shape, color } = raw;
-  if (typeof time !== 'number' || !Number.isFinite(time)) return null;
+  if (typeof time !== 'number' || !loaded.has(time)) return null;
   if (shape === undefined || !DRAWABLE.has(shape)) return null;
   if (position === undefined || !PLACED.has(position)) return null;
   if (typeof color !== 'string' || color === '') return null;
@@ -80,9 +93,13 @@ export function markChannel(): MarkChannel {
       if (resolution === lastResolution) return lastMap;
       const built = new Map<string, readonly SeriesMarkerPoint[]>();
       for (const view of resolution.views) {
-        const raw = (passes.get(view.id)?.result as { markers?: readonly VendorMarker[] } | null)?.markers;
+        const pass = passes.get(view.id);
+        const raw = (pass?.result as { markers?: readonly VendorMarker[] } | null)?.markers;
         if (raw === undefined || raw.length === 0) continue;
-        const marks = raw.map(markOf).filter((mark): mark is SeriesMarkerPoint => mark !== null);
+        const loaded = new Set<number>((pass?.grid ?? []).map((bar) => bar.time as number));
+        const marks = raw
+          .map((mark) => markOf(mark, loaded))
+          .filter((mark): mark is SeriesMarkerPoint => mark !== null);
         if (marks.length === 0) continue;
         const key = view.overlay
           ? seriesStyleKey(PRICE_PANE_ID, priceOverlaySeriesId(view.lane, 0))

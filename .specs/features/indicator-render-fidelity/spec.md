@@ -218,8 +218,8 @@ in the manifest and nothing failed on it.
 | PROOF-02 | P1: A silent drop cannot pass again | T15, T16 | Done |
 | PROOF-03 | P1: A silent drop cannot pass again | T15, T16 | Done |
 | PROOF-04 | P1: A silent drop cannot pass again | T15, T16 | Done |
-| MARK-01 | P2: The marks reach the bars | T11, T18 | Done |
-| MARK-02 | P2: The marks reach the bars | T11 | Done |
+| MARK-01 | P2: The marks reach the bars | T11, T18, T19 | Done |
+| MARK-02 | P2: The marks reach the bars | T11, T19 | Done |
 | BAR-01 | P2: A bar the indicator colours | T12 | Done |
 | BAR-02 | P2: A bar the indicator colours | T12 | Done |
 | REST-01 | P3: The remaining channels | T14 | Done |
@@ -230,6 +230,8 @@ MARK-01 REOPENED IN T18. T11 counted marker pixels on `realtime-volume-bars`, wh
 two hues from its markers AND from its point colours; when T13 made point colours draw, the count
 stopped being able to fall to zero and deleting the marker plugin left the scene green. T18 drives a
 study whose marker colours appear in no other channel of its own result, and re-runs both controls.
+T19 gives `example/studyMarks.ts` the suite it never had — every rule it declares, each proved to
+discriminate on its own — and implements the edge case below about a marker outside the window.
 
 LINES-03 CLOSES IN T17. T7 gave every resolved line a declared series to be drawn into and asserted
 the correspondence with a narrow width planted as a positive control; T16 pinned the live count
