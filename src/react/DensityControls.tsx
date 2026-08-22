@@ -58,11 +58,16 @@ export function DensityControls({
   testIdPrefix = 'density',
 }: DensityControlsProps): ReactElement {
   const safe = clampDensityTuning(tuning);
+  // An absolute floor is a weight in the host's unit; this rail is a share of a column peak. They
+  // cannot share a track, and widening the rail would leak the host's unit into the package. So the
+  // rail goes inert and the number is shown as what it is.
+  const absoluteFloor = safe.floorMode === 'absolute';
 
   const row: CSSProperties = { display: 'flex', gap: 4, alignItems: 'center' };
   const readout: CSSProperties = { fontVariantNumeric: 'tabular-nums', opacity: 0.85 };
 
   const handleFloor = (event: ChangeEvent<HTMLInputElement>): void => {
+    if (absoluteFloor) return;
     onChange(clampDensityTuning({ ...safe, floor: Number(event.target.value) }));
   };
 
@@ -99,11 +104,14 @@ export function DensityControls({
           min={DENSITY_TUNING_BOUNDS.floor.min}
           max={DENSITY_TUNING_BOUNDS.floor.max}
           step={DENSITY_TUNING_BOUNDS.floor.step}
-          value={safe.floor}
+          value={absoluteFloor ? DENSITY_TUNING_BOUNDS.floor.min : safe.floor}
           onChange={handleFloor}
-          style={{ width: 70, accentColor: theme.accent }}
+          disabled={absoluteFloor}
+          style={{ width: 70, accentColor: theme.accent, opacity: absoluteFloor ? 0.4 : 1 }}
         />
-        <span style={{ ...readout, width: 30 }}>{`${Math.round(safe.floor * 100)}%`}</span>
+        <span style={{ ...readout, width: 30 }}>
+          {absoluteFloor ? String(safe.floor) : `${Math.round(safe.floor * 100)}%`}
+        </span>
       </label>
 
       <label style={row}>
@@ -125,7 +133,13 @@ export function DensityControls({
       <button
         type="button"
         data-testid={`${testIdPrefix}-reset`}
-        onClick={() => onChange(DEFAULT_DENSITY_TUNING)}
+        onClick={() =>
+          onChange(
+            absoluteFloor
+              ? { ...DEFAULT_DENSITY_TUNING, floor: 0, floorMode: 'absolute' }
+              : DEFAULT_DENSITY_TUNING,
+          )
+        }
         style={{
           background: 'transparent',
           border: `1px solid ${theme.border}`,

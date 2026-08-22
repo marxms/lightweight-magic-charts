@@ -39,13 +39,21 @@ function runProbe(dist: string): Run {
 }
 
 /**
- * The highest the entry limit was ever allowed to reach, written down so the descent is checkable.
+ * The highest the entry limit is allowed to reach, written down so the descent is checkable.
  *
- * It is the last of the per-phase re-pins, the one the boundary declared provisional. Keeping it
- * here rather than in the budget is deliberate: the budget holds what is true now, and a ceiling the
- * ratchet has already left would read as a live allowance sitting next to the live one.
+ * It is a PER-PHASE ceiling, and AD-012 is what moves it: a phase that adds public API may raise it
+ * ONCE, to `ceil(measured * 1.1)`, and the re-pin has to name the phase and what the phase added.
+ * Keeping it here rather than in the budget is deliberate: the budget holds what is true now, and a
+ * ceiling the ratchet has already left would read as a live allowance sitting next to the live one.
+ *
+ * RAISED 2026-08-21, 104994 -> 115629 — THE ABSOLUTE-DENSITY-SCALE PHASE. The previous value was
+ * pinned by a phase that ended with the entry 21 B under it, and the prose here called that descent
+ * finished. It was not: `DensityScale` alone costs 144 B, and this phase also brings the absolute
+ * floor and the legend. What has NOT moved is the thing that makes the entry answerable — the
+ * budget's own ratchet is still zero-slack and down-only, so every byte is still named in
+ * `size-budget.json` before it is allowed through.
  */
-const PROVISIONAL_ENTRY_LIMIT = 104994;
+const PROVISIONAL_ENTRY_LIMIT = 115629;
 
 /**
  * THE TABLE AT THE CUTOVER — dated, because an equality between two sides that move together is no
@@ -240,9 +248,59 @@ const SYMBOLS_AT_CUTOVER = 13;
  * getting its width back and the price-alert label leaving the raw bookkeeping id off the user's
  * screen. Both are defects the LAN deploy found in a browser, which no static gate could see — the
  * grid rendered 0 px wide with heightPx arriving correct, and the axis read `alert alert-1`.
+ * RE-PINNED 2026-08-21, entry 104973 -> 105117 (+144 B) and ChartWorkspace 95702 -> 95846 (+144 B):
+ * THE ABSOLUTE-DENSITY-SCALE PHASE — `toDensityColumns` takes an optional `DensityScale`, so a run
+ * of slices normalises against one window peak instead of against each column's own. Per-column
+ * scale makes accumulation unrepresentable: a bin whose absolute magnitude never moves darkens on
+ * its own as some other column grows. The bytes are the walk that finds the peak and the branch that selects it; `draw()`
+ * is untouched, and omitting the argument returns what 0.2.1 publishes.
+ * RE-PINNED 2026-08-21, entry 105117 -> 105296 (+179 B) and ChartWorkspace 95846 -> 96025 (+179 B):
+ * the same phase, the floor half — `DensityTuning` gained an optional `floorMode`, and under
+ * `absolute` the cut is on the cell's own weight instead of on its share of a peak. The bytes are
+ * the branch in `draw()` and the second arm of `clampDensityTuning`. The relative rule is still the
+ * default, and a relative tuning still clamps to exactly the two members it always had.
+ * RE-PINNED 2026-08-21, entry 105296 -> 106245 (+949 B) and ChartWorkspace 96025 -> 96076 (+51 B):
+ * the same phase, the legend — `DensityLegend` publishes the ramp with its top end labelled by a
+ * string the host formatted, because a colour scale with no number on it is decoration. The entry
+ * pays for the component; the composed root pays only for the two words that entered the label
+ * contract, since the host mounts the legend itself. The largest item of the phase, and it still
+ * sits 9384 B under the ceiling this phase raised once.
+ * RE-PINNED 2026-08-21, entry 106245 -> 106257 (+12 B) and ChartWorkspace 96076 -> 96088 (+12 B):
+ * the same phase, the reach — `useOverlayFields` takes the `DensityScale` and passes it on. Every
+ * byte of the mode above was unreachable through the drop-in until this: the hook consumers mount
+ * called `toDensityColumns` with one argument, so the mode shipped, could not be asked for, and no
+ * gate saw it. The bytes are the argument and the effect dependency that re-attacks the columns when
+ * only the scale moves. The smallest item of the phase, and the one that makes the rest reachable.
+ * RE-PINNED 2026-08-22, entry 106294 -> 106562 (+268 B) and ChartWorkspace 96125 -> 96390 (+265 B):
+ * the same phase again, closing four seams an adversarial review found open before the merge. A
+ * supplied `peak` is validated instead of trusted (non-finite and negative fall back to the derived
+ * window peak; zero is honoured, because a window with no mass paints nothing); the normalised
+ * share is clamped, so a peak below the window maximum saturates rather than driving the ramp out
+ * of gamut; `floorMode` rides through the persistence gate, which rebuilt the tuning from two
+ * fields and silently reinterpreted an absolute floor as a share on every restore; and the floor
+ * rail goes inert under an absolute floor instead of rewriting the host's threshold on the first
+ * drag. NOT new surface — four defects that had already shipped into the branch.
+ * RE-PINNED 2026-08-21, entry 106257 -> 106294 (+37 B) and ChartWorkspace 96088 -> 96125 (+37 B):
+ * the same phase, the seam — `WorkspaceDataSource` gains `densityScale` and the drop-in can finally
+ * ask for the mode. NESTED in the group that already carries the slices, so the composed root still
+ * declares ten top-level props and `propCount` does not move; the bytes are the field's two hops,
+ * through `CanvasSurface` and into the hook. This closes the phase: entry 104994 -> 106294 in all,
+ * 9335 B under the ceiling the phase raised once.
+ * RE-PINNED 2026-08-22 ON THE MERGE, entry 106562 -> 106439 (-123 B) and ChartWorkspace
+ * 96390 -> 96012 (-378 B): `feat/indicator-library-adoption` meets master, and the pin is what the
+ * probe measured on the merged tree rather than either side's number. The two lines part from a
+ * common ancestor at entry 104973 / ChartWorkspace 95702 and arrive at 104853 / 95324 and
+ * 106562 / 96390; their independent deltas sum to 106442 on the entry and to exactly 96012 on the
+ * composed root. The entry measures three bytes UNDER that sum because both lines edited
+ * `useOverlayFields` and the merged hook carries one argument list, not two — which is the reason
+ * the number here is taken with `npm run build && node scripts/size-gate.mjs` and never
+ * reconciled. `ChartSurface` keeps 24138, this branch's value: master's row never left the
+ * ancestor's 23840. `PROVISIONAL_ENTRY_LIMIT` stays at master's 115629 — the absolute-density-scale
+ * phase raised it once under AD-012 and this branch never lifted the ceiling at all — so the entry
+ * lands 9190 B under it.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 104853,
+  '*': 106439,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -255,7 +313,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 24138,
-  ChartWorkspace: 95324,
+  ChartWorkspace: 96012,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
@@ -546,10 +604,10 @@ describe('LMC-27, LMC-34 — conformance leaves the entry and gets a subpath of 
   });
 
   it('pins the entry AT its measurement, with the down-only ratchet back and no slack left', () => {
-    // Per-phase re-pinning existed only while the composition was being mounted inside the library:
-    // the entry grew by design and a pre-feature pin would have rejected its own goal. The host's
-    // composition is dissolved, so the growth is over and the ratchet returns in its strict form —
-    // the limit IS the measurement, and the next byte of growth fails on the spot.
+    // The ratchet is the strict one and it never relaxes: the limit IS the measurement, so the next
+    // byte of growth fails on the spot and has to be defended in the budget's note before it passes.
+    // The provisional ceiling above is the OTHER half — a phase boundary, moved once per phase by
+    // AD-012 — and it bounds how far the named growth of one phase may carry the entry.
     expect(BUDGET.entry.ratchet).toBe('down-only');
     expect(BUDGET.entry.limit).toBe(BUDGET.entry.measured);
     // The descent, asserted rather than narrated: whatever the pin becomes, it may never climb back

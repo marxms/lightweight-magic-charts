@@ -29,7 +29,8 @@ import { paneId, seriesId, utcSeconds } from '../src/domain/types';
 import { resolutionPolicy } from '../src/catalogue/sources';
 import type { SourceLookup } from '../src/catalogue/sources';
 import { resolveSources } from '../src/indicator/resolution';
-import type { DensitySlice } from '../src/overlays/densityField';
+import { DEFAULT_DENSITY_RAMP } from '../src/overlays/densityField';
+import type { DensityScale, DensitySlice } from '../src/overlays/densityField';
 import type { LiveTip } from '../src/port/frames';
 import { seriesStyleKey } from '../src/react/surface/ChartSurface';
 import type { SeriesReader } from '../src/react/surface/ChartSurface';
@@ -45,7 +46,7 @@ import type { OverlayPrimitive } from '../src/render/overlayBridge';
 import type { StudySettings, WorkspaceSetupPolicy } from '../src/tabs/setup';
 import { MAX_WORKSPACE_TABS } from '../src/tabs/workspaceTabs';
 import type { WorkspaceStore } from '../src/tabs/workspaceTabs';
-import { RecordingContext } from './renderFakes';
+import { RecordingContext, alphaOf } from './renderFakes';
 
 const LIB_ROOT = join(__dirname, '..');
 
@@ -748,7 +749,7 @@ const settle = async (): Promise<void> => {
  * a renderer, draw — because that is the only path on which the columns it was given become pixels.
  * Prices read back as `1000 - price`, so the scale INVERTS like a real one.
  */
-function painted(ledger: EngineLedger): readonly number[] {
+function paint(ledger: EngineLedger): RecordingContext {
   const ctx = new RecordingContext();
   const target: BitmapTarget = {
     useBitmapCoordinateSpace: (fn) =>
@@ -773,8 +774,17 @@ function painted(ledger: EngineLedger): readonly number[] {
     });
     primitive.paneViews()[0].renderer()?.draw(target);
   }
-  return ctx.rects.map((rect) => rect.x);
+  return ctx;
 }
+
+const painted = (ledger: EngineLedger): readonly number[] =>
+  paint(ledger).rects.map((rect) => rect.x);
+
+/** The alphas of one column's gradient, in stop order, which is top price first. */
+const light = (ledger: EngineLedger, at: number): readonly number[] =>
+  paint(ledger)
+    .recordedGradients()
+    [at].stops.map(([, colour]) => alphaOf(colour));
 
 const lastMarks = (ledger: EngineLedger): readonly SeriesMarkerPoint[] =>
   ledger.markers[ledger.markers.length - 1] ?? [];
@@ -2048,5 +2058,148 @@ describe('the column stack inside the composed root', () => {
     expect(view.container.querySelector('[role="tabpanel"]')?.getAttribute('style')).toBe(
       'display: flex; flex-direction: column; flex: 1; min-height: 0;',
     );
+  });
+});
+
+/**
+ * LIQ-04, LIQ-05 — the scale reaches the field through the PUBLIC seam.
+ *
+ * The global mode shipped in the package and no host could ask for it: the drop-in carried the
+ * slices and nothing that said which peak to normalise them against, so the only reachable rule was
+ * the per-column one — the very rule that makes accumulation unrepresentable. A bin whose absolute
+ * magnitude never moves darkens on its own as some other column grows.
+ *
+ * ASSERTED AS LIGHT, NEVER AS THE ATTRIBUTE. A composition that writes the field and drops it paints
+ * exactly what a composition that never wrote it paints, so every case below reads the alpha off the
+ * gradient the overlay recorded. The two prices are two bars apart, so a band is one wide and the
+ * pair shares the edge at 901: three stops, the higher price first.
+ */
+const SCALED_SLICES: readonly DensitySlice[] = [
+  { time: utcSeconds(10), samples: [{ price: 900, weight: 4 }, { price: 902, weight: 2 }] },
+  { time: utcSeconds(20), samples: [{ price: 900, weight: 8 }, { price: 902, weight: 2 }] },
+];
+
+/** The bin at 902 holds a constant 2 in both columns; the bin at 900 doubles. Peaks 4 and 8. */
+const CONSTANT_BIN = 0;
+const GROWING_BIN = 2;
+
+/** The map switched on, with the gamma the catalogue above hands it — so alpha IS the raw share. */
+const LIT_CATALOGUE: WorkspaceSetupPolicy = { ...CATALOGUE, showDensity: true };
+const GAMMA = 1;
+
+async function mountScaled(
+  densityScale?: DensityScale,
+): Promise<{ ledger: EngineLedger; view: ReturnType<typeof render> }> {
+  const ledger = noLedger();
+  const props = minimalProps(fakePort());
+  const view = render(
+    <ChartWorkspace
+      {...props}
+      catalogue={LIT_CATALOGUE}
+      data={{ ...props.data, engine: makeEngine(ledger), density: SCALED_SLICES, densityScale }}
+    />,
+  );
+  await settle();
+  return { ledger, view };
+}
+
+describe('LIQ-04, LIQ-05 — the density scale on the data seam', () => {
+  it('omitting the scale keeps the published rule: the untouched bin DIMS as its neighbour grows', async () => {
+    const { ledger } = await mountScaled();
+
+    expect(light(ledger, 0)[CONSTANT_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.5, GAMMA)), 6);
+    expect(light(ledger, 1)[CONSTANT_BIN]).toBeCloseTo(
+      alphaOf(DEFAULT_DENSITY_RAMP(0.25, GAMMA)),
+      6,
+    );
+  });
+
+  it('omitting the scale leaves the columns exactly where the published build put them', async () => {
+    const { ledger } = await mountScaled();
+
+    expect(painted(ledger)).toEqual([5, 15]);
+  });
+
+  it('spells the default out: an explicit `column` scale paints what omitting it paints', async () => {
+    const omitted = await mountScaled();
+    const byColumn = [light(omitted.ledger, 0), light(omitted.ledger, 1)];
+    omitted.view.unmount();
+
+    const { ledger } = await mountScaled({ mode: 'column' });
+
+    expect([light(ledger, 0), light(ledger, 1)]).toEqual(byColumn);
+  });
+
+  it('the host reaches the global mode through the seam: the untouched bin keeps its light', async () => {
+    // 2 is a quarter of the window peak of 8 in BOTH columns, and the per-column rule cannot say so.
+    const { ledger } = await mountScaled({ mode: 'global' });
+
+    expect(light(ledger, 0)[CONSTANT_BIN]).toBeCloseTo(light(ledger, 1)[CONSTANT_BIN], 6);
+    expect(light(ledger, 0)[CONSTANT_BIN]).toBeCloseTo(
+      alphaOf(DEFAULT_DENSITY_RAMP(0.25, GAMMA)),
+      6,
+    );
+  });
+
+  it('under the global mode a cell is its share of the WINDOW peak, not of its own column', async () => {
+    // Weight 4 IS the first column's own peak, so the published rule paints it at full intensity.
+    const { ledger } = await mountScaled({ mode: 'global' });
+
+    expect(light(ledger, 0)[GROWING_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.5, GAMMA)), 6);
+    expect(light(ledger, 1)[GROWING_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(1, GAMMA)), 6);
+  });
+
+  it('normalises against the SUPPLIED peak, so the whole scale travels and not just its mode', async () => {
+    // 16 is nowhere in the slices: only a peak carried across the seam produces these shares.
+    const { ledger } = await mountScaled({ mode: 'global', peak: 16 });
+
+    expect(light(ledger, 0)[CONSTANT_BIN]).toBeCloseTo(
+      alphaOf(DEFAULT_DENSITY_RAMP(2 / 16, GAMMA)),
+      6,
+    );
+    expect(light(ledger, 0)[GROWING_BIN]).toBeCloseTo(
+      alphaOf(DEFAULT_DENSITY_RAMP(4 / 16, GAMMA)),
+      6,
+    );
+  });
+
+  it('changes the LIGHT and never the placement — a scale is not a filter', async () => {
+    const { ledger } = await mountScaled({ mode: 'global', peak: 16 });
+
+    expect(painted(ledger)).toEqual([5, 15]);
+  });
+
+  it('repaints on a change of scale with the SAME slices — the seam is live, not mount-only', async () => {
+    const ledger = noLedger();
+    const props = minimalProps(fakePort());
+    const engine = makeEngine(ledger);
+    const view = render(
+      <ChartWorkspace
+        {...props}
+        catalogue={LIT_CATALOGUE}
+        data={{ ...props.data, engine, density: SCALED_SLICES }}
+      />,
+    );
+    await settle();
+    const before = light(ledger, 0)[GROWING_BIN];
+
+    view.rerender(
+      <ChartWorkspace
+        {...props}
+        catalogue={LIT_CATALOGUE}
+        data={{
+          ...props.data,
+          engine,
+          density: SCALED_SLICES,
+          densityScale: { mode: 'global' },
+        }}
+      />,
+    );
+    await settle();
+
+    // ONE overlay, so the reading below cannot be crediting a second attachment for the change.
+    expect(ledger.attached).toHaveLength(1);
+    expect(light(ledger, 0)[GROWING_BIN]).toBeCloseTo(alphaOf(DEFAULT_DENSITY_RAMP(0.5, GAMMA)), 6);
+    expect(light(ledger, 0)[GROWING_BIN]).not.toBeCloseTo(before, 6);
   });
 });

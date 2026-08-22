@@ -20,7 +20,7 @@ export const gammaBound = DENSITY_TUNING_BOUNDS.gamma;
 ## Exports
 
 - **`clampDensityTuning`** · value · `(tuning: DensityTuning) => DensityTuning`
-- **`DENSITY_TUNING_BOUNDS`** · value · `Readonly<Record<keyof DensityTuning, TuningBound>>`
+- **`DENSITY_TUNING_BOUNDS`** · value · `Readonly<Record<'floor' | 'gamma', TuningBound>>`
 - **`TuningBound`** · type · `interface TuningBound { min: number; max: number; step: number }`
 
 Back to the [reference map](../_index.md) · why it is shaped this way is under

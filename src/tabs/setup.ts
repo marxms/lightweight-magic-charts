@@ -165,9 +165,12 @@ export function coerceWorkspaceSetup(raw: unknown, policy: WorkspaceSetupPolicy)
       policy.maxGridCells,
     ),
     panes: reconcilePanes(item.panes, policy.catalogue),
+    // `floorMode` rides along: an absolute floor reinterpreted as a share of the column peak means
+    // something else entirely, and rebuilding from two fields did that on every restore.
     density: clampDensityTuning({
       floor: asFiniteNumber(density.floor, policy.density.floor),
       gamma: asFiniteNumber(density.gamma, policy.density.gamma),
+      ...(density.floorMode === 'absolute' ? { floorMode: 'absolute' as const } : {}),
     }),
     showDensity: item.showDensity === true,
     showProfile: item.showProfile === true,

@@ -169,6 +169,7 @@ const ALLOWED_PEERS = new Set(Object.keys(PACKAGE.peerDependencies ?? {}));
 const DECLARED_IMPURITY: Readonly<Record<string, ImportKind>> = {
   'react/CompactCell.tsx': 'runtime',
   'react/DensityControls.tsx': 'type',
+  'react/DensityLegend.tsx': 'type',
   'react/DrawingToolbar.tsx': 'runtime',
   'react/SeriesMenu.tsx': 'runtime',
   'react/TimeframeChips.tsx': 'runtime',

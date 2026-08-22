@@ -7,7 +7,7 @@ import { useEffect, useMemo } from 'react';
 import type { Bar } from '../domain/types';
 import type { Overlay } from '../extension/plugins';
 import { DensityFieldOverlay, toDensityColumns } from '../overlays/densityField';
-import type { DensitySlice, DensityTuning } from '../overlays/densityField';
+import type { DensityScale, DensitySlice, DensityTuning } from '../overlays/densityField';
 import { TroughProfileOverlay, buildProfile } from '../overlays/troughProfile';
 
 /** Buckets the profile is built over. Enough to separate levels, few enough to stay a shape. */
@@ -17,6 +17,8 @@ export interface OverlayFields {
   readonly bars: readonly Bar[];
   /** Already adapted by the host: which grid a slice describes is the host's vocabulary, not ours. */
   readonly density?: readonly DensitySlice[];
+  /** Which peak normalises a cell. Absent, per column, which is the published rule. */
+  readonly scale?: DensityScale;
   readonly tuning?: DensityTuning;
   readonly showDensity?: boolean;
   readonly showProfile?: boolean;
@@ -27,6 +29,7 @@ const NO_SLICES: readonly DensitySlice[] = [];
 export function useOverlayFields({
   bars,
   density = NO_SLICES,
+  scale,
   tuning,
   showDensity = false,
   showProfile = false,
@@ -41,8 +44,8 @@ export function useOverlayFields({
   );
 
   useEffect(() => {
-    field.setColumns(showDensity ? toDensityColumns(density) : []);
-  }, [field, density, showDensity]);
+    field.setColumns(showDensity ? toDensityColumns(density, scale) : []);
+  }, [field, density, scale, showDensity]);
 
   useEffect(() => {
     if (tuning !== undefined) field.setTuning(tuning);

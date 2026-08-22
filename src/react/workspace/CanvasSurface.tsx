@@ -67,8 +67,10 @@ export const CanvasSurface = memo(function CanvasSurface({
 }: CanvasSurfaceProps): ReactElement {
   const drawing = useDrawingRail();
   const state = useCandleLane(lane);
-  const { density, tuning, showDensity, showProfile } = fields;
-  const fielded = useOverlayFields({ bars: state.bars, density, tuning, showDensity, showProfile });
+  const { density, scale, tuning, showDensity, showProfile } = fields;
+  const fielded = useOverlayFields({
+    bars: state.bars, density, scale, tuning, showDensity, showProfile,
+  });
   const overlays = useMemo(() => (own === undefined ? fielded : [...fielded, ...own]), [fielded, own]);
 
   // By reference: a host writing the report inline hands over a new function on every render.
