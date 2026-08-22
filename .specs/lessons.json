@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 33,
+  "next_id": 37,
   "lessons": [
     {
       "id": "L-001",
@@ -582,6 +582,78 @@
       ],
       "created": "2026-08-22T06:23:18Z",
       "last_seen": "2026-08-22T06:23:18Z"
+    },
+    {
+      "id": "L-033",
+      "key": "surviving_mutant::a guard keyed on the committed artefact still declares it is defeated by any sanctioned path that removes the declaration when a second ledger can retire that evidence the guard must read that ledger too",
+      "text": "A guard keyed on 'the committed artefact still declares it' is defeated by any sanctioned path that removes the declaration; when a second ledger can retire that evidence, the guard must read that ledger too.",
+      "signal": "surviving_mutant",
+      "scope": "ledger,integrity-gates",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/indicator-proof/value-ledger.mjs:316 (ledger,integrity-gates)"
+      ],
+      "created": "2026-08-22T19:30:42Z",
+      "last_seen": "2026-08-22T19:30:42Z"
+    },
+    {
+      "id": "L-034",
+      "key": "surviving_mutant::when a merge concatenates two independently owned collections assert the order as well as the membership each side s own suite dies on its own half and neither notices a swap",
+      "text": "When a merge concatenates two independently-owned collections, assert the ORDER as well as the membership: each side's own suite dies on its own half and neither notices a swap.",
+      "signal": "surviving_mutant",
+      "scope": "react,composition",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "src/react/workspace/CanvasSurface.tsx:74 (react,composition)"
+      ],
+      "created": "2026-08-22T19:30:42Z",
+      "last_seen": "2026-08-22T19:30:42Z"
+    },
+    {
+      "id": "L-035",
+      "key": "spec_precision_gap::a spec that pins ordering stability across redraws still leaves the ordering itself undefined name which producer draws over which or say the order is deliberately unspecified",
+      "text": "A spec that pins ordering STABILITY across redraws still leaves the ordering ITSELF undefined; name which producer draws over which, or say the order is deliberately unspecified.",
+      "signal": "spec_precision_gap",
+      "scope": "overlays,z-order",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "spec.md:194 (overlays,z-order)"
+      ],
+      "created": "2026-08-22T19:30:42Z",
+      "last_seen": "2026-08-22T19:30:42Z"
+    },
+    {
+      "id": "L-036",
+      "key": "surviving_mutant::two features that meet in one expression need a test that switches both on suites deliberately scoped to one side leave the conjunction covered only by whatever shape the demo happens to have",
+      "text": "Two features that meet in one expression need a test that switches BOTH on; suites deliberately scoped to one side leave the conjunction covered only by whatever shape the demo happens to have.",
+      "signal": "surviving_mutant",
+      "scope": "testing,conjunction",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "test/workspaceOverlays.spec.tsx:60 (testing,conjunction)"
+      ],
+      "created": "2026-08-22T19:30:42Z",
+      "last_seen": "2026-08-22T19:30:42Z"
     }
   ]
 }

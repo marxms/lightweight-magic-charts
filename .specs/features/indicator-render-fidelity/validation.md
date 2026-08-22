@@ -1,541 +1,556 @@
-# Indicator render fidelity — Validation
+# Indicator render fidelity — Validation (third pass, post-merge)
 
 **Date**: 2026-08-22
 **Spec**: `.specs/features/indicator-render-fidelity/spec.md`
-**This pass**: `b2c0082..a57dbb3` — 8 commits, tasks T18–T24, branch `feat/indicator-library-adoption`
-**Cumulative**: `0480c76..a57dbb3` — 26 commits, 24 tasks
-**Report committed at**: `773481d` — this report's own commit, `.specs/` only. `git diff a57dbb3..773481d -- src/ test/ scripts/ example/ conformance/ package.json size-budget.json .github/` is **empty**, and every gate below was re-run at `773481d` with identical results (1478/1478 · 96/96 · 33/33 · 104853/104853 · `--check` OK, 310 offered). A validation report cannot cover the commit that carries it; this line closes that gap by measurement.
-**Verifier**: independent sub-agent, second pass (author ≠ verifier). Coverage re-derived from the
-spec and the diff, evidence-or-zero. Nothing was inherited from `tasks.md` or from the first pass's
-report — every one of the four failing attacks was rebuilt from scratch and re-run in both
-directions.
+**This pass**: `a57dbb3..4170125` — **22 commits**, branch `feat/indicator-library-adoption`
+**Cumulative**: `0480c76..4170125`
+**Verifier**: independent sub-agent, third pass (author ≠ verifier). Nothing inherited from
+`tasks.md` or from the first two reports. Every attack rebuilt from zero.
+**Platform measured**: macOS/arm64, Node v25.9.0, npm 11.15.0
 
 ---
 
-## Verdict: ✅ PASS
+## Verdict: ❌ FAIL
 
-**Result**: PASS ✅
+Every acceptance criterion in the spec still passes and every gate is green. The FAIL is not about
+the spec — it is about **two grounded sensor results inside the range this pass covers**:
 
-The four surviving mutants that failed the first pass are dead. I killed them with mutations I wrote
-myself, and for the two where a *false* red was the risk I also ran the counter-direction and
-confirmed the test stays **green** when the neighbouring channel is removed — which is what
-distinguishes a repaired sensor from a re-armed accident.
+1. **A live laundering path in the value ledger** (`L-N3`) that no attack in this repository has
+   tried: withdraw a row through the signed withdrawal ledger, then restore it. It returns as a
+   *debut* with nothing to answer to. Measured: **310 offered, `--check` exit 0, `npm run proof`
+   38/38, zero value declarations, and a tampered digest on file.** Three of the 22 commits in this
+   range exist to close laundering holes; this one is still open, and it is *cheaper* than the hole
+   the file's own docblock discloses, because it needs no hand-edit of any digest.
+2. **A surviving mutant at the merge point** (`M-Y`): the composition order between the package's
+   own field overlays and the host's own overlays is asserted nowhere — not by 1524 unit tests, not
+   by 96 e2e scenes.
 
-`git diff b2c0082..a57dbb3 -- src/` is **empty**. Confirmed. This pass added no published byte, no
-runtime behaviour inside the package, and exactly one runtime rule anywhere: the loaded-window test
-in `example/studyMarks.ts`, which implements a spec edge case that had no implementation at all.
-
-One second-order mutant survives and it is **not** a regression from this phase: the new ledger
-guard's own call site inside the generator is unpinned by any gate — and I measured that the
-*pre-existing* vanished-id refusal, which this one copies, has exactly the same property. It is
-recorded below under limitations, not ranked as a gap.
-
----
-
-## 1. The four re-attacks, rebuilt from zero
-
-### G1 — the marker sensor. **Both directions confirmed.**
-
-The first pass found that T13's point colours had disarmed T11's control: the scene drove
-`realtime-volume-bars`, which writes `#00FF00`/`#FF0000` from **two** channels, so `up > 0 && down > 0`
-could no longer fall to zero.
-
-Baseline on the real tree, measured by me: `marks.reach-the-bars` reads **up 393, down 426** against
-`marks.none-before-the-pick` at **0, 0** (`scripts/e2e-demo.mjs:1454`, `:1442`).
-
-| Direction | Mutation | Result |
-| --- | --- | --- |
-| **(a) the channel under test** | delete `withMarkers` at `example/engine.ts:124` → `return created;` | **up 0, down 0 — RED, `npm run e2e` 95/96, exit 1** |
-| **(b) the neighbouring channel** | `alignColors` returns `null` at `src/indicator/availability.ts:55` | **up 392, down 426 — GREEN, 96/96** |
-
-Direction (a) is decisive on its own: **both hues go to exactly zero** when only the marker plugin is
-removed. Nothing else on the page — not the point colours, not the 975 `barColors` `t3-psar` also
-emits — writes either hue, and that is measured rather than asserted. Direction (b) is the proof the
-first pass demanded: with the point-colour channel dead the scene is unmoved (one pixel of
-antialias), so it cannot be satisfied through that channel. The mutation was confirmed live in the
-browser bundle (`dist/esm/indicator/availability.js:36` carried it), not merely in the TypeScript
-source.
-
-The study choice is independently corroborated: `example/indicators/manifest.json` records `t3-psar`
-with `{"fills":1,"markers":259,"barColors":975}` in category **Moving Averages** — 259 marks, as
-claimed, and the category with the space that forced the `domId` change judged in §5.
-
-**Verdict: the sensor is repaired, not cosmetically re-armed.**
-
-### G2 — every rule in `markOf`, ablated one at a time
-
-`example/studyMarks.ts` had no test file at all when the first pass looked; deleting the whole
-narrowing left `npm test` and `npm run e2e` green. `test/studyMarks.spec.ts` now exists (21 cases).
-I deleted each rule separately, in a scratch worktree, and ran the suite:
-
-| # | Rule removed (`example/studyMarks.ts`) | Cases red |
-| --- | --- | --- |
-| G2-R1 | `typeof time !== 'number'` alone, keeping `loaded.has` | **0 — equivalent mutant**, see below |
-| G2-R2 | `!loaded.has(time)` — the loaded-window test | **3** |
-| G2-R2b | the whole time rule (`:60`) | **4** |
-| G2-R3 | the shape allow-list (`:61`) | **3** |
-| G2-R3a | only `DRAWABLE.has(shape)`, keeping the `undefined` check | **2** |
-| G2-R4 | the position allow-list (`:62`) | **2** |
-| G2-R4a | only `PLACED.has(position)` | **1** |
-| G2-R5 | the colour rule (`:63`) | **1** |
-| G2-R5a | only `color === ''`, keeping `typeof` | **1** |
-| G2-R6 | `text` dropped when empty (`:70`) | **1** |
-| G2-R7 | **all four rules at once** (the first pass's M20) | **9** |
-| G2-R8 | `loaded` built from the marks instead of `pass.grid` (`:99`) | **3** |
-
-**Every rule kills at least one case, and every rule kills a case no other rule kills.** G2-R7 — the
-mutation that survived last time with 1449/1449 green — now takes down 9 of 21.
-
-**G2-R1 is an equivalent mutant, not a survivor.** With the `typeof` guard removed and a cast added
-so it still compiles, all 21 cases pass — because `loaded` is a `Set<number>` and
-`new Set([10,20]).has('20')` is already `false`. The case `drops a time that is not a number at all`
-(`test/studyMarks.spec.ts:167`) still passes through the membership rule. Removing the guard *without*
-the cast is a TypeScript error, which is exactly what the module's own docblock says it is for
-("the `typeof` guard stays because it is what types `time`").
-
-**Judgement on `Number.isFinite`: real subsumption, with one stated reason that is wrong.**
-
-The docblock justifies the removal with *"a set of bar times holds neither `NaN` nor `Infinity`."*
-That is a claim about the caller's data, not about `Set`. `Set` uses SameValueZero, so
-`new Set([NaN]).has(NaN)` is **true**. I measured it directly: against a grid whose own times are
-`[NaN, Infinity, 20]`, `markOf` keeps **all three** marks, including the two non-finite ones; against
-a finite grid it keeps only `20`.
-
-So the subsumption is real **for every grid this host can produce** and false in general. Weighing it:
-
-- The behaviour the spec asks for is unchanged and still asserted — `test/studyMarks.spec.ts:161`
-  drops a `NaN` time, and G2-R2 shows that case goes red when the replacement rule is removed.
-- The replacement is strictly stronger for finite grids: it also closes `spec.md:195`, which the
-  finiteness test never did.
-- The precondition is a bar grid with finite times. Nothing in `src/` or `example/` validates it, but
-  a `NaN`-timed bar breaks the candle series long before it reaches a marker, and this file is
-  host-side with 0 B in the package.
-
-**Verdict: subsumption, not a rule deleted with an excuse.** The docblock's reasoning is imprecise
-and I have recorded a lesson for it; the code is not weaker in any reachable state.
-
-### G3 — `BandFillOverlay.zOrder`
-
-`example/bandOverlay.ts:159` `readonly zOrder = 'behind' as const` → `'ahead'`.
-
-**RED.** `test/bandOverlay.spec.ts` 1 failed / 13 passed — `declares the bottom layer on the fill
-itself, not on a probe of the seam`, at `test/bandOverlay.spec.ts:125`:
-`expect(new BandFillOverlay('anchor').zOrder).toBe('behind')`.
-
-The assertion is read at the production object, matching `test/densityField.spec.ts:60` and
-`test/channelOverlays.spec.ts:262`. The synthetic-probe test of the seam
-(`test/overlayAnchor.spec.tsx:267`) is still there and still tests a different, correct thing.
-
-### G4 — the catalogue can no longer shrink without a signature. **All three confirmed.**
-
-I planted a **new** rule in `scripts/build-indicator-manifest.mjs` that withdraws three ordinary
-indicators (`bop`, `mass-index`, `momentum`) — the first pass's M19b, rebuilt — and ran the real
-generator against three ledger states:
-
-| # | `example/indicators/withdrawals.json` | `node scripts/build-indicator-manifest.mjs` |
-| --- | --- | --- |
-| **G4a** | `withdrawals: []` | **exit 1**, refuses to write, names all three ids and the rule that took each |
-| **G4c** | `reason: "   "`, a missing `reason`, and `reason: ""` | **exit 1**, all three still faults |
-| **G4b** | all three signed with a real reason | **exit 0**, 307 rows written |
-| **G4d** | `--check` mode, empty ledger | **exit 1** — the CI step at `.github/workflows/ci.yml:128` is on the same path |
-
-The refusal message is the instruction and is tested with the rule
-(`scripts/indicator-proof/manifest-shape.mjs:168`, asserted at `test/manifestChannels.spec.ts:293`).
-The rule itself is a pure function both sides call, so neither tests a copy —
-`withdrawalFaults` at `manifest-shape.mjs:155`, called at `build-indicator-manifest.mjs:345`,
-exercised at `test/manifestChannels.spec.ts:259-297`. Five mutations of that function, all killed:
-
-| Mutation | Red |
-| --- | --- |
-| return `[]` — the old exemption | 4 |
-| ignore the ledger entirely | 2 |
-| accept a blank reason as a declaration | 1 |
-| count a *vanished* id as a withdrawal | 1 |
-| drop the id list from the refusal message | 1 |
-
-The `CONTROL — the same two withdrawals, signed, are not a fault` case
-(`test/manifestChannels.spec.ts:268`) is what stops the rule degenerating into "refuse every
-withdrawal", and it is the case that dies under "ignore the ledger". The accepting branch is
-asserted, not only the refusing one.
+Also recorded, and not a defect: **the state I was asked to verify does not match the tree.**
 
 ---
 
-## 2. The central claim, measured with my own instruments
+## 0. State discrepancies — measured before anything else
 
-I did not reuse the e2e's hue list. I served `example/` with the same esbuild configuration, drove
-Chromium myself, picked **Ichimoku Cloud** by its own catalogue id, and histogrammed every canvas
-pixel under `[data-testid="workspace-surface"]` before and after the pick, keeping only colours that
-were **absent before** and present at ≥300 px after, clustered at 24/channel.
+| Claimed | Measured | Evidence |
+| --- | --- | --- |
+| HEAD `deba8aa` | HEAD **`4170125`** — one commit later | `git rev-parse HEAD` |
+| 21 commits `a57dbb3..deba8aa` | 21 confirmed, but **22** to HEAD | `git rev-list --count a57dbb3..HEAD` = 22 |
+| version **0.3.1** | version **0.3.2** | `package.json:3`; `git show 4170125 -- package.json` |
+| — | `4170125 chore: bump version` changes **only** `package.json`, +1/−1 | `git show --stat 4170125` |
+
+`CHANGELOG.md:7` newest entry is **0.3.1**. There is **no 0.3.2 section** (`grep -n '0\.3\.2'
+CHANGELOG.md` → no match). No gate binds the two — `test/gates/packageName.spec.ts:143-144` only
+asserts the version is not `0.0.0` and matches `\d+\.\d+\.\d+` — so nothing is red, and a 0.3.2
+would publish with an empty changelog. **Not ranked as a blocking gap; recorded so the owner sees
+it before merging.**
+
+---
+
+## 1. FOCO 1 — the merge, and the point with no verifier of its own
+
+### 1.1 Both halves of `CanvasSurface.tsx` are independently asserted
+
+The merged file carries both intentions: `scale` reaches `useOverlayFields`
+(`src/react/workspace/CanvasSurface.tsx:70`, `:71-73`) and the host's own overlays are merged with
+the fielded ones (`:74`).
+
+I reverted each half separately in a temporary worktree and ran the full suite:
+
+| Mutant | What it reverts | Result |
+| --- | --- | --- |
+| **M-OURS** `:74` → `own === undefined ? fielded : fielded` | this branch's half | ✅ **Killed — 3** in `test/workspaceOverlays.spec.tsx` (`paints the host overlay on the LANE scale it named`, `paints a host overlay that named NOTHING`, `keeps two host overlays apart`) |
+| **M-THEIRS** `:70,:71-73` → `scale` dropped | master's half | ✅ **Killed — 4** in `test/chartWorkspace.spec.tsx:2106` (`LIQ-04, LIQ-05 — the density scale on the data seam`) |
+
+So the worry that "reverting master's half kills nothing of ours and vice versa" does **not** hold.
+Each half has a live assertion, and master's half is asserted *through* `ChartWorkspace`, which is
+the same component `CanvasSurface` sits inside.
+
+### 1.2 The interaction — built and measured, not assumed
+
+Neither side's suite drives both at once, and both do so **on purpose**:
+
+- `test/workspaceOverlays.spec.tsx:60` — `showDensity: false`, with the comment at `:236-237`
+  saying the package's own field overlays are switched off so an unfed socket and a fed one are
+  told apart by 0 against 1.
+- `test/overlayFields.spec.tsx:58` — `useOverlayFields({ ..., showDensity: true, ...props })`
+  through `renderHook`, with **no host overlay array at all**.
+
+I therefore mounted the conjunction myself, through a real `<ChartWorkspace>` with a fake engine
+recording every `attachPrimitive`, and read the **canvas**, not the call:
+
+| Case | `attachPrimitive` calls | Reading |
+| --- | --- | --- |
+| A — density OFF, host overlay anchored to the lane | 1, factor **5** | host probe paints at **y=20** (the lane's scale) |
+| B — density ON, no host overlay | 1, factor **11** | field records gradients on pane zero |
+| **C — BOTH: density ON + global scale + host overlay anchored to the lane** | **2, factors [11, 5]** | field on pane zero **and** host probe at **y=20**. **Neither is lost.** |
+| D — both, `scale: {mode:'global'}` | — | constant bin reads **0.155 in both columns** — global normalisation survives the host array |
+| E — both, scale omitted (control) | — | constant bin **dims 0.31 → 0.155** — the per-column rule is intact |
+
+**The merge is behaviourally correct at the meeting point.** D and E run in both directions, so the
+global mode is not being satisfied by an accident.
+
+### 1.3 What the conjunction is *not* asserted by — two sensor results
+
+| Mutant | `npm test` (1524) | `npm run e2e` (96) | Verdict |
+| --- | --- | --- | --- |
+| **M-X** `:74` → `own === undefined ? fielded : [...own]` — the package's field overlays are dropped whenever the host supplies its own | **1524 pass** (only the 3 known dist-missing `sizeBudget` false positives) — **SURVIVES** | **95/96** — `FAIL density.toggle-changes-the-canvas — checksum with field on=289147, off=289147` (`scripts/e2e-demo.mjs:516`) | ⚠️ **Killed by exactly ONE scene, and incidentally** |
+| **M-Y** `:74` → `[...own, ...fielded]` — the composition order is swapped | **1524 pass — SURVIVES** | **96/96 — SURVIVES** | ❌ **SURVIVING MUTANT** |
+
+**On M-X.** My probe kills it in three places (case C drops to `attached=1 factors=[5]` — the field
+vanishes). The repository catches it only because `example/App.tsx:76` always hands a **non-empty**
+`studies.overlays` into `:121` while `:143` supplies `density: DEMO_DENSITY` on the same workspace —
+so the demo happens to sit permanently in the conjunction. Change the demo to a host with no band
+overlays and the last assertion covering this composition disappears. **No unit test covers it at
+all.** Ranked as coverage thinness, not as a survivor.
+
+**On M-Y.** Swapping the order changes which of two `behind` overlays occludes the other on the
+pane-zero anchor (`src/react/surface/ChartSurface.tsx:242` — an overlay naming nothing falls through
+to the pane-zero anchor, which is where the density field also lands). Nothing asserts it, and
+**`spec.md` never defines it**: the edge case at `spec.md:194` says only that overlays tying on
+z-order keep their order *across redraws*, which M-Y preserves. So this is a surviving mutant **and**
+a spec-precision gap — the spec does not say whether a host's overlay draws over or under the
+package's own field.
+
+### 1.4 The other five crossings — checked, nothing un-updated
+
+Files both sides changed: `git diff --name-only be75dd6 51065cb` ∩ `... be75dd6 f97761b` = 15 files.
+The five with code or assertions:
+
+| File | Ours | Master | Judgement |
+| --- | --- | --- | --- |
+| `src/react/chrome/labels.ts` | `+duplicateStudy`, `−truncated` (net 0) | `+densityLegend` group (net +2) | ✅ `test/workspaceLabels.spec.ts:63` asserts **87**, re-derived from `DEFAULT_WORKSPACE_CHROME_LABELS` by walking its leaves (`:19`, `:54`), not picked off a side. The comment at `:56-62` was rewritten with the full derivation (85 + 2). Passes. |
+| `src/tabs/setup.ts` | `studySettings` restore via `onlyActive` | `floorMode` rides along in `density` | ✅ Orthogonal fields in the same return object. No assertion of either side needed updating. |
+| `src/index.ts` | 7 additions | 4 additions | ✅ Both present; `docs/reference/_index.md` regenerated to 308/114/194/54 and the byte gate `test/gates/docReference.spec.ts` passes. |
+| `test/boundary.spec.ts` | evasion loop for `import(<var>)`/`require(<var>)` | `+react/DensityLegend.tsx: 'type'` in `DECLARED_IMPURITY` | ✅ Both live; all four boundary mutants red (§4.3). |
+| `test/gates/sizeBudget.spec.ts` | untouched | limit → 115629 | ✅ See §4.1. |
+
+**The `coerceIndicators` class of defect does not recur.** All ten stubs in `test/` return arrays:
+`workspaceSetup.spec.ts:52`, `densityAbsoluteScaleGuards.spec.tsx:88` (`() => []`, the repaired one),
+`studyForm.spec.tsx:59`, `chartWorkspace.spec.tsx:72`, `studySettings.spec.ts:44`,
+`workspaceOverlays.spec.tsx:63`, `tabsRegion.spec.tsx:35`, `idleRedraw.spec.tsx:60`. The merged
+coercion walks that list at `src/tabs/setup.ts` (`for (const id of indicators)` inside `onlyActive`),
+so a non-array stub would throw; none does.
+
+---
+
+## 2. FOCO 2 — the ledger, re-attacked from zero
+
+**Method.** A second temporary worktree with its **own physical copy** of
+`node_modules/lightweight-charts-indicators` (7.4 MB), reached through an env-driven shim that can
+multiply one indicator's readings, rename it, or make it emit no plots. The real `node_modules` was
+never touched. **Instrument calibration: my own driver reproduced all 310 committed digests
+byte-for-byte** before any attack — so every number below is measured against the real artefact.
+
+**Control 0**: untouched tree → `--check` exit 0, 310 offered; `npm run proof` 38/38.
+
+### 2.1 The prescribed attacks — all behave
+
+| # | Attack | Result |
+| --- | --- | --- |
+| **A0** | `wma × 1.0001`, nothing declared | ✅ **RED** — `wma — undeclared: 164192aca8f9… → 042a185abf7c…`; refuses to write |
+| **A1** | **bump + tamper + declared re-spelling** (full costume) | ✅ **RED, 2 faults** — `release-with-respelling` **and** `wma — undeclared … under series-scaled-2^-36/sha256/v2`, both digests printed in full |
+| **A1b** | **tamper + declared re-spelling, NO bump** | ✅ **RED on the per-id rule ALONE** — this is the decisive one: the fix is not being carried by `release-with-respelling` |
+| **A2** | **legitimate re-spelling alone** — new encoding registered, same vendor, nothing tampered | ✅ **GREEN.** Write regenerates **310 of 310** digests with **0 per-id declarations** and one `encodings` entry; `--check` then exit 0 |
+| **A3** | declared rename + tamper | ✅ **RED** — `wma-weighted — undeclared: 164192aca8f9… → 042a185abf7c…`; refuses to write |
+| **A4** | clean declared rename | ✅ **GREEN** — 310 offered, and the digest is **carried forward byte-identical** under the new id |
+| **A5** | past encoding pruned from `ENCODERS` | ✅ **RED** — `unaddressable-encoding`, refuses to write; **still refuses with a tamper hidden under it** |
+
+### 2.2 Combinations nobody had tried
+
+| # | Attack | Result |
+| --- | --- | --- |
+| **N1** | rename + **deleted** `entries.wma` + tamper | ✅ **RED** — `wma-weighted — vanished-fingerprint`. The *offer* travels with the id, so the debut is not buyable through a rename |
+| **N1b** | same, no tamper (does the rule over-fire?) | ✅ RED for the same structural reason — correct: the entry was deleted either way |
+| **N2** | **rename + declared re-spelling + tamper** | ✅ **RED** — named under `series-scaled-2^-36/sha256/v2`, the spelling the file is written in |
+| **N2b** | rename + declared re-spelling, **no tamper** (control) | ✅ **GREEN** — 310 offered, `--check` exit 0 |
+| **N3** | **withdraw, then restore with a tampered value** | ❌ **PASSES EVERY GATE — see below** |
+
+### 2.3 `L-N3` — the finding: a signed withdrawal buys a debut
+
+Two runs, both entirely through sanctioned commands. No digest is hand-edited.
+
+**Step 1 — the row stops being drawable.** The generator detects it and refuses:
 
 ```
-NEW HUES (>=300 px, zero before the pick)
+build-indicator-manifest: REFUSING to write. 1 row(s) the committed manifest offers would be
+WITHDRAWN by a rule in this generator, and nothing declares the loss:
+  wma — returns no plot series
+```
+
+Sign it in `example/indicators/withdrawals.json` with an ordinary sentence, re-run:
+**309 offered.** `wma` is now gone from `manifest.json` **and from `fingerprints.json`** (309 entries).
+
+**Step 2 — the row comes back, with different arithmetic.** Nothing is declared:
+
+```
+build-indicator-manifest: 310 offered, 147 rejected
+--check          -> OK — the committed artefacts are what this generator produces (310 offered)
+npm run proof    -> 38/38 passed
+value declarations: 0
+digest at HEAD : 164192aca8f9463491a64e70482f0cda574c1cfb7309e24a256bf4c13f20a208
+digest now     : 042a185abf7c24a992742781737c04882c0370d231bc5f674edfef686f9b2844   <- tampered
+```
+
+**Control (the other direction):** the same two steps with **untampered** arithmetic restore the
+digest **byte-identical**. So this is specifically a laundering channel, not general instability.
+
+**Root cause**, at `scripts/indicator-proof/value-ledger.mjs:316`:
+
+```js
+if (!offers.has(id)) continue;   // "an id the committed manifest does not offer is genuinely new"
+```
+
+The docblock states the premise plainly (`value-ledger.mjs:38-41`): *"an id the COMMITTED MANIFEST
+still offers and the fingerprint file no longer covers is a proof that vanished … while an id the
+committed manifest does not offer is genuinely new and needs no declaration."* A **signed
+withdrawal retires the very evidence that rule depends on** — it removes the id from the committed
+manifest, so on the next run the id is, by this test, "genuinely new".
+
+**Why this is not the disclosed limitation.** `value-ledger.mjs:73-75` discloses the *hand-edit*
+variant — *"deleting the indicator from the manifest AND the fingerprints in one edit, which offers
+it back as new at the price of moving a whole catalogue entry."* `L-N3` needs no hand edit: the
+generator writes both artefacts itself, twice, and the only human input is one signed sentence in an
+append-only ledger that exists to make catalogue shrinkage honest. Reviewer cost is a row leaving in
+one commit and returning in another.
+
+**The evidence to close it is already on disk.** After step 2, `withdrawals.json` still names `wma`
+(measured). Nothing in `valueLedgerFaults` reads that file — `offered`, `encoding`, `underCommitted`,
+`vendor` and `renames` are its only inputs (`value-ledger.mjs:142`). *Diagnosis only; the fix is
+another role's.*
+
+### 2.4 Quantisation — both claims reproduced independently
+
+Measured with my own driver (calibrated: 310/310 digests byte-identical to `fingerprints.json`),
+using the repo's exact bit-increment ULP nudge (`scripts/indicator-proof.mjs:694-700`):
+
+| Perturbation | Quantised digests moved (of 310) | Unquantised control |
+| --- | --- | --- |
+| 1, 2, 4, 8, 16 ULP on the eight | **0** | 14 |
+| **64 ULP** | **0** | 13 |
+| 256 ULP | 3 | 13 |
+| 1024 ULP | 4 | 13 |
+| uniform rel. 1e-13 | **262** | 310 |
+| uniform rel. 1e-12 | **292** | 310 |
+| uniform rel. 1e-11 | **309** | 310 |
+| uniform rel. 1e-9 | 310 | 310 |
+| uniform rel. 2.1e-2 (the `wma` defect class) | **310** | 310 |
+
+Every number the docblock claims (`value-encoding.mjs:52`, `:57-60`) reproduces **exactly** —
+including "0 of 310 move under 1, 2, 4, 8, 16 or 64 ULP". The negative control moves 13–14, so the
+perturbation genuinely reaches readings. Headroom beyond the claim is roughly two orders of ULP.
+**The quantum absorbs cross-platform noise and stays sensitive. Verified.**
+
+**The `**` limitation is written and honest** — `scripts/indicator-proof/value-encoding.mjs:66-71`:
+it names the operator, says it cannot be monkey-patched, says the sensor perturbs the eight
+functions and not the operator, cites the concrete bite (`10 ** -4` differing between Node builds)
+and names the mitigation (the CI Node matrix). Nothing overclaimed.
+
+---
+
+## 3. Discrimination sensor — summary
+
+**Isolation.** Three temporary `git worktree`s under the session scratchpad; `git stash` never used.
+Real-tree `git status --porcelain` was **0 bytes before and 0 bytes after**, byte-identical to the
+captured baseline; all three worktrees removed with `--force` and pruned; HEAD unchanged at
+**`4170125`** on `feat/indicator-library-adoption`.
+
+| # | Mutation | File:line | Result |
+| --- | --- | --- | --- |
+| M-OURS | host overlays no longer merged | `CanvasSurface.tsx:74` | ✅ Killed — 3 |
+| M-THEIRS | `scale` no longer reaches the hook | `CanvasSurface.tsx:70,71-73` | ✅ Killed — 4 |
+| **M-X** | field overlays dropped when the host supplies its own | `CanvasSurface.tsx:74` | ⚠️ **Survives `npm test`**; killed by 1 e2e scene only |
+| **M-Y** | composition order swapped | `CanvasSurface.tsx:74` | ❌ **SURVIVED both** (1524 + 96/96) |
+| A0 | `wma × 1.0001` | vendor registry | ✅ Killed — RED naming the id |
+| A1 | bump + tamper + declared re-spelling | vendor + `value-encoding.mjs` + ledger | ✅ Killed — 2 faults |
+| A1b | tamper + declared re-spelling, no bump | same | ✅ Killed — per-id rule alone |
+| A2 | legitimate re-spelling (counter-direction) | `value-encoding.mjs` | ✅ **GREEN**, 310 regenerated, 0 declarations |
+| A3 | declared rename + tamper | vendor + `renames.json` | ✅ Killed — names the new id |
+| A4 | clean rename (counter-direction) | `renames.json` | ✅ **GREEN**, digest carried forward |
+| A5 | past encoding pruned | `ENCODERS` | ✅ Killed — `unaddressable-encoding` |
+| N1/N1b | rename + deleted digest (± tamper) | `fingerprints.json` | ✅ Killed — `vanished-fingerprint` |
+| N2 | rename + re-spelling + tamper | all three | ✅ Killed |
+| N2b | same, no tamper (counter-direction) | all three | ✅ **GREEN** |
+| **N3** | **withdraw, then restore tampered** | `withdrawals.json` + vendor | ❌ **SURVIVED** — 310, `--check` 0, proof 38/38 |
+| N3-ctl | withdraw, then restore untampered | same | ✅ digest byte-identical |
+| BND-1 | `lightweight-charts-indicators` in `src/` | `src/indicator/availability.ts:1` | ✅ Killed — 5 clauses |
+| BND-2 | `import(<variable>)` in `src/` | `src/indicator/availability.ts` | ✅ Killed — 4 clauses, fails **closed** |
+| BND-3 | `lightweight-charts-drawing` in `src/` | same | ✅ Killed — 5 clauses |
+| BND-4 | `oakscriptjs` in `src/` | same | ✅ Killed — 5 clauses |
+| Q1–Q10 | ULP + uniform-relative quantum probes | `value-encoding.mjs` | ✅ every documented number reproduced |
+
+**Depth**: P0-full — **21 behaviour-level mutations**, plus 4 counter-direction controls and 1
+instrument calibration.
+**Result**: 19 killed · **2 survived** (M-Y, N3) · 1 partial (M-X, single-scene cover) — **FAIL ❌**
+
+---
+
+## 4. Previous-phase invariants — re-derived, not trusted
+
+### 4.1 `PROVISIONAL_ENTRY_LIMIT` — the raise is master's, never ours
+
+| Commit | Value |
+| --- | --- |
+| `be75dd6` (merge base) | 104994 |
+| `a57dbb3` (last verified) | 104994 |
+| `51065cb` (**our side, tip before merge**) | **104994** |
+| `f97761b` (master) | **115629** |
+| `deba8aa`, `4170125` | 115629 |
+
+`git diff a57dbb3 51065cb -- test/gates/sizeBudget.spec.ts` is **empty** — this branch never touched
+the file. `git log -G"PROVISIONAL_ENTRY_LIMIT" a57dbb3..51065cb` returns one commit, `773481d`, whose
+`--stat` is `.specs/` only (`LESSONS.md`, `validation.md`, `lessons.json`). ✅ **This branch never
+raised the ceiling.** Current value at `test/gates/sizeBudget.spec.ts:56` = 115629; entry measured
+**106439**, 9190 B of headroom.
+
+### 4.2 No suite deleted, no skip added
+
+- `git diff --diff-filter=D --name-only a57dbb3 HEAD -- test/ scripts/ conformance/ example/ src/` → **empty**.
+- No `.skip(`, `.only(`, `xit(`, `fit(`, `xdescribe(`, `fdescribe(` on any added line in the range → **none**.
+- Spec files 123 → **126** (+3). Jest suites 120 → **123**, tests 1478 → **1524** (+46). Nothing decreased.
+
+### 4.3 Boundary gate
+
+| Planted in `src/` | Clauses red |
+| --- | --- |
+| `lightweight-charts-indicators` | **5** |
+| `lightweight-charts-drawing` | **5** |
+| `oakscriptjs` | **5** |
+| `import(<variable>)` | **4**, reported as unreadable — fails **closed** |
+
+### 4.4 Packaging
+
+`package.json` has **no `dependencies` key**; `peerDependencies` = exactly two —
+`lightweight-charts >=5.2.0 <6`, `react >=18.0.0 <20`. ✅
+
+### 4.5 The central phase-2 claim survived the merge — measured with my own instrument
+
+Served `example/` with the e2e's own esbuild configuration, drove Chromium, picked **Ichimoku Cloud**
+by its catalogue id (`Trend` / `ichimoku`), and histogrammed every canvas pixel under
+`[data-testid="workspace-surface"]` before and after. **I did not reuse the e2e's hue list.**
+
+```
+NEW HUES (>=300 px, exactly ZERO before the pick)
   rgb(71,163,71)    13427 px   <- Kumo, bullish fill
-  rgb(245,71,51)     8425 px   <- Kumo, bearish fill
-  rgb(76,154,255)    1805 px   <- plot0  Conversion Line
-  rgb(38,198,218)    1562 px   <- plot2  Lagging Span
-  rgb(199,146,234)   1363 px   <- plot1  Base Line
-  rgb(245,166,35)    1029 px   <- plot3  Leading Span A
-  rgb(102,187,106)    872 px   <- plot4  Leading Span B
-  rgb(19,23,34)      3752 px   <- chart chrome (background, dashed guide)
-  rgb(149,152,161)    756 px   <- chart chrome (axis and legend grey)
+  rgb(245,71,51)     7917 px   <- Kumo, bearish fill
+  rgb(76,154,255)    1425 px   <- plot0  #4c9aff
+  rgb(199,146,234)   1316 px   <- plot1  #c792ea
+  rgb(38,198,218)    1216 px   <- plot2  #26c6da
+  rgb(245,166,35)    1029 px   <- plot3  #f5a623
+  rgb(102,187,106)    872 px   <- plot4  #66bb6a
+
+DISTINCT PLOT-POSITION HUES DRAWN: 5     (plot5 #ef5350 = 0 px, correct: Ichimoku has 5 plots)
+KUMO: 1 green region, 1 red region
 CONSOLE ERRORS: 0
 ```
 
-Then I repainted the canvas as a segmentation mask — each of the seven indicator hues replaced by a
-maximally distinct pseudo-colour, black everywhere else, so the two greens could not be confused by
-eye — and **I looked at it**.
-
-```
-plot0 line #4c9aff   px=  3108   distinct x-columns= 853
-plot1 line #c792ea   px=  2928   distinct x-columns= 807
-plot2 line #26c6da   px=  3052   distinct x-columns= 806
-plot3 line #f5a623   px=  2326   distinct x-columns= 712
-plot4 line #66bb6a   px=  1892   distinct x-columns= 617
-kumo bullish         px= 13478   distinct x-columns= 340
-kumo bearish         px=  8439   distinct x-columns= 265
-```
-
-**I counted FIVE lines.** Five continuous, separately coloured curves, each spanning 617–853 distinct
-x-columns of a 998 px canvas, plus a shaded band in **two** colours bounded above and below by the
-`plot3` and `plot4` curves, with the curves drawn over the shading. The five hues are exactly the
-first five entries of the host's own palette (`example/panes.ts:21`
-`['#4c9aff','#c792ea','#26c6da','#f5a623','#66bb6a','#ef5350']`), which the host cycles **by plot
-position** — so five distinct hues is five distinct plot slots drawn, not one line drawn five times.
-The Lagging Span is visibly displaced from the other four, which is why counting the legend would
-have been the wrong instrument.
-
-**Five lines and a two-coloured Kumo. Confirmed by eye and by count.**
+**Five lines and a two-coloured Kumo. Confirmed.** Each hue is the host's palette entry for its own
+plot position (`example/panes.ts:21`), and each was **exactly zero** before the pick — so five hues
+is five plot slots drawn, not one line drawn five times. `manifest.json` independently records
+`ichimoku` with **5 plots and 2 fills**.
 
 ---
 
-## 3. Gates — all re-run by me on the real tree, after the sensor
+## 5. Gate check — all re-run on the real tree
 
 | Gate | Command | Result |
 | --- | --- | --- |
 | Build | `npm run build` | exit 0 |
-| Quick | `npm test` | **120 suites, 1478 tests, 0 failed, 0 skipped**, exit 0 |
+| Quick | `npm test` | **123 suites, 1524 tests, 0 failed, 0 skipped**, exit 0 (run twice) |
 | Full | `npm run e2e` | **96/96**, exit 0 |
-| Proof | `npm run proof` | **33/33** in 10.4 s, exit 0 |
-| Build | `node scripts/size-gate.mjs` | OK — 16 measurements, entry **104853 / 104853**, exit 0 |
-| Build | `node scripts/verify-package-paths.mjs` | OK — `files[]` and `exports` both resolve (7 entries), exit 0 |
-| Catalogue | `node scripts/build-indicator-manifest.mjs --check` | OK — 310 offered, exit 0 |
-
-**Test integrity.** `b2c0082`: 119 suites / 1449 tests. `a57dbb3`: **120 / 1478**. Delta **+1 suite,
-+29 tests**; nothing decreased. e2e 96 → 96 and proof 33 → 33 are unchanged because T18 *repointed* an
-existing scene rather than adding one.
-`git diff --diff-filter=D --name-only b2c0082..a57dbb3 -- test/ scripts/ conformance/ example/ src/`
-is **empty** — no suite, script or module deleted. No `.skip`, `.only`, `xit`, `fit`, `xdescribe` or
-`fdescribe` added anywhere in the range. The single `-1` line in `test/manifestChannels.spec.ts` is
-the import statement being extended, not an assertion removed.
+| Proof | `node scripts/indicator-proof.mjs` | **38/38** in 11.4 s, exit 0 |
+| Size | `node scripts/size-gate.mjs` | OK — 16 measurements, entry **106439 / 106439** against a ceiling of 115629, exit 0 |
+| Paths | `node scripts/verify-package-paths.mjs` | OK — 7 entries, exit 0 |
+| Catalogue | `node scripts/build-indicator-manifest.mjs --check` | OK — **310 offered**, exit 0 |
 
 **Skill gates.** `validate_spec.py` → 0 errors, 0 warnings. `validate_tasks.py` → 0 errors, 3
-warnings (judged in §5). All 8 commit messages pass `check_commit.py`. One atomic commit per task,
-T18 → T24, in order.
-
----
-
-## 4. Discrimination sensor
-
-**Isolation.** Two temporary `git worktree`s at `a57dbb3` under the session scratchpad, with
-`node_modules` symlinked and a full `npm run build` so the scratch baseline was itself **120 suites /
-1478 tests green** before any mutation. `git stash` was never used. Real-tree
-`git status --porcelain` was **empty** before the sensor and is **empty** after (0 bytes, byte-identical
-to the captured baseline); both worktrees were removed with `--force` and pruned; HEAD is unchanged
-at `a57dbb3` on `feat/indicator-library-adoption`.
-
-**Depth**: P0-full — 33 behaviour-level mutations across the whole diff surface of this pass, plus 2
-counter-direction controls and 1 reachability probe.
-
-| # | Mutation | File:line | Result |
-| --- | --- | --- | --- |
-| G1a | marker plugin removed from the real engine | `example/engine.ts:124` | ✅ **Killed** — e2e 95/96, up 0 / down 0 |
-| G1b | `alignColors` returns nothing (counter-direction control) | `src/indicator/availability.ts:55` | ✅ **Marks scene stays GREEN**, 392/426 — the point-colour channel cannot satisfy it |
-| G2-R1 | `typeof time` guard only, type-safe | `example/studyMarks.ts:60` | ⚪ **Equivalent mutant** — `Set.has('20')` is already false |
-| G2-R2 | loaded-window membership removed | `example/studyMarks.ts:60` | ✅ Killed — 3 |
-| G2-R2b | whole time rule removed | `example/studyMarks.ts:60` | ✅ Killed — 4 |
-| G2-R3 | shape allow-list removed | `example/studyMarks.ts:61` | ✅ Killed — 3 |
-| G2-R3a | `DRAWABLE.has` only | `example/studyMarks.ts:61` | ✅ Killed — 2 |
-| G2-R4 | position allow-list removed | `example/studyMarks.ts:62` | ✅ Killed — 2 |
-| G2-R4a | `PLACED.has` only | `example/studyMarks.ts:62` | ✅ Killed — 1 |
-| G2-R5 | colour rule removed | `example/studyMarks.ts:63` | ✅ Killed — 1 |
-| G2-R5a | empty-string clause only | `example/studyMarks.ts:63` | ✅ Killed — 1 |
-| G2-R6 | `text` kept when empty | `example/studyMarks.ts:70` | ✅ Killed — 1 |
-| G2-R7 | the whole narrowing (the first pass's M20) | `example/studyMarks.ts:60-63` | ✅ Killed — **9** |
-| G2-R8 | `loaded` built from the marks, not the grid | `example/studyMarks.ts:99` | ✅ Killed — 3 |
-| G3 | band fill `zOrder` `'behind'` → `'ahead'` | `example/bandOverlay.ts:159` | ✅ **Killed** — `test/bandOverlay.spec.ts:125` |
-| MZ1 | `paneViews()` rebuilds the view array per call | `src/render/overlayBridge.ts:92` | ✅ Killed — 2 |
-| MZ2 | `zOrder()` answers a different layer on a later frame | `src/render/overlayBridge.ts:73` | ✅ Killed — 1 |
-| MZ3 | `Z_ORDER` always `'top'` | `src/render/overlayBridge.ts:73` | ✅ Killed — 2 |
-| G4a | planted rule withdraws 3 rows, ledger empty | `scripts/build-indicator-manifest.mjs` | ✅ **Killed** — generator exit 1 naming all three |
-| G4b | the same three, signed (counter-direction control) | same | ✅ **Accepted** — exit 0, 307 rows |
-| G4c | the same three, blank / missing reasons | same | ✅ **Killed** — exit 1 |
-| G4d | G4a under `--check` (the CI step) | same | ✅ **Killed** — exit 1 |
-| G4e/G4f | the guard's own call site deleted | `scripts/build-indicator-manifest.mjs:345-353` | ❌ **SURVIVED** — see limitation L1 |
-| WF-1 | `withdrawalFaults` returns `[]` | `scripts/indicator-proof/manifest-shape.mjs:155` | ✅ Killed — 4 |
-| WF-2 | ledger ignored | same | ✅ Killed — 2 |
-| WF-3 | blank reason accepted | same | ✅ Killed — 1 |
-| WF-4 | a vanished id counted as a withdrawal | same | ✅ Killed — 1 |
-| WF-5 | refusal message drops the id list | `manifest-shape.mjs:168` | ✅ Killed — 1 |
-| OPT-1 | `Overlay.anchor?` deleted | `src/extension/plugins.ts:36` | ✅ Killed — **24 suites** + `tsc` exit 2 |
-| OPT-2 | `Point.color?` deleted | `src/domain/types.ts:41` | ⚠️ Killed — **1 test, and it is the docs-byte gate** `test/gates/docReference.spec.ts`; `tsc -p tsconfig.example.json` still exits **0** |
-| OPT-3 | `SourceResolution.colors?` deleted | `src/indicator/resolution.ts:51` | ✅ Killed — 13 suites + `tsc` exit 2 |
-| BND-1 | banned vendor import planted in `src/` | `src/indicator/availability.ts:1` | ✅ Killed — 5 boundary clauses |
-| BND-2 | `import(<variable>)` planted in `src/` | `src/indicator/availability.ts` | ✅ Killed — 4 clauses, fails **closed** |
-| BND-3 | `lightweight-charts-drawing` planted in `src/` | `src/indicator/availability.ts:1` | ✅ Killed — 5 clauses |
-| DOMID | `pickStudy`'s `domId` narrowing reverted | `scripts/e2e-demo.mjs:115` | ✅ Killed — e2e `TimeoutError`, exit 1 |
-| NAN | reachability probe: a grid whose own times are `NaN`/`Infinity` | `example/studyMarks.ts:99` | ⚠️ **Non-finite marks pass through** — precision note in §1 (G2) |
-
-**Sensor result**: 33 mutations injected · **31 killed** · 1 equivalent · 1 survived (second-order, §6 L1).
-Plus 2 counter-direction controls, both behaving as the fix requires.
-
----
-
-## 5. The three declared deviations — judged
-
-### 1. `pickStudy` applies `SeriesMenu`'s own `domId` narrowing. **Necessary.**
-
-`src/react/SeriesMenu.tsx:73` renders `data-testid={domId(prefix, value)}` where
-`domId = (p, v) => \`${p}-${v.replace(/[^a-zA-Z0-9]+/g, '-')}\``. Every category the suite drove until
-now was a single word, so the transform was the identity. `t3-psar` sits in **Moving Averages**,
-which has a space, and the rendered attribute is therefore
-`workspace-catalogue-category-Moving-Averages`. The e2e helper must apply the same transform or the
-locator cannot resolve.
-
-I measured the failure mode: reverting `scripts/e2e-demo.mjs:115` to the raw `${category}` makes
-`npm run e2e` die with a `TimeoutError` and exit 1. **It fails closed** — a divergence between the
-helper's copy of the transform and the production one cannot silently pass; it can only stop the
-suite. Not a workaround: the production code narrows, so the probe must narrow.
-
-Residual: the transform is duplicated in a `.mjs` script rather than imported from the `.tsx` module,
-which the script cannot import. That is a structural limit of the harness, and the failure direction
-is safe.
-
-### 2. `Number.isFinite` removed from `markOf` as subsumed. **Real subsumption; the stated reason is wrong.**
-
-Fully argued in §1 (G2). Behaviour unchanged in every reachable state, strictly stronger for finite
-grids, still asserted at `test/studyMarks.spec.ts:161`, and the replacement rule is what makes that
-case red. The docblock's justification — that a `Set` of bar times cannot hold `NaN` — is a claim
-about the caller, not about `Set`; `Set.has(NaN)` is `true` under SameValueZero, which I measured.
-Lesson recorded. Not a defect.
-
-### 3. `validate_tasks.py` emits 3 warnings. **All three are correctly justified. Acceptable.**
-
-| Warning | Judgement |
-| --- | --- |
-| T19: `Where` names `example/studyMarks.ts` **and** `test/studyMarks.spec.ts` | The validator's granularity smell is calibrated for multiple *implementation* files. Here the second file is the first one's test, and the task's whole point is that the module had none. Splitting would produce a task that writes a failing test and a task that makes it pass — the opposite of one atomic commit. |
-| T22: `Tests: none` | The Test Coverage Matrix at `tasks.md:28` prescribes `none` for `Documentation & decision log`. T22 corrects a narrative sentence in `spec.md` only. |
-| T23: `Tests: none` | Same row, same reason. T23 is the LINES-03 rewording, `spec.md` only. |
-
-Both `Tests: none` tasks nevertheless carry `Gate: quick` and ran `npm test`.
+warnings (the same three judged and accepted in the second pass). `check_commit.py` → every
+authored commit in the range passes; the three that do not are GitHub's own
+`Merge pull request #13/#14` and `Merge branch 'master'` messages from master's history, not this
+line's work.
 
 ---
 
 ## 6. Spec-anchored acceptance criteria
 
-Only the rows that moved this pass are re-argued; the remaining rows were verified in the first pass
-over `0480c76..b2c0082`, are unchanged by an empty `src/` diff, and their evidence citations still
-resolve.
+The `src/` surface this feature owns is unchanged by the ledger commits, and the merge's only `src/`
+edits are the two halves judged in §1. Every criterion verified in the second pass still resolves,
+and the two that the merge could have moved were re-measured:
 
 | Criterion | Spec-defined outcome | `file:line` + assertion | Result |
 | --- | --- | --- | --- |
-| **FILL-03** fill beneath the lines it spans | the fill's own z-order is `behind` | `test/bandOverlay.spec.ts:125` — `expect(new BandFillOverlay('anchor').zOrder).toBe('behind')`; sensor G3 flips it to `'ahead'` and the suite goes red | ✅ **PASS** (was ❌) |
-| **MARK-01** markers placed on the bars they name | marks on screen, on the study's own series | Canvas: `scripts/e2e-demo.mjs:1454` `up > 0 && down > 0` on hues **exclusive to the marker channel** — G1a takes both to **0**, G1b leaves both unmoved. Unit: `test/studyMarks.spec.ts:101,126,144,184,220,228,290` — shape, position, colour, window, series key and the exact port shape, each with the neighbour that is kept | ✅ **PASS** (was ❌) |
-| **MARK-02** no marker door ⇒ lines still draw, no marks offered | draw, do not fail | `test/studyMarks.spec.ts:235` `expect([...channel.map(...).keys()]).toEqual([])` when every mark is refused; `:257` one study's emptiness leaves the other keyed; `test/chartSurface.spec.tsx:744-746` unchanged | ✅ PASS (strengthened) |
-| **PROOF-01** a dropped channel fails the proof, naming both | indicator + channel named | unchanged from the first pass, **plus** the withdrawal ratchet: `test/manifestChannels.spec.ts:259` `toEqual([{id:'bop',measured:'planted rule'},{id:'mass-index',…}])`, control at `:268` `toEqual([])`, one-at-a-time at `:272`, blank reason at `:280`, vanished-id separation at `:289`, message at `:293`; sensors G4a/G4c/G4d red, G4b green | ✅ PASS (strengthened) |
-| **LINES-03** lines on screen = live plots | *equality* on the bitmap (clause 3); *inequality* at catalogue scale (clause 3a) | `spec.md:95` now words the equality **and names where it is measured**: e2e `scripts/e2e-demo.mjs` five hues, each 0 before the pick — re-measured independently in §2. `spec.md:96` words 3a as an explicit inequality with the proof's own number: `lines.every-live-plot-has-a-slot-in-the-declared-resource` → **949 live of 1026 declared, 77 dead across 23 rows**, planted control `auto-support: 40 live against a declared 20` | ✅ **PASS** — the spec-precision gap is **closed by narrowing the wording**, which was one of the two options the first pass offered |
-| **FILL-05** bounds unresolvable ⇒ not offered | the indicator is withheld | unchanged: half asserted at `test/bandOverlay.spec.ts:110-111`; the non-offering half has no producer — **360 of 360 bounds resolve** | ⚠️ **PARTIAL — declared and honest.** Not re-judged this pass; the first pass judged it and it does not block |
-| FILL-01/02/04/06, LINES-01/02/04, POINT-01/02/03, BAR-01/02, REST-01, PROOF-02/02a/03/04 | — | unchanged; `src/` diff empty; all first-pass citations still resolve | ✅ PASS |
+| **FILL-01/02** a fill is drawn between the two drawn lines / against a level | the host's overlay reaches the pane of the study it annotates | `test/workspaceOverlays.spec.tsx:249` — `expect(paintedY(anchored[0])).toBe(20)`; `:256` `toBe(44)`; `:265` `toEqual([20, 44])`. Sensor **M-OURS kills 3** | ✅ PASS |
+| **FILL-03** the fill sits beneath the lines it spans | the fill's own z-order is `behind` | `test/bandOverlay.spec.ts:125` — `expect(new BandFillOverlay('anchor').zOrder).toBe('behind')` | ✅ PASS |
+| **LINES-03** lines on screen = live plots | equality on the bitmap; inequality at catalogue scale | Re-measured in §4.5: **5 distinct plot hues, each 0 px before the pick**. Catalogue-scale clause: proof case `lines.every-live-plot-has-a-slot-in-the-declared-resource` → **949 live of 1026 declared, 77 dead across 23 rows** | ✅ PASS |
+| **PROOF-01/02/02a/03** a dropped or object-shaped channel fails the proof, naming it | indicator + channel named, enumerated from the result | proof cases `channels.every-member-the-result-carries-is-what-the-manifest-declares` (310 rows) and `channels.the-comparison-discriminates-in-three-independent-directions` — three plantings, three different clauses | ✅ PASS |
+| **MARK-01/02**, **BAR-01/02**, **POINT-01/02/03**, **REST-01**, **FILL-04/06**, **LINES-01/02/04** | — | unchanged; `git diff a57dbb3..HEAD -- src/` touches only `CanvasSurface.tsx`, `useOverlayFields.ts`, `chrome/labels.ts`, `tabs/setup.ts`, `index.ts`, `overlays/densityField.ts`, `overlays/densityTuning.ts`, `react/Density*.tsx`, `ChartWorkspace.tsx` — none of them a producer for these clauses; all second-pass citations still resolve | ✅ PASS |
+| **FILL-05** bounds unresolvable ⇒ not offered | the indicator is withheld | unchanged: the non-offering half still has no producer — 360 of 360 bounds resolve | ⚠️ **PARTIAL — declared, carried, does not block** |
+| **NEW — the composition order of package fields vs host overlays** | **not defined anywhere in `spec.md`** | no assertion — **M-Y survives 1524 + 96/96** | ⚠️ **Spec-precision gap** |
 
-**Status**: **22 of 23 rows PASS · 0 gaps · 1 PARTIAL (FILL-05, declared) · 0 unflagged
-spec-precision gaps.**
+**Status**: **22 of 23 rows PASS · 1 PARTIAL (FILL-05, declared) · 1 NEW spec-precision gap
+(composition order) · 0 spec ACs failing.**
 
-### Edge cases — all five now carry evidence
+### Edge cases
 
-`spec.md:199-205` now records where each one is asserted and what discriminates it. I verified the
-table rather than reading it.
-
-| Edge case (`spec.md:192-196`) | Evidence | Sensor | Result |
-| --- | --- | --- | --- |
-| a non-finite bound interrupts the fill | `test/bandOverlay.spec.ts:123`, control at `:133` | first pass M2 kills 2 | ✅ |
-| the lane grows rather than the study being cut | `test/hostSlots.spec.ts:125,131-152` (`overPrice: 56, ownPane: 14`) | first pass M9 → e2e 93/96 | ✅ |
-| two overlays tying on z-order keep their order across redraws | `test/overlayBridge.spec.ts:172-208` — identity at `:193`, the tie asserted real at `:203`, three frames at `:205`, `'ahead'` as the positive control | **MZ1 kills 2, MZ2 kills 1, MZ3 kills 2** | ✅ **new** |
-| a marker outside the loaded window is dropped without affecting the rest | `test/studyMarks.spec.ts:184` `toEqual([10,20,30])` for marks at `[10,15,20,99,30]`; positive control at `:200` `toEqual([10,15,20,99,30])` against a window that holds all five | **G2-R2 kills 3** | ✅ **new, and newly implemented** |
-| entry stays below `PROVISIONAL_ENTRY_LIMIT` | `test/gates/sizeBudget.spec.ts:557` `expect(BUDGET.entry.limit).toBeLessThan(PROVISIONAL_ENTRY_LIMIT)` | measured 104853 < 104994 | ✅ |
-
-**On the z-order case, one half is delegated and the spec says so** (`spec.md:207-212`). The base
-library sorts pane views with `Array.prototype.sort`, which the language specification requires to be
-stable; the test models that rather than re-implementing it. What this repository owns is asserted
-and discriminates: `paneViews()` returning the same objects (MZ1) and a `zOrder()` that answers the
-same layer on every call (MZ2). I judge the delegation honest and correctly disclosed — a test that
-only re-ran the modelled sort would have been tautological, and MZ1/MZ2 prove it is not.
+All five carry the evidence recorded at `spec.md:199-205` and it still resolves. The z-order tie
+edge case (`spec.md:194`) is asserted at `test/overlayBridge.spec.ts:172-208` and is **not** what
+M-Y breaks — M-Y keeps the order stable across redraws; it changes *which* order. That distinction
+is the spec-precision gap named above.
 
 ---
 
-## 7. Previous-phase invariants — re-derived, not trusted
+## 7. Ranked gaps
 
-| Invariant | Measurement |
-| --- | --- |
-| `PROVISIONAL_ENTRY_LIMIT` never raised in this range | `test/gates/sizeBudget.spec.ts:48` = **104994**. `git diff b2c0082..a57dbb3 -- test/gates/sizeBudget.spec.ts` is **empty** — the file is untouched. `git log -G"PROVISIONAL_ENTRY_LIMIT" b2c0082..a57dbb3` finds two commits and both touch `.specs/` only. ✅ |
-| Entry below the ceiling | `size-gate` measured **104853 / 104853**, `ratchet: down-only`, zero slack. `size-budget.json` untouched in the range. ✅ |
-| No suite deleted | `git diff --diff-filter=D` over `test/ scripts/ conformance/ example/ src/` is **empty**. ✅ |
-| No `.skip` / `.only` added | grep over the range's added lines finds none. ✅ |
-| Test count never decreased | 1449 → **1478** (+29), 119 → **120** suites. ✅ |
-| `dependencies` absent, exactly two peers | `package.json` has **no `dependencies` key**; `peerDependencies` = `lightweight-charts >=5.2.0 <6`, `react >=18.0.0 <20`, both `optional: false`. ✅ |
-| Boundary gate red for the banned vendor names | **BND-1**, **BND-3** — 5 clauses each, naming the file. ✅ |
-| Boundary gate red for `import(<variable>)` | **BND-2** — 4 clauses, reported as `<unreadable module reference>`; the guard fails **closed**. ✅ |
-| `Overlay.anchor?` kills a test if deleted | **OPT-1** — 24 suites + `tsc` exit 2. ✅ |
-| `Point.color?` kills a test if deleted | **OPT-2** — **1 test, and it is the docs-byte gate**; `tsc -p tsconfig.example.json --noEmit` exits **0**. ⚠️ Killed, weakly — carried unchanged from the first pass. |
-| `SourceResolution.colors?` kills a test if deleted | **OPT-3** — 13 suites + `tsc` exit 2. ✅ |
-| `src/` untouched by this phase's second pass | `git diff b2c0082..a57dbb3 -- src/` is **empty**. ✅ |
+### 1. `L-N3` — a signed withdrawal buys a debut, and a debut launders a value — **Major**
+
+- **Where**: `scripts/indicator-proof/value-ledger.mjs:316` — `if (!offers.has(id)) continue;`
+- **Measured**: two runs of the sanctioned generator; step 2 writes a tampered digest with
+  **310 offered, `--check` exit 0, proof 38/38, zero value declarations**. Control with untampered
+  arithmetic restores the digest byte-identical.
+- **Why it matters**: three of the 22 commits in this range exist to close laundering channels, and
+  the file's doctrine (`value-ledger.mjs:34-41`) states the closure in terms of an id the committed
+  manifest *still offers*. A withdrawal retires that evidence.
+- **Not covered by the disclosed limitation** (`value-ledger.mjs:73-75`), which describes a
+  hand-edit of two artefacts. This path hand-edits nothing.
+- **The information to close it is on disk**: `withdrawals.json` still names the id after the
+  restore; nothing in `valueLedgerFaults` reads it.
+
+### 2. `M-Y` — the overlay composition order is asserted nowhere — **Minor, plus a spec gap**
+
+- **Where**: `src/react/workspace/CanvasSurface.tsx:74`
+- **Measured**: `[...fielded, ...own]` → `[...own, ...fielded]` leaves `npm test` **1524/1524** and
+  `npm run e2e` **96/96** green.
+- **Two things at once**: a surviving mutant *and* a spec-precision gap — `spec.md` never says
+  whether a host overlay draws over or under the package's own density field.
+
+### 3. `M-X` — the conjunction has one incidental assertion and no unit cover — **Minor**
+
+- **Where**: same line. Dropping `fielded` whenever `own` is present survives all 1524 unit tests
+  and dies only at `scripts/e2e-demo.mjs:516` (`density.toggle-changes-the-canvas`).
+- **Why it is thin**: that scene only reaches the conjunction because `example/App.tsx:76` always
+  supplies a non-empty `studies.overlays`. Both dedicated unit suites scope themselves to one side
+  on purpose (`test/workspaceOverlays.spec.tsx:60`, `test/overlayFields.spec.tsx:58`).
+
+### 4. Version / changelog drift — **Cosmetic, but publish-facing**
+
+- HEAD is `4170125`, not `deba8aa`; `package.json` is **0.3.2**; `CHANGELOG.md` newest entry is
+  **0.3.1** and there is no 0.3.2 section. No gate binds the two.
 
 ---
 
-## 8. The 320 → 310 question — registered, not decided
-
-The owner's question is recorded and nobody settled it in code. Verified against the artefacts:
-
-- `example/indicators/withdrawals.json` carries an `openQuestion` field naming **all ten** rows —
-  `madrid-trend-squeeze`, `linear-regression-candles`, `market-shift-levels`, `matrix-series`,
-  `modified-heikin-ashi`, `super-supertrend`, `banker-fund-flow` (`plotCandles`);
-  `ml-adaptive-supertrend`, `ml-rsi`, `supertrend-ai-clustering` (`tables`) — and states the two
-  options: declare them with a written reason each, or wire `plotCandles` and `tables` and restore
-  320.
-- `withdrawals.withdrawals` is **`[]`**. None of the ten is declared. Writing them in would settle
-  the question by default, which the file's own text says it exists to prevent.
-- None of the ten appears in `example/indicators/manifest.json`; the catalogue is **310**.
-
-**This is an owner decision and it is still open.** It must appear in the PR body.
-
----
-
-## 9. Code quality
+## 8. Code quality
 
 | Principle | Status |
 | --- | --- |
-| No features beyond what was asked | ✅ — 7 commits, 4 of them tests or ledgers, 2 documentation, 1 the ratchet. 0 B in `src/`. |
-| No abstractions for single-use code | ✅ — `withdrawalFaults`/`withdrawalRefusal` have two callers each (generator + suite), which is why neither tests a copy |
-| Only touched files required for the task | ✅ — no undeclared file outside a task's `Where` this pass |
+| No features beyond what was asked | ✅ — the four branch commits are one portability fix, two ledger holes and the merge |
+| No abstractions for single-use code | ✅ |
+| Only touched files required for the task | ✅ |
 | Didn't "improve" unrelated code | ✅ |
-| Matches existing patterns | ✅ — the ledger copies `renames.json` and `value-changes.json` verbatim in doctrine, the z-order assertion copies `test/densityField.spec.ts:60`, the positive-control style is the house one throughout |
-| Would a senior engineer approve? | ✅ — behaviour and evidence now agree |
-| Tests map to ACs and are non-shallow | ✅ — every new case names its clause; the `marks` scene now satisfies the repo's own matrix line *"a call that was made is not a thing that was drawn"* on a hue only the marker channel writes |
-| Spec-anchored outcome check | ✅ — 22/23, 0 unflagged gaps |
+| Matches existing patterns | ✅ — the ledger fixes copy the doctrine of `renames.json` and `withdrawals.json` |
+| Spec-anchored outcome check | ⚠️ 22/23 PASS, 1 PARTIAL, **1 new spec-precision gap flagged** |
 | Every test maps to a spec requirement | ✅ — no unclaimed tests in the diff surface |
+| Tests non-shallow / discriminating | ⚠️ **2 surviving mutants** — see §7 |
 | Documented guidelines followed | ✅ `CONTRIBUTING.md`, `jest.config.js`, the Test Coverage Matrix at `tasks.md:20-28` |
 
 ---
 
-## 10. What is true, and what is limited
-
-Written for the owner to read on return.
+## 9. What is true, and what is limited
 
 ### True, and I measured every line of it myself
 
-- **Ichimoku draws FIVE lines and a TWO-COLOURED Kumo.** Five separately coloured curves, each hue
-  zero before the pick, each hue the host's palette entry for its own plot position; the shaded band
-  is green above and red below, bounded by `plot3`/`plot4`, with the curves over the shading. Counted
-  on a segmentation mask I rendered and looked at, not inferred from the suite.
-- **The marker sensor now measures the marker channel and nothing else.** Delete the plugin and both
-  hues read exactly **0**. Delete the neighbouring point-colour channel and the scene does not move.
-  Both directions run.
-- **`example/studyMarks.ts` has 21 cases and every rule in it discriminates alone.** The mutation
-  that survived last time now kills 9.
-- **The fill's z-order is pinned at the fill**, matching every sibling overlay in the repository.
-- **The catalogue can no longer shrink without a signature.** A rule that withdraws an offered row
-  makes the generator refuse to write — in `--check` mode too, which is the CI step — until the loss
-  is signed with a real reason in an append-only ledger. A blank reason is not a signature.
-- **The z-order tie and the out-of-window marker, the two edge cases with no evidence, now have
-  some** — and the second one now has an *implementation*, which it did not before.
-- **Nothing regressed.** 1449 → 1478 tests, no suite deleted, no skip added,
-  `PROVISIONAL_ENTRY_LIMIT` untouched, entry still 104853/104853, `dependencies` still absent, exactly
-  two peers, `src/` byte-identical to `b2c0082`.
+- **Ichimoku still draws FIVE lines and a TWO-COLOURED Kumo** after the merge — five palette hues
+  each at exactly 0 px before the pick, plus a green and a red fill region, 0 console errors.
+- **The merge is behaviourally correct at the one point with no verifier**: a host overlay anchored
+  to a study pane and the density field with a global scale both attach, each on its own price
+  scale, and neither is lost. Measured on the canvas through a real mount, in both directions.
+- **Each half of the `CanvasSurface` merge is independently asserted** — 3 tests die for ours, 4 for
+  master's.
+- **The two ledger holes this range closed are genuinely closed.** A tamper hiding under a declared
+  re-spelling is named **with no bump present**, so the catch is the per-id rule and not the
+  release-and-respelling rule. A tamper hiding under a declared rename is named under the new id.
+  Both counter-directions stay green.
+- **The quantum is exactly what the file says it is** — 0 of 310 digests move at up to 64 ULP,
+  262 of 310 move at a uniform 1e-13, and the `wma` defect class moves all 310. Every documented
+  number reproduced against a calibrated instrument.
+- **Nothing regressed.** 1478 → 1524 tests, no suite deleted, no skip added, this branch never
+  raised `PROVISIONAL_ENTRY_LIMIT`, entry 106439 under a 115629 ceiling, `dependencies` still
+  absent, exactly two peers, boundary gate red for all four planted evasions.
 
-### Limited, and you will meet these
+### Limited — read these before merging
 
-**L1 — a ledger guard is not itself guarded.** Deleting the withdrawal guard's own call site
-(`scripts/build-indicator-manifest.mjs:345-353`) leaves `npm test` 1478/1478, `npm run proof` 33/33
-and `--check` OK. **This is not new**: I ran the same mutation on the pre-existing vanished-id
-refusal and measured exactly the same three greens. Every ledger guard in this repository is a rule
-that lives inside a build script, and no gate asserts that the script calls it. The mitigation is
-real but partial: shrinking the catalogue takes **two** edits in the same file, both in the diff, and
-before the artefact is rewritten `--check` refuses on STALE. Closing it would mean a test that runs
-the generator against a fixture registry — a genuinely larger piece of work than this phase, and it
-would apply to all three ledgers at once. **Ranked as a limitation, not a gap.**
+**L-N3** — the withdraw/restore laundering path. §2.3, §7.1. **New this pass.**
 
-**L2 — `Point.color?` is pinned only by the derived-docs byte gate.** Deleting it turns exactly one
-test red and it is `test/gates/docReference.spec.ts`; `tsc -p tsconfig.example.json --noEmit` still
-exits 0, because the behaviour tests build points through `as unknown as Point`. Carried unchanged
-from the first pass.
+**L-M-Y** — the overlay composition order is unasserted and undefined by the spec. §7.2.
 
-**L3 — `Number.isFinite`'s removal rests on an unasserted precondition.** Membership subsumes
-finiteness only for a grid whose own times are finite; `Set.has(NaN)` is `true`. Measured: against a
-`NaN`-timed grid, non-finite marks pass through. Unreachable in this demo and 0 B in the package.
+**L-M-X** — the conjunction has exactly one assertion, and it is incidental to the demo's shape. §7.3.
 
-**L4 — FILL-05 stays PARTIAL, with 360/360 beside it.** Its refusal half has no producer anywhere in
-the catalogue. Judged honest by the first pass and not re-opened here.
+**L1 (carried)** — a ledger guard is not itself guarded: deleting a guard's call site inside
+`build-indicator-manifest.mjs` leaves `npm test`, `npm run proof` and `--check` green. Pre-existing
+in kind for all three ledgers.
 
-**L5 — the alpha correction and the per-bar fill colours remain unit-only claims.** No canvas control
-exists for either; a canvas divides premultiplied alpha back out, so `getImageData` cannot see the
-alpha defect at all.
+**L2 (carried)** — `Point.color?` is pinned only by the derived-docs byte gate.
 
-**L6 — the catalogue is 310, not 320, and that is still an open owner decision.** See §8.
+**L3 (carried)** — `Number.isFinite`'s removal in `example/studyMarks.ts` rests on an unasserted
+precondition (`Set.has(NaN)` is `true`).
 
-### Numeric verification seal — unchanged in method, moved in count
+**L4 (carried)** — FILL-05 stays PARTIAL, with 360/360 bounds resolving beside it.
 
-**This phase was about RENDERING. It re-derived no arithmetic.** The tier definitions are untouched;
-the counts follow the catalogue, and they moved only because T15 withdrew ten rows in the *previous*
-pass — this pass changed neither.
+**L5 (carried)** — the alpha correction and the per-bar fill colours remain unit-only claims.
 
-| | `0480c76` (320 rows) | `a57dbb3` (310 rows) |
-| --- | --- | --- |
-| **pinned** — hand-computed vectors | 6 | **6** |
-| **constrained** — asserted bounds | 111 | **108** |
-| **structural** — draws, deterministic, pure, aligned, on its declared scale | 203 | **196** |
+**L6 (carried)** — the catalogue is **310**, not 320, and `withdrawals.json`'s `openQuestion` still
+names all ten rows with `withdrawals: []`. **Still an open owner decision.**
 
-Read off `example/indicators/manifest.json`'s own `verification` field, row by row, and it sums to
-310. `seal.the-manifest-transcribes-it-rather-than-computing-it` re-derives all three every proof run
-and compares them against the committed totals. `oracle.counter-implementation` still measures the
-vendor against this repository's own implementations at maxAbs ≤ 2.84e-13 on six series — **unchanged
-by this phase, and not re-verified by it.** The pinned tier is unchanged at 6.
+**L7 (new, disclosure check)** — the `**` operator is outside the sensor's reach. The limitation is
+written at `value-encoding.mjs:66-71`, it is specific, and it names its mitigation. **Honest.**
 
-Do not write "the seal did not change" in the PR. Write: *the tier definitions did not change; the
-counts fell by the ten withdrawn rows.*
+### Numeric verification seal
+
+**This range re-derived no arithmetic.** The tier definitions are untouched and the counts are
+unchanged from the second pass: **pinned 6 · constrained 108 · structural 196**, summing to 310 —
+read off `seal:` in the generator's own output on the real tree. `oracle.counter-implementation`
+still measures the vendor against this repository's own implementations, unchanged by this range
+and not re-derived by it.
+
+Do not write "the seal did not change" without the qualifier. Write: *the tier definitions and the
+counts are both unchanged; this range touched rendering composition and the ledger, not arithmetic.*
 
 ---
 
-## 11. Requirement traceability update
+## 10. Requirement traceability update
 
 | Requirement | Previous | New |
 | --- | --- | --- |
-| **FILL-03** | ❌ Needs Fix | ✅ **Verified** — pinned at the object, `test/bandOverlay.spec.ts:125`, G3 red |
-| **MARK-01** | ❌ Needs Fix | ✅ **Verified** — canvas evidence discriminating in both directions, plus 21 unit cases |
-| **MARK-02** | ✅ Verified | ✅ Verified (strengthened by `test/studyMarks.spec.ts:235-257`) |
-| **LINES-03** | ⚠️ spec-precision gap | ✅ **Verified** — equality scoped to the bitmap, inequality written as clause 3a with its own control |
-| **PROOF-01** | ✅ Verified | ✅ Verified (strengthened by the withdrawal ratchet) |
-| FILL-05 | ⚠️ Partial | ⚠️ **Partial** — unchanged, declared, does not block |
-| FILL-01, FILL-02, FILL-04, FILL-06 | ✅ Verified | ✅ Verified |
-| LINES-01, LINES-02, LINES-04 | ✅ Verified | ✅ Verified |
+| FILL-01, FILL-02, FILL-03, FILL-04, FILL-06 | ✅ Verified | ✅ Verified — FILL-01/02 re-measured through the merge |
+| FILL-05 | ⚠️ Partial | ⚠️ Partial — unchanged, declared, does not block |
+| LINES-01, LINES-02, LINES-03, LINES-04 | ✅ Verified | ✅ Verified — LINES-03 re-measured on the bitmap |
 | POINT-01, POINT-02, POINT-03 | ✅ Verified | ✅ Verified |
-| BAR-01, BAR-02, REST-01 | ✅ Verified | ✅ Verified |
-| PROOF-02, PROOF-03, PROOF-04 | ✅ Verified | ✅ Verified |
+| MARK-01, MARK-02, BAR-01, BAR-02, REST-01 | ✅ Verified | ✅ Verified |
+| PROOF-01, PROOF-02, PROOF-03, PROOF-04 | ✅ Verified | ✅ Verified — proof 38/38 |
+| *(new)* overlay composition order | — | ⚠️ **Undefined in the spec, unasserted in the suite** |
 
 ---
 
 ## Summary
 
-**Overall**: ✅ **Ready.** The PR can be marked ready, with §8's open question and §10's six
-limitations written into the body.
+**Overall**: ❌ **Not ready to merge without a decision on §7.1.**
 
-**Spec-anchored check**: 22/23 ACs match the spec-defined outcome · 0 gaps · 1 PARTIAL (declared) ·
-0 unflagged spec-precision gaps
-**Sensor**: 33 injected, **31 killed**, 1 equivalent, 1 survived (second-order, pre-existing in kind)
-· 2 counter-direction controls confirmed
-**Gate**: `npm test` 1478/1478 · `npm run e2e` 96/96 · `npm run proof` 33/33 ·
-`size-gate` 104853/104853 · `verify-package-paths` OK · `build-indicator-manifest --check` OK (310
-offered) — every one exit 0, all re-run on the real tree after the sensor, porcelain byte-identical to
-the pre-sensor baseline, HEAD unchanged at `a57dbb3`.
+**Spec-anchored check**: 22/23 ACs match the spec-defined outcome · 0 failing ACs · 1 PARTIAL
+(declared) · **1 new spec-precision gap**
+**Sensor**: 21 injected, **19 killed, 2 survived** (`M-Y`, `L-N3`), 1 partial (`M-X`), plus 4
+counter-direction controls and 1 instrument calibration
+**Gate**: `npm test` 1524/1524 · `npm run e2e` 96/96 · `npm run proof` 38/38 ·
+`size-gate` 106439/106439 under 115629 · `verify-package-paths` OK · `--check` OK (310 offered) —
+every one exit 0, all run on the real tree, porcelain byte-identical to the pre-sensor baseline,
+HEAD unchanged at `4170125`.
 
-**Next steps**: open the PR. Put in the body: (1) the 320 → 310 question, verbatim from
-`withdrawals.json`'s `openQuestion`; (2) FILL-05 stays Partial with 360/360 beside it; (3) the seal
-sentence from §10; (4) limitation L1, so the next person who tightens a generator rule knows the
-guard is a rule and not a test.
+**What works**: everything the spec asks for. The rendering claim, the merge interaction, the two
+ledger fixes and the quantum all hold under attacks I wrote myself.
+
+**What blocks**: `L-N3`. The owner can merge with the hole recorded — it costs an attacker two
+commits and a signed sentence — but it should be a decision, not an oversight, because it reopens
+by a different door the exact channel three commits in this range were written to close.
+
+**Next steps**: (1) decide on `L-N3` — close it or record it in the PR body beside the disclosed
+hand-edit limitation; (2) assert the overlay composition order, or say in `spec.md` that it is
+deliberately unspecified; (3) give the conjunction a unit test so its only cover is not the demo's
+shape; (4) reconcile `package.json` 0.3.2 with `CHANGELOG.md`; (5) carry forward L1–L6 and the
+still-open 320 → 310 question.

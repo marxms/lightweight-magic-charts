@@ -206,6 +206,30 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: example/studyMarks.ts:60 (Number.isFinite removed as subsumed by Set membership) (example/,narrowing)
 - last seen: 2026-08-22T06:23:18Z
 
+### L-033 - A guard keyed on 'the committed artefact still declares it' is defeated by any sanctioned path that removes the declaration; when a second ledger can retire that evidence, the guard must read that ledger too.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `ledger,integrity-gates` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: scripts/indicator-proof/value-ledger.mjs:316 (ledger,integrity-gates)
+- last seen: 2026-08-22T19:30:42Z
+
+### L-034 - When a merge concatenates two independently-owned collections, assert the ORDER as well as the membership: each side's own suite dies on its own half and neither notices a swap.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `react,composition` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: src/react/workspace/CanvasSurface.tsx:74 (react,composition)
+- last seen: 2026-08-22T19:30:42Z
+
+### L-035 - A spec that pins ordering STABILITY across redraws still leaves the ordering ITSELF undefined; name which producer draws over which, or say the order is deliberately unspecified.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `overlays,z-order` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: spec.md:194 (overlays,z-order)
+- last seen: 2026-08-22T19:30:42Z
+
+### L-036 - Two features that meet in one expression need a test that switches BOTH on; suites deliberately scoped to one side leave the conjunction covered only by whatever shape the demo happens to have.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `testing,conjunction` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: test/workspaceOverlays.spec.tsx:60 (testing,conjunction)
+- last seen: 2026-08-22T19:30:42Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
