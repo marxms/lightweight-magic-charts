@@ -2,6 +2,7 @@ import { ChartWorkspace, resolutionPolicy, resolveSources } from 'lightweight-ma
 import type { Bar, SeriesCatalogueEntry, StudySettings } from 'lightweight-magic-charts';
 import { useMemo, useRef, useState, type ReactElement } from 'react';
 
+import { bandChannel } from './bandOverlay';
 import { demoSetupPolicy } from './catalogue';
 import { DEMO_DRAWING_VOCABULARY, demoDrawingBinding } from './drawing';
 import { demoEngine } from './engine';
@@ -60,6 +61,11 @@ export function App({ indicators }: AppProps): ReactElement {
    */
   const widths = indicators?.MANIFEST_WIDTHS ?? { overPrice: 1, ownPane: 3 };
   const panes = useMemo(() => demoPanes(widths), [widths.overPrice, widths.ownPane]);
+  /**
+   * ONE PRIMITIVE PER SLOT, BUILT ONCE. The attach effect depends on the array, so a fresh one every
+   * render would detach and re-attach every fill — and an overlay carries its own data.
+   */
+  const bands = useMemo(() => bandChannel(STUDY_CAPACITY), []);
   const offered = useMemo(() => new Set(rows.map((row) => row.id)), [rows]);
   const catalogue = useMemo(
     () => demoSetupPolicy([...offered], indicators?.coerceStudySettingsFor()),
@@ -86,14 +92,19 @@ export function App({ indicators }: AppProps): ReactElement {
             asked.current = false;
           });
         }
-        const vendor = indicators?.sourceLookupFor(library, settings, rows);
-        return resolveSources(
+        const vendor = indicators?.sourceLookupFor(library, settings, rows, bands.record);
+        const resolution = resolveSources(
           ids,
           (id) => demoLookup(id) ?? vendor?.(id),
           bars,
           POLICY,
         );
+        // AFTER the resolve, because which slot a study lands on is what the resolve decided: an
+        // over-price request measured off the price scale is filed in a lane instead.
+        bands.apply(resolution);
+        return resolution;
       },
+      overlays: bands.overlays,
       capacity: STUDY_CAPACITY,
       // Without lanes there is nowhere for an own-pane study to go, and picking one would look
       // like nothing happening.
@@ -101,7 +112,7 @@ export function App({ indicators }: AppProps): ReactElement {
     }),
     // `library` is a dependency because the arithmetic arriving has to invalidate the memo the
     // composition holds — otherwise the study stays a name with no line under it.
-    [entries, indicators, library, offered, rows, widths.ownPane],
+    [bands, entries, indicators, library, offered, rows, widths.ownPane],
   );
 
   return (

@@ -140,6 +140,45 @@ async function drawnReadingCount(page, testId) {
   }, testId);
 }
 
+/**
+ * How many pixels of the surface carry a given hue — read from the bitmap, never from a call.
+ *
+ * A translucent fill lands on a pane layer whose own background is transparent, so the byte that
+ * says "this was painted" is the alpha, and the three that say WHICH fill are the channels. Both are
+ * compared with a tolerance because the base library composites onto the layer before we read it.
+ */
+async function hueCount(page, hostSelector, rgb, tolerance = 6) {
+  return page.evaluate(
+    ({ selector, want, slack }) => {
+      const host = document.querySelector(selector);
+      if (host === null) return 0;
+      let found = 0;
+      for (const canvas of host.querySelectorAll('canvas')) {
+        const ctx = canvas.getContext('2d');
+        if (ctx === null || canvas.width === 0 || canvas.height === 0) continue;
+        let data;
+        try {
+          data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        } catch {
+          continue;
+        }
+        for (let at = 0; at < data.length; at += 4) {
+          if (data[at + 3] === 0) continue;
+          if (
+            Math.abs(data[at] - want[0]) <= slack &&
+            Math.abs(data[at + 1] - want[1]) <= slack &&
+            Math.abs(data[at + 2] - want[2]) <= slack
+          ) {
+            found += 1;
+          }
+        }
+      }
+      return found;
+    },
+    { selector: hostSelector, want: rgb, slack: tolerance },
+  );
+}
+
 /** A cheap, deterministic checksum of every canvas the surface currently draws. Identical inputs and
  * an identical chart state always produce the identical number — the candles come from a fixed seed
  * and nothing here reads the clock, so this is a legitimate equality check, not a fragile one. */
@@ -1268,6 +1307,57 @@ check(
   );
 }
 
+// ---------------------------------------------------------------------------------------------
+// Scene 16 — THE FILL. The Kumo is the reading the Ichimoku is named for, and until this feature
+// the demo drew none of it: the two cloud boundaries are hidden plots the vendor fills BETWEEN, and
+// nothing carried a fill to the canvas at all. It exists only as pixels, so it is read as pixels —
+// and in TWO colours, because a reference that collapses them deletes the signal.
+// ---------------------------------------------------------------------------------------------
+const KUMO_BULLISH = [67, 160, 71]; // #43A047, the vendor's own
+const KUMO_BEARISH = [244, 67, 54]; // #F44336
+
+async function sceneCloudIsShaded(browser, base) {
+  const { page, console_ } = await freshPage(browser, base);
+  const surface = '[data-testid="workspace-surface"]';
+
+  const beforeGreen = await hueCount(page, surface, KUMO_BULLISH);
+  const beforeRed = await hueCount(page, surface, KUMO_BEARISH);
+  check(
+    'cloud.nothing-shaded-before-the-pick',
+    beforeGreen === 0 && beforeRed === 0,
+    `cloud pixels before picking anything: bullish ${beforeGreen}, bearish ${beforeRed}`,
+  );
+
+  await openStudies(page);
+  await pickStudy(page, 'Trend', 'ichimoku');
+  await page.waitForTimeout(SETTLE_MS);
+
+  const green = await hueCount(page, surface, KUMO_BULLISH);
+  const red = await hueCount(page, surface, KUMO_BEARISH);
+  check(
+    'cloud.kumo-is-shaded',
+    green > 0 && red > 0,
+    `cloud pixels after picking Ichimoku: bullish ${green}, bearish ${red}`,
+  );
+  // THE TWO COLOURS ARE THE READING. One of them alone is what the reference implementation
+  // produces, and it is the failure this clause exists to name rather than the success.
+  check(
+    'cloud.keeps-both-colours',
+    green > 0 && red > 0 && green !== red,
+    `bullish ${green} px and bearish ${red} px are both present and are different regions`,
+  );
+
+  const legend = await page.locator('[data-testid="workspace-legend-price"]').textContent();
+  check(
+    'cloud.five-lines-under-it',
+    (await drawnReadingCount(page, 'workspace-legend-price')) >= 4,
+    `price legend after Ichimoku: ${JSON.stringify(legend)}`,
+  );
+
+  reportConsole('cloud.console-clean', console_);
+  await page.close();
+}
+
 const control = await splittingControl();
 check(
   'bundle.splitting-is-what-keeps-it-small',
@@ -1301,6 +1391,7 @@ try {
   await sceneCatalogueBeforeTheLibrary(browser, base);
   await sceneCatalogueFailureStillMounts(browser, base);
   await sceneEditedInputRedraws(browser, base);
+  await sceneCloudIsShaded(browser, base);
   await sceneFullJourneyStaysClean(browser, base);
 } finally {
   await browser.close();

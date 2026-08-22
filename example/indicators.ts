@@ -94,7 +94,13 @@ export interface VendorPoint {
 
 export interface VendorResult {
   readonly plots?: Readonly<Record<string, readonly VendorPoint[]>>;
-  readonly hlines?: readonly { readonly value?: number; readonly price?: number }[];
+  readonly hlines?: readonly {
+    readonly value?: number;
+    readonly price?: number;
+    readonly options?: { readonly title?: string };
+  }[];
+  /** Shaded regions between two bounds. Narrowed where it is drawn — see `example/bandOverlay.ts`. */
+  readonly fills?: readonly unknown[];
 }
 
 export interface VendorEntry {
@@ -253,8 +259,21 @@ function passOf(entry: VendorEntry, inputs: Readonly<Record<string, StudyValue>>
   };
 }
 
+/** What one study computed, handed on so a channel the plots do not carry can be drawn from it. */
+export interface StudyPass {
+  readonly id: string;
+  /** The bars the vendor computed against — ascending, and the order the points are indexed by. */
+  readonly grid: readonly Bar[];
+  readonly result: VendorResult | null;
+}
+
 /** A chosen study, with the values the tab is holding for it applied. */
-export function studySourceFor(row: ManifestRow, entry: VendorEntry, values: StudyValues): PlottableSource {
+export function studySourceFor(
+  row: ManifestRow,
+  entry: VendorEntry,
+  values: StudyValues,
+  onPass?: (pass: StudyPass) => void,
+): PlottableSource {
   const pass = passOf(entry, inputsFor(row, entry, values));
   let last: VendorResult | null = null;
   return {
@@ -282,7 +301,12 @@ export function studySourceFor(row: ManifestRow, entry: VendorEntry, values: Stu
           id: seriesId(`${row.id}.${key}`),
           compute: (bars: readonly Bar[]): readonly Point[] => {
             const { grid, result } = pass(bars);
-            last = result;
+            // ONCE PER RESULT, not once per plot: `pass` caches on the bars array, so the identity
+            // changing is exactly the study having been recomputed.
+            if (result !== last) {
+              last = result;
+              onPass?.({ id: row.id, grid, result });
+            }
             return toPoints(grid, result?.plots?.[key]);
           },
         },
@@ -327,6 +351,7 @@ export function sourceLookupFor(
   library: IndicatorLibrary | null,
   settings: Readonly<Record<string, StudySettings>> | undefined,
   rows: readonly ManifestRow[] = MANIFEST_ROWS,
+  onPass?: (pass: StudyPass) => void,
 ): SourceLookup {
   const byId = new Map(rows.map((row) => [row.id, row] as const));
   const entries =
@@ -336,7 +361,7 @@ export function sourceLookupFor(
     if (row === undefined) return undefined;
     const entry = entries?.get(id);
     if (entry === undefined) return pendingSourceFor(row);
-    return studySourceFor(row, entry, readStudyValues(settings?.[id], row));
+    return studySourceFor(row, entry, readStudyValues(settings?.[id], row), onPass);
   };
 }
 

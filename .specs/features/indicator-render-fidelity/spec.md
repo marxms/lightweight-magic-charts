@@ -201,11 +201,11 @@ in the manifest and nothing failed on it.
 
 | Requirement ID | Story | Tasks | Status |
 | --- | --- | --- | --- |
-| FILL-01 | P1: The cloud that is the indicator | T8, T9 | Partial |
-| FILL-02 | P1: The cloud that is the indicator | T9 | Partial |
-| FILL-03 | P1: The cloud that is the indicator | T8 | Partial |
+| FILL-01 | P1: The cloud that is the indicator | T8, T9, T10 | Done |
+| FILL-02 | P1: The cloud that is the indicator | T9, T10 | Done |
+| FILL-03 | P1: The cloud that is the indicator | T8, T10 | Done |
 | FILL-04 | P1: The cloud that is the indicator | - | Pending |
-| FILL-05 | P1: The cloud that is the indicator | - | Pending |
+| FILL-05 | P1: The cloud that is the indicator | T10, T15 | Partial |
 | FILL-06 | P1: The cloud that is the indicator | - | Pending |
 | LINES-01 | P1: A study's line count is the study's | T5, T7 | Done |
 | LINES-02 | P1: A study's line count is the study's | T5 | Done |
@@ -224,7 +224,7 @@ in the manifest and nothing failed on it.
 | BAR-02 | P2: A bar the indicator colours | - | Pending |
 | REST-01 | P3: The remaining channels | - | Pending |
 
-**Coverage:** 22 total, 7 mapped to tasks, 15 unmapped
+**Coverage:** 22 total, 8 mapped to tasks, 14 unmapped
 
 LINES-03 is PARTIAL for the same kind of reason: T7 gives every resolved line a declared series to be
 drawn into, and asserts the correspondence with the narrow width planted as a positive control, but

@@ -388,14 +388,32 @@ generator refuses to write a page without.
 - Skill: `ecc:e2e-testing`
 
 **Done when**:
-- [ ] A fill whose bound is a constant level draws against that level
-- [ ] A bar where either bound is non-finite is not painted — measured, 164 of 186 fills have at least one such bar, so this is the common case and not an edge
-- [ ] A bicoloured fill keeps its two colours: the Kumo is green above and red below, which the reference collapses and this does not
-- [ ] An alpha channel is respected rather than concatenated into an opaque colour, which the reference does on 46% of fills
-- [ ] Gate check passes: `npm run build && npm test && npm run e2e`
+- [x] A fill whose bound is a constant level draws against that level
+- [x] A bar where either bound is non-finite is not painted — measured, 164 of 186 fills have at least one such bar, so this is the common case and not an edge
+- [x] A bicoloured fill keeps its two colours: the Kumo is green above and red below, which the reference collapses and this does not
+- [x] An alpha channel is respected rather than concatenated into an opaque colour, which the reference does on 46% of fills
+- [x] Gate check passes: `npm run build && npm test && npm run e2e`
 
 **Tests**: e2e
 **Gate**: full
+**Status**: DONE — **0 B in the package**, which is the point of the seam: `example/bandOverlay.ts`
+holds the primitive, the five-rule bound resolver and the colour composition, and reaches the canvas
+through T8's anchor and T9's channel. e2e **76/76**, up from 71.
+
+Read off the real bitmap by `cloud.kumo-is-shaded`: **13,459 bullish pixels and 8,425 bearish**,
+against **0 and 0** before the pick. The five lines are under it.
+
+**Two of the brief's numbers did not reproduce, and the measurement wins.**
+- The resolver is **247/247 over the whole registry**, exactly as briefed, and **14** bound
+  references name an `hlines` entry rather than a plot.
+- Per-bar colour is **86 of 186** as briefed, of which **76** actually change colour.
+- Interrupted fills measure **171 of 186** on this fixture, not 164 — same conclusion, common case.
+- The alpha defect is NOT "46% painted opaque black". Measured on the offered rows at their own
+  defaults, **0 of the 16 fills that carry `transp` have an `rgba` base**, so the reference's
+  concatenation never produces invalid CSS here. What it produces is the WRONG ALPHA:
+  `'#43A047' + (90).toString(16)` is `#43A0475a`, a valid hex8 carrying 35% where PineScript's
+  `transp: 90` means 10% — the Kumo comes out three and a half times too opaque and buries the
+  candles. The invalid-CSS path is latent, not live, and the test says so in its own control.
 
 ---
 
