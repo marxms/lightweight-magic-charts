@@ -223,7 +223,7 @@ export function valueLedgerFaults({ committed, derived, ledger, offered, encodin
 /** What the generator prints instead of writing, and what `--check` prints instead of "stale". */
 export function valueLedgerRefusal(faults, ledgerPath) {
   return [
-    `build-indicator-manifest: REFUSING. ${faults.length} indicator value change(s) are not declared:`,
+    `build-indicator-manifest: REFUSING. ${faults.length} change(s) to the committed digests are not declared:`,
     ...faults.map((fault) => `  ${fault.id} — ${fault.fault}: ${fault.detail}`),
     '',
     'A digest in example/indicators/fingerprints.json IS an indicator\'s arithmetic. Regenerating it as',

@@ -2,9 +2,9 @@
  "why": "NAMES AND SHAPES ARE NOT ENOUGH. A check that compares ids, plot keys and input shapes stays green when a vendor release changes what a number IS — the upgrade that matters and the one nobody would notice. These are digests of computed VALUES.",
  "declaredIn": "NOT EDITED BY HAND, AND NOT REGENERATED IN SILENCE EITHER. A digest that moved has to be DECLARED in example/indicators/value-changes.json — the id, the digest it moved from, the digest it moved to and the reason — and until it is, `scripts/build-indicator-manifest.mjs` REFUSES to write and `--check` REFUSES to pass. Deleting an entry is not a way round it: while the committed manifest still offers the id, an absent digest is a proof that vanished, not an indicator that appeared. Typing a number in here to agree with a vendor you patched yourself is the one move this file cannot catch, which is why the sentence you are reading is at the top of the file you would be editing.",
  "algorithm": {
-  "id": "raw-value-text/sha256/v1",
-  "how": "sha256 over `plotId:index:value` for every finite reading of every promised plot, at the entry's own defaults, over the fixture named in the manifest — the reading spelled exactly as `String(value)` spells it",
-  "why": "THE READING, VERBATIM. Every bit of every double reaches the digest, so nothing a vendor could change is rounded away before it is compared."
+  "id": "series-scaled-2^-36/sha256/v2",
+  "how": "sha256 over `plotId:index:reading` for every finite reading of every promised plot, at the entry's own defaults, over the fixture named in the manifest — each reading first divided by a step of 2^-36 of its own series' scale and rounded to the nearest whole number, with that scale digested beside the readings. The scale is the smallest power of two at or above the largest reading in the series, read from the exponent bits.",
+  "why": "NOT THE RAW DOUBLE, BECAUSE THAT DIGESTS THE PLATFORM TOO. ECMAScript leaves Math.exp, pow, log, log10, sin, cos, atan and acos implementation-approximated — only sqrt is exact by IEEE 754 — and the vendor calls those eight 66 times, so the same version over the same fixture produced different digests on linux/amd64/Node 22 and macOS/arm64/Node 25 and the check went red over a difference no chart could show. MEASURED: the four indicators that disagreed differed by at most 3.304e-16 relative, about 1.5 ULP. The quantum is 2^-36 of the SERIES scale (~1.46e-11) rather than a count of significant digits of each reading, because a reading near zero has no significant digits to round — trix loses its flat stretches to cancellation, and 1 ULP in moves it 1.68e-12 out. At 12 significant digits two of the 310 still move under 1 ULP; at 2^-36 of the series scale none of them move under 1, 2, 4, 8, 16 or 64. It stays sensitive at the other end, also measured: a uniform relative change of 1e-13 across every reading moves 262 of the 310 digests, 1e-12 moves 292, 1e-11 moves 309, and the 2.1e-2 inverted-weight wma this file exists to catch is nine orders above the quantum."
  },
  "vendor": {
   "name": "lightweight-charts-indicators",
@@ -17,1243 +17,1243 @@
  },
  "entries": {
   "sma": {
-   "values": "9ea8989f4d8dd28849c473efaab503f4f14aae5d21004761bf5f39b5e58761d3",
+   "values": "c098f0de935bd0a794c71d5c18ea02a325de445f7067f3a47a3a894d7c94f7c6",
    "confirmsWithinBars": 0
   },
   "adr": {
-   "values": "bf5f2f638e3166e1a090b596f475e15ab668315781f95431c9f241890dbe0836",
+   "values": "85d6cebde390a09dc58c337bc08c4c64862b0e1d4c0dd7320c24c90db28b3820",
    "confirmsWithinBars": 0
   },
   "alma": {
-   "values": "b32be9c1ab46ee4adf72d3308ca75943888415d07ff229d832f8eaaa6478f3cc",
+   "values": "7636c71ad784a5f76ab95c2b6efe36f149f9d708b00158f000d5612a3ea0ca10",
    "confirmsWithinBars": 0
   },
   "atr": {
-   "values": "7a512c9575038557c981b574c14f02d0037afcb4aa4deeb5a7d47d81f3b21140",
+   "values": "6b1fd646a99c2ddb32b51e7e0d20c666b9907d16efe3601c7c10a1e89c7a3ab6",
    "confirmsWithinBars": 0
   },
   "bb": {
-   "values": "f6bc8e7e0604d9818de9dc48380dc364fc247cc0015379e5b5b7a5e78dedd5f5",
+   "values": "0df19dcc5edfa523a335b4824b0e6630d87ffcfb6db7d36383919efb3225606b",
    "confirmsWithinBars": 0
   },
   "bop": {
-   "values": "a2533a239d742a544f5ea8849da38b1965528e3d07d8c3817e415b02da579804",
+   "values": "fdaf321333aa8cce28b0d0911bd589a1127cf2a7cfb9ae6ac8e9d3b196f51514",
    "confirmsWithinBars": 0
   },
   "cci": {
-   "values": "5522d5bb023c97433faf80f99223cbaf2e592f13f6de51ae8f23955dad8f7d65",
+   "values": "aee4d3212505056ba5642cfdb5f6554d96feaebb429cc53da73cc79105808452",
    "confirmsWithinBars": 0
   },
   "dema": {
-   "values": "a0c9c1caeb80ff20fa624dd64cdee73ac1309295dcba9fad38644a48fabcb3ea",
+   "values": "e803e3e0de6ae4fc3f8094fb703814dbc58cdd64c9985135507b9be080c55195",
    "confirmsWithinBars": 0
   },
   "ema": {
-   "values": "b0dbbb35142d88de10a6c4da31c278c397ea02ead651f01e5ef2da3695dd8130",
+   "values": "5bec79ff7b8ecba2e8fece53e05320e414461c8a2f068e8b247775f185372672",
    "confirmsWithinBars": 0
   },
   "hma": {
-   "values": "9ff780fc179a8ebd24495c525d356d46c601f4a5315d3cdc35f274b56ba0a81d",
+   "values": "99559484bba2b20a604a329b70270672211c77d722a53bda76af916562133b00",
    "confirmsWithinBars": 0
   },
   "ichimoku": {
-   "values": "17df7d3e80d6ee2c293460a1478d52c7831c023277d7ef83495bc1e25f8cf418",
+   "values": "736d4283e9f49dde3867f516033f46bb2ec3fbe404ef1fdde17bc82bc7189f9a",
    "confirmsWithinBars": 24
   },
   "keltner": {
-   "values": "dec837d7289e729c2fd6d6e380a03e9465771b0234f67d6ee5724b6f07f95e31",
+   "values": "0f60bcfbf1d0520298915ed2eb857413a9a87febd699644ac6bfa80341c84df6",
    "confirmsWithinBars": 0
   },
   "lsma": {
-   "values": "417866bc78ca32c45e30cbb566d9dc0179a04f0936c0048300dd7ff3c22ee5c1",
+   "values": "13b8720c42c2eea8df2095dfc7b0e199cb5d38675a46e938dcd0c45d433ab9d8",
    "confirmsWithinBars": 0
   },
   "macd": {
-   "values": "d9b85821e1230c7e26984504eb3aba85ed6e5d766f8d9b96a687b1a1f0701383",
+   "values": "f250584706c433014e2d6e1b94d7ae364264cd141f8b274fb8ef5702634f5cff",
    "confirmsWithinBars": 0
   },
   "mass-index": {
-   "values": "63a65883283fcfa828592d4470bb9c1c8339524051235874708a95fd74424809",
+   "values": "f26b3c5a7e63db1f4ca2360b8d02f91b0928dd7a4950a031af6d9a0821040def",
    "confirmsWithinBars": 0
   },
   "mc-ginley-dynamic": {
-   "values": "99df9892fab0304088d047230bfc83cfbc87dbafb3d24ac9150fa038c7bf51d5",
+   "values": "31524653f879e4fc05491f3a6b018187101d208ddf86d524d948349186af8eb3",
    "confirmsWithinBars": 0
   },
   "momentum": {
-   "values": "d772424a9f857ac6471d434d31e6a442806819c354852bdd08a908fe516faca6",
+   "values": "34b11ad2713d4c721165abd4956c58f933e763308486d0a9ce17ff98ee73572c",
    "confirmsWithinBars": 0
   },
   "obv": {
-   "values": "f78ef056fa212f6e1ab7ac7bfe6b370bb34130ceaa2780afdf786ce3111379dc",
+   "values": "84d5778536b1c124ec8249555b07869b90a7893d764aefa5fd57fc89405dc3ad",
    "confirmsWithinBars": 0
   },
   "rma": {
-   "values": "c11400457aaa64a3a48732137d6c907e2557d912df71833ebbb790b42b663db1",
+   "values": "45d6c17945816151e33510338bc7b43278e906e2ba160f013764accae49c73c1",
    "confirmsWithinBars": 0
   },
   "roc": {
-   "values": "bc27c16d2178a6f9da1f0f54329ecbfc8da89ce465339eecd229834cec4ea77c",
+   "values": "997df183aea7388af52ead7c91a0045101ac77e637660ba32918e0f20e909a53",
    "confirmsWithinBars": 0
   },
   "rsi": {
-   "values": "fc705d350883557a53e4c092a34547eaf6b9ab9621ae11a32688a9fdef2ce29d",
+   "values": "a19741752af9addd0727ba290a0ea01a41c25eef912b0335f805dcf2bd561c75",
    "confirmsWithinBars": 0
   },
   "stoch": {
-   "values": "05bdc1ee6bc6e4b216dbb6f9c4e407c7d29e2e04cfcf7406af555dfb72df7049",
+   "values": "703daab93c9cfc7d3529c64dd8c516baa58d63f9bc5d8948e33b15484a6d57e3",
    "confirmsWithinBars": 0
   },
   "tema": {
-   "values": "2135ab6aca28edfd8e29e40e81e6c4e615c671e0f27b1077b4514deda6bda64a",
+   "values": "042542da86ff23bfd4b9041a17421044ce5819803e7d6b81af215f883dfd3ab2",
    "confirmsWithinBars": 0
   },
   "vwma": {
-   "values": "2177f7fe7e63cec0d0e9b6e89f94ad9bc12aa41131d335e160a69324093bb41e",
+   "values": "7ca855f45ee046cd7e26737270cfc23f34012c0e1a54219d83780216e6465cf6",
    "confirmsWithinBars": 0
   },
   "wma": {
-   "values": "5f2aee29a86438b2b5a811cd091cba08fe6269f00045b1dc5e9afd5b746dc465",
+   "values": "164192aca8f9463491a64e70482f0cda574c1cfb7309e24a256bf4c13f20a208",
    "confirmsWithinBars": 0
   },
   "donchian": {
-   "values": "10eaf183d5ddb60529ea7e309089d384581152f4238946510f5ea4ed4fc2636b",
+   "values": "41d13f931b8168660bc5393ebd89f4017121c0cc5846fe09121e62c15715d829",
    "confirmsWithinBars": 0
   },
   "parabolic-sar": {
-   "values": "db27fa0b29350d8a3e944541507a1ea6bf044dbc13ef6404c0d783faf34f830b",
+   "values": "c48869a4c7c81206d0d0b4c506c54e512dbd9ed48301cd6f9735eea5fa31aa28",
    "confirmsWithinBars": 0
   },
   "supertrend": {
-   "values": "cf0d7bbc77fa35b8829f3eb621f166c50cbbacaedeb4607003c78310dd8168b4",
+   "values": "76bfb3119a03b73cfac9cdb098cb095602060c497c7dc0df0dd6a054e6b70367",
    "confirmsWithinBars": 0
   },
   "adx": {
-   "values": "e962f91c9d28ac16c712fe0fdaa798282aafe35215357cf78fe8e25ff083adcc",
+   "values": "3d6bd894a87012216934f3ebf972639a605a7495ecf7945444e7538eb8f43437",
    "confirmsWithinBars": 0
   },
   "awesome-oscillator": {
-   "values": "8dc7f9e36f6032814a444f4ccbc5519dcfc6aa8d026b7fec18a1e42b52d59191",
+   "values": "44335699b31e0809d0c07987b3b5646505cba54ad565cac1ae0d971386a6ac19",
    "confirmsWithinBars": 0
   },
   "bbtrend": {
-   "values": "51c0f5aa9046c2e717d8e37d99689eb905d3aa7f338353626e9b867421bb7868",
+   "values": "b497459695c41d17acfdff0ef1ecb9d6078674269a3c70a34fd2fcffe256e213",
    "confirmsWithinBars": 0
   },
   "bull-bear-power": {
-   "values": "3014bd74af5249baf16e6ba16f61c45edeeb7f2b03d7757ebe2c335e24a3dec3",
+   "values": "5ab9a2f9466241d1b384dae8220b635074215ed7cb0f3ae832bbbf37a1569a55",
    "confirmsWithinBars": 0
   },
   "chande-mo": {
-   "values": "69ee9750ad944b56b489bd66605a37332019f98fda7ba1053f3383b840a43203",
+   "values": "031a23a096ba06b12e84802696bf022b2bd443bd148ea81bd29d4c261d7ad6bc",
    "confirmsWithinBars": 0
   },
   "dpo": {
-   "values": "e268130961b856436eb80ad1875da95d03d4a159cc4ef641e237cd559a746154",
+   "values": "83aa727c0b4511268ba392953f01dca86f023ef77bbe7c6197a6a2fa1bf9e62b",
    "confirmsWithinBars": 0
   },
   "elder-force": {
-   "values": "6f80027b42afe954f9b6a8fdb646d791821b3dbbedf2a85d602ce47919d90e71",
+   "values": "e1dd38cd0bebf342506431b667eee815c852a90a43c2930eb74d8f4aa8e766ce",
    "confirmsWithinBars": 0
   },
   "hist-volatility": {
-   "values": "969e4f8ab75e642138d6b68618462385ea2986f327b50e9484f0135dc16d56e3",
+   "values": "6b846ffcfe17523fdd739fb5e748af4372e4875669e78c4eddddab1a20bb9d26",
    "confirmsWithinBars": 0
   },
   "ma-cross": {
-   "values": "6468133bd5ebab9b6a021547a39ff035c5a0a13eca6e1a081ed862118faa84ed",
+   "values": "1ca64ca7a8049127b2a4648d33a41ff7e465a50f26d1a2b2d90a359a8f6f7dbe",
    "confirmsWithinBars": 0
   },
   "ma-ribbon": {
-   "values": "faa0acd9df32c20c05da1368001c73f793782a2f1c0a2f0abc75509980bd1508",
+   "values": "0b5d643212f0b58b7c39ecd1b2a042190499d0fa662c380a0f4612b62ed254da",
    "confirmsWithinBars": 0
   },
   "median": {
-   "values": "0c47ca276923e6be6d06361614b9bfb65667f150de7e3f0a51ee5ea706458c83",
+   "values": "3f568386652d0eaeb0bd9fca9a5cbc2fba16be6015e38dce99bc02cc88149475",
    "confirmsWithinBars": 0
   },
   "mfi": {
-   "values": "82ad48c36fadb0f033cf24d4f0c9732b262e36ce6e90225b32e3afcd627b2973",
+   "values": "a7b7c6d2a00995976f4b89d35f6e33d8bdedc722ac495772d5b08336f196572e",
    "confirmsWithinBars": 0
   },
   "pvt": {
-   "values": "34c4d739a09648ccdd2cb3f74a136dd05f9a6f5c4b324248fedd7f5d8ab5315f",
+   "values": "8b3c93b9829986b0767b67cc6a644c7304564edcbc74bb9f357efd91302f7b70",
    "confirmsWithinBars": 0
   },
   "rvi": {
-   "values": "ee96aad0e4306d7f666f09edc4ffd3ffa36d079bae1e465c3bf9551f2999ea00",
+   "values": "f27f3a29df1ca5d49f9bc7c3eb933dbb2a3b4aead053041c1c91c0f3f5774549",
    "confirmsWithinBars": 0
   },
   "smi-ergodic": {
-   "values": "0be8020b559db905f4f0b37fda1b8080f2c4f2b54d5499e49cf3db84982d4171",
+   "values": "97d6c9530a293e86f8f5d30d86be2f89ec7092a3ad2fb7acea58dacf61b12a8d",
    "confirmsWithinBars": 0
   },
   "smi-ergodic-osc": {
-   "values": "8581b1ad39843a496d1a5fb1180f5b1f5b81a615e6103e560fc56bf4121b15e6",
+   "values": "4c50e95b03ff967b756fd34bebf44a5b57880f0feff182b00e2d564aecfe5f89",
    "confirmsWithinBars": 0
   },
   "smma": {
-   "values": "7bf4e8d0486990ac483b0ef26e1176d20e2bf98954dc52bbecfce1eafdf0e262",
+   "values": "45d6c17945816151e33510338bc7b43278e906e2ba160f013764accae49c73c1",
    "confirmsWithinBars": 0
   },
   "stdev": {
-   "values": "cc96aa8371d3384ca137b2b3d9c2a4fac90bc95524863367e967294c8cce9859",
+   "values": "ff4ce334712feccfe381ce08d07f71a9c2d3a5c7348041b8ea36acaa48f114b3",
    "confirmsWithinBars": 0
   },
   "stoch-rsi": {
-   "values": "e86513ad1885eeeba4fff8a362f556b62aa6c19b13b2bdf68a6d2fcc148dffb9",
+   "values": "c0422ce810473415bf41ea77cdf9c6be711f06b375426beb0e6ca00b49bf070a",
    "confirmsWithinBars": 0
   },
   "trend-strength": {
-   "values": "6b856e89ea06761e3c75b2a090a93b55d1c3324dba01bd55a426cc1bb549cc1b",
+   "values": "70f13920aeba8ae9ea67a8f4c418d22b35739e489fbcda1552540cb6244a2ee3",
    "confirmsWithinBars": 0
   },
   "tsi": {
-   "values": "81260da146f8dfbb1393a653fe89bcda1250d8767a731a1a4ac5e38082d0d1ed",
+   "values": "ccf6f7a015c71c58eec28eca4e94a5a2bd30a45a657ca32bfaa50a72f4186546",
    "confirmsWithinBars": 0
   },
   "volume-osc": {
-   "values": "9f67bc390c54d3c605f51555784c7c7d60e36bca125a6904bd6808b753e90d71",
+   "values": "8a37bc55aea1126c3464951e024fd1124dc8517aae455101dbfcc3fb06ac20d4",
    "confirmsWithinBars": 0
   },
   "vortex": {
-   "values": "808a3bf2215f711b3dbb061be5072e6bd2264f3caa3f066c92ec37ab16ee1727",
+   "values": "b378d33837ae03b59d9dee467abe71fb8f1ddc7ee9485d04cf72cce6edd6b995",
    "confirmsWithinBars": 0
   },
   "williams-alligator": {
-   "values": "10c50c4ce814a8c4f847357ef8fc48fa812d0b3d3b354b001d55bc37a0687abb",
+   "values": "4ef82712afe7a21920e62af6fafba18978d3301541fdde21ae93c2fde6615d6f",
    "confirmsWithinBars": 0
   },
   "williams-r": {
-   "values": "5c260cf48690a50c9074e58e6335de9d3bdcfada46f590590bc4facdcdaac736",
+   "values": "217910d94fab1f58f6bcf8bed04036368d133c9c293f5b36261972dd80cb6ed3",
    "confirmsWithinBars": 0
   },
   "woodies-cci": {
-   "values": "fb4a70e6bf0b102b8c7bbbb6099ed11fba03e9da184ea04855bd6026ab0c7ac9",
+   "values": "b950563c96b23c8a255507be3e19b1bbd8bc75b8336965c22883e8a83761c912",
    "confirmsWithinBars": 0
   },
   "bb-percent-b": {
-   "values": "5619fb9f83f405a6ed92aa663a13a753b53c841d309b4535e09f5fee518f8062",
+   "values": "997f889a4f5b721ff40afcf54876df6952cca613af2dabb8366d4e4a774f411d",
    "confirmsWithinBars": 0
   },
   "bb-bandwidth": {
-   "values": "b6609f7b98e297ed6a3e7b8e55f449e09d9e4fbacbdf646bded1bfe888caf659",
+   "values": "87815af503502e39c02d2f62b6d33d0e3742c1ad21c698d19c88f17e8a4ecdc2",
    "confirmsWithinBars": 0
   },
   "chaikin-mf": {
-   "values": "fda9fdb3a1ee1388cc95e0b9d7d9a6423e3514a79181b2e6175f21c3a75e12ee",
+   "values": "ce026c3d8aa31854d5a4f371b086bd0a6bfcc4b0cc7cfe63c35730b829095b1a",
    "confirmsWithinBars": 0
   },
   "envelope": {
-   "values": "dd67e2e39fb52cf20b2660deda2dd74fd16d2a36a970675d9590a1ae5c27c0d4",
+   "values": "558ca4c7cfeeb3383ffd6b51d6ffddf7be8f407249275aee40ad4ae78de9b703",
    "confirmsWithinBars": 0
   },
   "price-oscillator": {
-   "values": "849b29c39788d06b4024c9ff97dd92d31cfcc3a15900d9c79611ee6082756c6b",
+   "values": "5eaa7420875de65e52e41327a0856d0e8f786f4fd1e50e03cef99f46bb9f962c",
    "confirmsWithinBars": 0
   },
   "aroon": {
-   "values": "79f0ebcc6b7dc0339e1e5b6da9cd10ea0bfc87cb345d18bfcaa63b7c6e2613b8",
+   "values": "2a9efa03209025077aef1a3147604c0409e12094227a33c1d48fe09f18b289b2",
    "confirmsWithinBars": 0
   },
   "coppock-curve": {
-   "values": "66be517dd4ebf5851e02d49a7fb72824463d9149f11da5533ed14589eae5df09",
+   "values": "fe0849fe3f1c6f25a7dc530525ff24b53b7f60b24b4f339e89eb403536bff3cf",
    "confirmsWithinBars": 0
   },
   "choppiness": {
-   "values": "1262444c6bd5a8db365ca892bda7bcf7449f9fc370de2421da28f3c6daf48eae",
+   "values": "e88b4e087a4e542ff4b105822504322b45708bdb1c2e73aa0276362bcd95db38",
    "confirmsWithinBars": 0
   },
   "eom": {
-   "values": "c2b534575795033a94ce31e6f3b9122a98ecb0edac6ef584b9a31990667eeea2",
+   "values": "e01c36b6aa82fd182ad81eabc56b4accf9a146d783fa2f6c28365e7f30518858",
    "confirmsWithinBars": 0
   },
   "chaikin-osc": {
-   "values": "a573f1537c81ba98a994237df803fd8a70557ac48ffee07c8c0a242c7fcab1b2",
+   "values": "8e0259b734748df2d75a40d1d7c790bb6fbbeba8d33dd7a2ef73cae2e794672c",
    "confirmsWithinBars": 0
   },
   "fisher-transform": {
-   "values": "50205ab28b081257fc7122b7cc415edd416b7220473f9a09f3d1b2295f7063de",
+   "values": "b5505693d47c1c99debfd0e1c7c6a66303e3c15eeaf8181ca82e9b50bf80bd46",
    "confirmsWithinBars": 0
   },
   "trix": {
-   "values": "ff40e52398063f6ec17be2c59b7767872bab34017109b18be8c6cd57e0666926",
+   "values": "174a479d6640b77262f2dd15adb62cbb0e53bc413679863341514813171ca27b",
    "confirmsWithinBars": 0
   },
   "dmi": {
-   "values": "4948d888ddf9533da147738fe409a3f68972dec1b951143aa07103428e2cbed4",
+   "values": "01946f60509791e8c255cdfb5f4f409feec09c4cebf904eb3bd95708a3a33831",
    "confirmsWithinBars": 0
   },
   "klinger": {
-   "values": "dc8ea3e52e329491e56800e833124e650c5fda1ea65f00536f5af6b6b90685ec",
+   "values": "30f5accb5110a7019a03be94eac25db3f2be38ef655a40c08ac28c712e7118cd",
    "confirmsWithinBars": 0
   },
   "ultimate-osc": {
-   "values": "395b4fa7ba967220efdc879dda367bed3cdb754ce4dfb03f205993a715b81b56",
+   "values": "67865839c745c39aef1cffe26c6d3a3ee0df539d329be8f99aea455263da99b9",
    "confirmsWithinBars": 0
   },
   "chande-kroll-stop": {
-   "values": "31db2c1b05c30f52580ad0bdd973652ac82b5bd65295c068b59bc221ba6803f1",
+   "values": "90ee07a3b4aae95aca4e1391f25df7b5136473524eef5eec6fe40c24ac90b3a8",
    "confirmsWithinBars": 0
   },
   "relative-volume-at-time": {
-   "values": "0f3f3455fc3cb3ec7a61187a209beb896f819f0d6e878516c2b7236e4b7eb968",
+   "values": "107188c0e83dc3b9e209191fbcc1faaf23a9c5c5b4a4c67cdbb8ab963d233d0e",
    "confirmsWithinBars": 0
   },
   "rci-ribbon": {
-   "values": "9b6bab7e79551269ba920523f4a6ccdc18b126fb71e46b6f19a264643be38484",
+   "values": "f44d3c531c874be6fd371f25fe2d78a9f4a75ae3278e910cececcd981bcd13f1",
    "confirmsWithinBars": 0
   },
   "net-volume": {
-   "values": "1cc70235113113e16edc1f2ed300ec61d5e105cd764e2823287d9f101731cf22",
+   "values": "f6c81719840b834da4c0d7dcea2dd87f4bb73261c49f5da0b6fc9c8ea16b242c",
    "confirmsWithinBars": 0
   },
   "kst": {
-   "values": "d5ef8242dea9d777bcf807ab76024c6d8f5e15ce102d820bd0bb2c3b31104684",
+   "values": "70e4bd3b19fbc820655b5db5133debe7db058b086b05a171a497a0bff0f736be",
    "confirmsWithinBars": 0
   },
   "connors-rsi": {
-   "values": "86bbf16ff9b44053bf5829291609ca655fff29c0d0ed9b18f03ad257e84ba050",
+   "values": "dcb3f5e0cc5fa7baf0f9c890d635fa31c68a05dfaf42bda66973f53c99508008",
    "confirmsWithinBars": 0
   },
   "chop-zone": {
-   "values": "a7964973c07497cf2235af0bf9c7518c69adbf1221513becdbdf919f0f7bd86e",
+   "values": "d8be2d0b864835741fef78d92df2c39cf2d6c95d8e27e750513a29b0f5209915",
    "confirmsWithinBars": 0
   },
   "rci": {
-   "values": "81c7e5c30fffcaccc415860efcd005d4b4db0109b8f09677fbdf258af86da63e",
+   "values": "fda75eb4638445dbebde51eb8419e20509d150cb26edf931225fffb651878bb2",
    "confirmsWithinBars": 0
   },
   "rvol": {
-   "values": "58afac454417d1051f3907bbabd531ea3a747a7cf33599c3cec6a792e172e70c",
+   "values": "e128976521c7a2446d2a483c771a727a9cfd551931a8c12d25fbb94d5db20b93",
    "confirmsWithinBars": 0
   },
   "twap": {
-   "values": "06351df1ea963f398f7a15ccd6068ed68bfc47785a886ab772cdab504c4e23ad",
+   "values": "f76e8cea807b23aabbb50cc5a620afa046fe028c167fe6aed811521f4d52d400",
    "confirmsWithinBars": 0
   },
   "zlsma": {
-   "values": "f8e517bfdf9633ff5e19dbe59fd2062df8ac17f4a4d93d252698ae85bc4e6ae6",
+   "values": "d3c5a32588d6f2e8d8975bc04431422ade48f9ed90961c41517ab2fe600b1f82",
    "confirmsWithinBars": 0
   },
   "forecast-oscillator": {
-   "values": "764f5070d814a927b16fb3b10cca4a55687427baaf04fc38fd1d8e18bc4a63c1",
+   "values": "e6008dc604077aa02deb67e7c070c227968583800dbec2a338e4d7e72585ad20",
    "confirmsWithinBars": 0
   },
   "cct-bbo": {
-   "values": "0bb91f395151e4746b1706bf64832f04e0e8d66b4e5b8b800f4bf26f63b1b574",
+   "values": "d1ea7a6603d4cb28fbfb6685e2cb35db9598df8b9aa8372ccbea18255c95ad22",
    "confirmsWithinBars": 0
   },
   "macd-4c": {
-   "values": "50b30b2d0b4f5dcd1a5a140320c723f0e881de47cd001153c760089021a3baae",
+   "values": "9a794e114a0665fc534f3b8035fcbd53f80989f5125f2f1391bb6c0dd79675ae",
    "confirmsWithinBars": 0
   },
   "colored-volume": {
-   "values": "52e7509db7fa4492f459e8352eab453ffa14bf6359c4a1d625fac33edd9243b5",
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
    "confirmsWithinBars": 0
   },
   "kdj": {
-   "values": "1b0726ba5fb51ecdcf84b8803cd1e4e494615f5e9876f69c53260dcc73cca90b",
+   "values": "726f9ea67e20735410baa18a5345fcbb7b46e09c136911a93daf6af42b6cf720",
    "confirmsWithinBars": 0
   },
   "wavetrend": {
-   "values": "7fa235b9adbd468dbcedd6a26a398c3a2133d2f8d5c6d33fd75cd65b338c5611",
+   "values": "74dfa53e48463b65e1ac8512f9243f17d53c3c8833ae5b978c3d96dcb0a9ea08",
    "confirmsWithinBars": 0
   },
   "squeeze-momentum": {
-   "values": "89d22dea748dfb23933719137a82b71d6d7d14718dc188ddb98f96c5831bb77d",
+   "values": "1fd974fce74a70ea30b493bf2c8ff29250e79ae8da43085b891c722bd0648271",
    "confirmsWithinBars": 0
   },
   "coral-trend": {
-   "values": "932e05171e4588d94ba75e8cbd2f173c154f44acde2bb337d4c5692887cd2510",
+   "values": "1f7cae4308f7169fc022b002f1fa1f3c9847a8a15b4a69210163b592ad6ccc92",
    "confirmsWithinBars": 0
   },
   "chandelier-exit": {
-   "values": "e17763caed15058caef55edd60a4a7dc2000e02255995261d5b5fc657f38eb7d",
+   "values": "5c38d62c0571be70e5049c5e976807685cec8e9cf1bc476cc1011d74ef694865",
    "confirmsWithinBars": 0
   },
   "impulse-macd": {
-   "values": "4fac44987a086d252da2d70bec74a49e8fe8324ddd6319d5a6ec50e0f4855994",
+   "values": "2a94e3ed9a1c97286fd07b4e6487ac5345014ad205f1bb103bfa1b37b71728cc",
    "confirmsWithinBars": 0
   },
   "schaff-trend-cycle": {
-   "values": "22119c05c0924c375019932f433d9f9587d54eda03686b0f88f1e4e8738ace6c",
+   "values": "496a1d91d71347271c7fd179a7665c6a93c0b01ee7adc5b85f1c0dfe49f35814",
    "confirmsWithinBars": 0
   },
   "donchian-trend-ribbon": {
-   "values": "9bc30828770395609309258a9eca16337aae1a894aa0012a0d613e091d80e63a",
+   "values": "41640053e0fe4f47067e5e3efd21595b79686dfa55cb715b7021acd8c439ae6b",
    "confirmsWithinBars": 0
   },
   "obv-macd": {
-   "values": "1720284c2ac87e9c0bd221d50ad7d832e56787c054ef13d9b3b0c2a0d642893c",
+   "values": "8bd8e80e046f579f3f78e82c3103d52602204af2ed174951b10aa6075d7f6784",
    "confirmsWithinBars": 0
   },
   "alpha-trend": {
-   "values": "437662dd564e9d30702c31a06c02efe8dfa8eb220f0c73fb1277e36471e1828c",
+   "values": "8349e05cb475183a3ffe58a8a13ba16ac0758e4c9f8e18f566d1812a35a6fa45",
    "confirmsWithinBars": 0
   },
   "half-trend": {
-   "values": "8718e2485234e592b360ee5df1080f6660bdd23230b9001f95032a59be303665",
+   "values": "7bb1a55e95402992faac075dcce82646366f2bb409af25d23a1edf13daffe37b",
    "confirmsWithinBars": 0
   },
   "qqe-mod": {
-   "values": "0605815cd728ea221b33b5fe34a89a89c27dcb3a6e58fa72449f80e97624bae9",
+   "values": "d586da06d0a00dd80cf8f5b96a2819a1bd32065ebabc8f7887b5419e8457a792",
    "confirmsWithinBars": 0
   },
   "follow-line": {
-   "values": "232c6331334486081db77a91122aa31894236d3471026db984869bdccb65ce9f",
+   "values": "f1e161ba80cf4fed95faf6268abb91cbde496b5554313c1e3c68a0ceb67b1b7f",
    "confirmsWithinBars": 0
   },
   "ut-bot": {
-   "values": "f73285c6dee1eb1f4c312ec8cec63f337f6ea14ecb53cb25285527d8c0089274",
+   "values": "6c8823ce32e52f44a59791f9fc4b79798feb9d6125559c55ca80c93740d9de87",
    "confirmsWithinBars": 0
   },
   "hull-suite": {
-   "values": "6c549c537bd8591eef329b95c8377307b095161c7158b9086ce643ca8e7909af",
+   "values": "dc74fdb9a0cc6bb565be62b6612aa22c3754678810385978d18f3f547189f562",
    "confirmsWithinBars": 0
   },
   "optimized-trend-tracker": {
-   "values": "b6a5dc3de11942a4cbc5a9a354a4a005f57293f9bde9b1500247c588ed0ecb81",
+   "values": "c27671f5e74d8ab9575096684fb368a0fe5f8f5a08600305d0626dc651a62fd4",
    "confirmsWithinBars": 0
   },
   "trend-magic": {
-   "values": "085101203e531d64d8683c272fb2690bd572f6ea1f6b426add9730caa0d24a39",
+   "values": "98bc0b1f1aacbecc1f061f454df3c091c0a9fa8d3c87d7b61da1c33e262f1715",
    "confirmsWithinBars": 0
   },
   "ssl-channel": {
-   "values": "bd8d3694b5b4f53d0fa74e86d9568c6fe1d7e22ab711e44e41704845c8b8bacd",
+   "values": "b88848d63d0dcfc2935e42048487a32b0bbe8ec1edd75e394ea10ee931cf87c4",
    "confirmsWithinBars": 0
   },
   "mavilimw": {
-   "values": "a0dc5f50bb8785158c1e7fb0d84093718aa48769b1f1547bacdfbef2ec6d38a5",
+   "values": "838f64741af6dd5447f2f54c14e3bc2524bd2d765b3100fa3205dd27611e9a01",
    "confirmsWithinBars": 0
   },
   "cdc-action-zone": {
-   "values": "00ca2143031f968ce46f4a1d53ecd1a2b9506d2cd837075778f1b8b34dbf0cc7",
+   "values": "213080a78c5dbd52ba3a798d36c93b34e363e683baffd24761ff062115bade62",
    "confirmsWithinBars": 0
   },
   "waddah-attar-explosion": {
-   "values": "b7e04ba271445b275eaa18bbdc96cb372ca8f8c1a3adac71b839cee86bc28925",
+   "values": "3eafbcdf5e7e967802609091e4157116616a4c664907aaeeff9d6901d5165ce4",
    "confirmsWithinBars": 0
   },
   "ripster-ema-clouds": {
-   "values": "9998ee076c130f0c3ac21dfbd3fce66c044ea54d6c0117c085c7e7fa4efe3dab",
+   "values": "17ed0e20b0c64314817dddcabff3642190fd443ac14458eee7e6cca8b3bcc58e",
    "confirmsWithinBars": 0
   },
   "premier-rsi": {
-   "values": "39095b6dfc734d270c47910c576fb666c1f060a44cb86b72b6235938e8d020c3",
+   "values": "713bffa09a702a93579d99d5981da0b12c776013e370db07c106d40082a757b2",
    "confirmsWithinBars": 0
   },
   "laguerre-rsi": {
-   "values": "d4084880c8e1c453ef524350f9e1dfd3162f263d92f3d41671954c9f79f875b7",
+   "values": "16bb63aa32a598fdc13cf0740b37ea300283963c1ec7ec22099f974d806a8b4d",
    "confirmsWithinBars": 0
   },
   "zero-lag-macd": {
-   "values": "533e35166d54a878d4fddcfe1e8ccaf22851ec85454d266a33fc72799126f0f4",
+   "values": "e5b3b0f92561ece847cd5115ad0326ad98361b6b1e460fe6de401d48a77683ee",
    "confirmsWithinBars": 0
   },
   "awesome-oscillator-v2": {
-   "values": "217b421c5a12b2f37d029747bf201676876ecd97153ff5c8bd073acfe64d2885",
+   "values": "bc486f1eef3ea6f3e66413d740ea8f076d743245c225496428978f2313cfcf9b",
    "confirmsWithinBars": 0
   },
   "cm-ema-trend-bars": {
-   "values": "bddfcb2cb3330bed81773894000726794ae7835b29122b3f92429ff83f0262d6",
+   "values": "c0413d767e2881e8928dc9869c75a99f311f0cbb7734c3623a342ffcc0987e8b",
    "confirmsWithinBars": 0
   },
   "bb-fibonacci-ratios": {
-   "values": "cb0bfbfe99d736505fe44d0e157207b524affc091b7b207fb5edc19f113e18b6",
+   "values": "035fb3faa236c4954ac5f112894bc47474d6118b9f047d91e84fdcbe45ed4e4d",
    "confirmsWithinBars": 0
   },
   "average-sentiment-oscillator": {
-   "values": "4a677f8f42ee0e272a38647c55abd8d04cb244a9b32cd011c727eea57e817017",
+   "values": "87ef03cb2bf7ac39af60dbce7b4cf0efbdd5d7b959923782f9e6882fc9bc787d",
    "confirmsWithinBars": 0
   },
   "atr-trailing-stops": {
-   "values": "7d89a613a2891be9880e863113f30ab5e37813db99fac7f0cfc6b23685e024c6",
+   "values": "d41155469a583014d33d858b21bddf38131b9c6c8edbd92270c17b629245aee7",
    "confirmsWithinBars": 0
   },
   "accurate-swing-trading": {
-   "values": "084eee3a805aefa119c3b21bd3b5b0d935afd87681cb0f93b350b4b39f476991",
+   "values": "dd15c46e2e2c07f2a1eba238b0f2c9a3e962b2d4409ba70260e4cef5f739de9f",
    "confirmsWithinBars": 0
   },
   "bull-bear-power-trend": {
-   "values": "adeca47b0bcee3fa136dc729349cc055b2098d1bc720271a223a3ad07869760a",
+   "values": "b554ad79ddf250d70b3cf9becd045622469a32a93eb410d5e49f607b77d84fd3",
    "confirmsWithinBars": 0
   },
   "bb-breakout-oscillator": {
-   "values": "30e271255dd30298fe48b5c4e65f236a901680d0ab39ff8117a9ff4e3afdbc15",
+   "values": "15466e2cc00578ca81d14a1a83455e0bc6df019b8bfdedcc46bef5be568e571d",
    "confirmsWithinBars": 0
   },
   "chandelier-stop": {
-   "values": "7c8fa9bdc9f38d334f39b6bbfa1642f34501e9ac26fda76ee931c521eaf77685",
+   "values": "9cbb409885425dabb234a852668e7c190815860f7e3fe539208ab797c225517c",
    "confirmsWithinBars": 0
   },
   "ehlers-instantaneous-trend": {
-   "values": "d303ffdce0988b69e9763b8f36553d9096cb2c8744893ad753844efd57d72cac",
+   "values": "597e67c831d0bc997fcb4010b33e28b78224b52c13ec3df460cb466151744c9a",
    "confirmsWithinBars": 0
   },
   "price-momentum-oscillator": {
-   "values": "7fa6ec56e40da421a552f1b31e471586dc4f69e899e0f90a36aa1d83e67c97ff",
+   "values": "c719060676d4f599b6328c8f8617138d082b3594a8396bfb8fbe62358fb2e7e3",
    "confirmsWithinBars": 0
   },
   "fibonacci-bollinger-bands": {
-   "values": "c02be85671ac00642a9eee8e2d7e4870d482c75ba156f0712ea1702eb2156cb8",
+   "values": "09e016f035070d3df9aa1e92a36f60cc878e8c45b7cc3992524fa1eb5e8b514f",
    "confirmsWithinBars": 0
   },
   "trend-trigger-factor": {
-   "values": "499064d50627553c8b0ea4925a73f32756bf3536adddda48dc838bc8c4f578d4",
+   "values": "39c369a517ee2af318f7e7390ab6b755c6a809867324177802f18b02e0e2e116",
    "confirmsWithinBars": 0
   },
   "elliott-wave-oscillator": {
-   "values": "efe7e5e9ee3a553f2925fe2c0f9b3c7b6de6f7bfb22d2eac638b96111b3f0df8",
+   "values": "bfa213f49854c8b9c1c57f89bf16eae91f0e076476c382c440a62af3286d3c73",
    "confirmsWithinBars": 0
   },
   "kaufman-adaptive-ma": {
-   "values": "3d3c39d2fc13c20e6158aeed85918281dd628ba9464e633ac87956f194b2094c",
+   "values": "6a4015be288d276185501a7cb9b52fe4c1d53a91b8e135f8d8c266dd501ad5e4",
    "confirmsWithinBars": 0
   },
   "williams-vix-fix": {
-   "values": "6bb12bb4ab6fae19b338c958e8659fa34f4bd6a71fe0b6c8fcc2ee325351d9d6",
+   "values": "aa638ffecc5faaaa97bea900b26595877dca9c50a1f94d8e1b4b30de4e9b7838",
    "confirmsWithinBars": 0
   },
   "ehlers-mesa-ma": {
-   "values": "70f47aa8670bf8d003e7de975273dc948874a73432008e85df6fad6cb008ec20",
+   "values": "2e073e8ed3d8a779aaebfcec88b2f112f182ad258b2a0ca9148e53da6b13be50",
    "confirmsWithinBars": 0
   },
   "gann-high-low": {
-   "values": "dc03943aa88a60da56436c8b1a72f77bb9707807ccd4c51f12975f8392ea4cff",
+   "values": "c0a83e8defa79b87e2c986a2fee0001ef589cb33d653aac9c26c5777b5c110c6",
    "confirmsWithinBars": 0
   },
   "cm-sling-shot": {
-   "values": "ac26f4b5772c2130ef4932e865796810571d0a6bcf3ff3eb5e432dc3f5d00e77",
+   "values": "26551c46f973c181f8d871a2a665d6a0115d927a0de838d5c0426c9311d80c43",
    "confirmsWithinBars": 0
   },
   "range-identifier": {
-   "values": "0edfa06e0accc8d7da274c9d55a20e7a717c80850d8ba6c84fc2d951ffc76a27",
+   "values": "e78a721082831f2dab6ce3ea15d0c1075e628d47bcee0db9db3664a457a13f47",
    "confirmsWithinBars": 0
   },
   "macd-leader": {
-   "values": "419c008f34babccc4894ead2954089961cbba7cccac2ee20b6a6f9caf682d699",
+   "values": "ab70689de4a412c03ba830b8ac2190a7644659ce7c21baac2b18886e745cfb12",
    "confirmsWithinBars": 0
   },
   "ift-stoch-rsi-cci": {
-   "values": "b7a0e86ef3839a83f88478712e456c3248faef9ca23acf5320f80bd944b5e3c9",
+   "values": "d19bc6232e4648efc9257fa8d94e84ef589e1af2ac39256d3486d0492a2da3e5",
    "confirmsWithinBars": 0
   },
   "variable-ma": {
-   "values": "d0f96242ba7a50695d210828ab278414f11dc2abbb99ee56518f944a9c5da688",
+   "values": "25073818372131b4adfeb491183901f6fc58c01b83b919cd09f6a7521fd63cfb",
    "confirmsWithinBars": 0
   },
   "obv-oscillator": {
-   "values": "6b94aaf7b268010ad03fb120777d0e4b5705f9ccb944b99ecb689391327ba082",
+   "values": "4f2848bf2a502395b22bf55ad4bae667e7f36d05a98949625a9633e0d90ba468",
    "confirmsWithinBars": 0
   },
   "gmma": {
-   "values": "c5c4b6594d91d6328866e05f8705c561c36ece83a8366b51c7e8eea2a9387ea6",
+   "values": "b44cead5433835a3265555f7a5a29fa02cf36efeca634c16552043ccaedd2156",
    "confirmsWithinBars": 0
   },
   "turtle-trade-channels": {
-   "values": "c70b00f0b19a40f0420c3cb6aafd8b4c53a13ffb0d7cfde186b8c268daf94901",
+   "values": "cf63e6c873bb875e24a1563ad9cd1653aeebb92014dd648f02b8aade5030036a",
    "confirmsWithinBars": 0
   },
   "linear-regression-channel": {
-   "values": "261316a7580d525ce036c257a191b83b50d7ba25124161f474f9cfeec3aefa0c",
+   "values": "d8f8962f3b72185d492a03eab15ce19f15984aa70f42de5877c5c71abea150c6",
    "confirmsWithinBars": 0
   },
   "twin-range-filter": {
-   "values": "da22b42c3873d796c4eb2a0f98b7464aa3b8277d8772ff05c3d787e875a3480b",
+   "values": "4a29f824388217f84b55a38a272daed59f6f9682b41a7bbea2ca38beb56260a8",
    "confirmsWithinBars": 0
   },
   "tma-bands": {
-   "values": "cae712e144eada3ab99f291f02b1b93a4fed51e4b3fd081bb126e8dd5859a645",
+   "values": "c32b1ba9e6a0428363f606b2f3389f125348943dad1dadbc2fde963c0e706dac",
    "confirmsWithinBars": 0
   },
   "ehlers-stochastic-cg": {
-   "values": "e2a73d08a25b7f189689ecaa5aa0bdd909a5fe2b1afd7353f60ce31a5d1a2904",
+   "values": "c64ac42d3814368c68306d503c2fa6baf57ad42b9ecb9b3a9a6f16284c7b0938",
    "confirmsWithinBars": 0
   },
   "vpci": {
-   "values": "00ddf00eb16b0e37a85547264b6c3ee6ca258f1989c8b2ca3abbb3959da6c292",
+   "values": "87358f5228750160d7859c602abcadce9cfe8a5911e1632ebbef9349300f8194",
    "confirmsWithinBars": 0
   },
   "premier-stochastic": {
-   "values": "6d8ec5635f6a6d2382e43aef1bdb1ef33855bcd0f33e37041988790ed5bf6af2",
+   "values": "b1b8c2201bdb43c3231438ca818bd0d48b61c7b3faad6915ea755a342206cdbd",
    "confirmsWithinBars": 0
   },
   "volume-accumulation-pct": {
-   "values": "0c25493b917c9bfbf7b63134cfb09b9ef38ae80b9e0f239273babdc60e50dcf3",
+   "values": "a7c85dcb9661b0d9ff5f09b779acab48b4af29ce254a53d237a42acd8e7521e1",
    "confirmsWithinBars": 0
   },
   "vervoort-ha-oscillator": {
-   "values": "50e141cbdd437659f3af22b85020328c159cfea86b9aa37a850d1c83d02bb5fb",
+   "values": "ca763bcc16f27087c8baad1e1c39c6b74a9b1fc52c789c3e27a3d2dd6182aaf9",
    "confirmsWithinBars": 0
   },
   "adx-cobra": {
-   "values": "3364dc867657374c006c5240d195cf79424e565324244e5591541145c45f022c",
+   "values": "20cb570a9ed1660bdfdfb24cf6a19665c32468d59d10b1ff48e1976b8322410a",
    "confirmsWithinBars": 0
   },
   "ai-engulfing": {
-   "values": "47eb4c82834f0d174f48e53ceee5f5e7d90515ad1456aa07bd7d91a3d9398861",
+   "values": "ffad862c53c217d69109292dec3d8e5e2c802f97a855ba4f7d5b59adfb5a8558",
    "confirmsWithinBars": 0
   },
   "ak-trend-id": {
-   "values": "bf446a7bb1e9ca2606cc6013dcd067f8a8881281fc8e007c773c2a2286a5d02d",
+   "values": "34184424fbf2f8c5bfaf8e7a7300163181971dfec4c5699b0cc2f388422e29de",
    "confirmsWithinBars": 0
   },
   "anti-volume-stop": {
-   "values": "88c30288bfbf4f061517f22d57238c507605da1a511e5363f78eeff378e24ad3",
+   "values": "2afede2a848b386d16d1e87eec963f1119ecb7e477f24eaf3c075d3acbfe78fb",
    "confirmsWithinBars": 0
   },
   "atr-plus": {
-   "values": "450323aa52bbb7f89c17c2a2d46a158b29f6a718d1c0d741d2a413d3778cdf52",
+   "values": "5f4845415f293108c2e76d40b567cea5601e2e5a9e53053cb04a7aca18a9d453",
    "confirmsWithinBars": 0
   },
   "atr-trailing-colored": {
-   "values": "927ce5e45900a448f7f05b3c5ecad9df2c67521389c91eed12060b13cba0a4f9",
+   "values": "ea779945a105557350b83e5a7c3b196a171f1a9709ab9751ce539df371937c66",
    "confirmsWithinBars": 0
   },
   "auto-fib": {
-   "values": "f4cc4861eac628174733d43524c8c963aa1b5ce806956c970f2b0bebb36e7b82",
+   "values": "3fab8a765e2c356300be9f765d40c27a1a421fcd5ff72f4a8c229160c505ddb1",
    "confirmsWithinBars": 0
   },
   "auto-support": {
-   "values": "5af5ed7a3581fc6d6bbb6503b1d0b37fd9f9d4cd3f4eb485aba1fa8c4bd952cb",
+   "values": "94317bf3f6768b7a05c1e6439182effff366cf9bd8fbd35691bae2fdfeffcd68",
    "confirmsWithinBars": 0
   },
   "auto-support-resistance": {
-   "values": "cbbd18b283403d59b6d3ea26ffb6f0003b2cc44aa193dbee9ea13b4101da4fe4",
+   "values": "751bf7d0283355c8a48b08c3ecbc2cf8a4e888fbabe7ed241c25f70ff832d81c",
    "confirmsWithinBars": 9
   },
   "bb-stoch-rsi": {
-   "values": "30e7d9e9b8168a5af521228a9cc740ad71486d330d8703f3052f4eec12fde575",
+   "values": "c171643b0c7dc720ef114f103e765dcc38448df5cca91332e4de9c1e6310bad4",
    "confirmsWithinBars": 0
   },
   "bulls-bears-control": {
-   "values": "bf31e8ef551ef995a0d7b7dec58c1751576bd1562ff8c480fd268c5d9330f4c5",
+   "values": "7e7bf04de761d9b43146dbbfa79b971a8f707b93e6b273fdf9ec5049e52ba6c9",
    "confirmsWithinBars": 0
   },
   "buying-selling-volume": {
-   "values": "7bdc2f40839e3685d4b7cb98bba9a1fcabb3590afcd0a99c9fffa09b0960022d",
+   "values": "dfc18d74325ac1b1c237234f2b5837135edcf4eb7101c83b368e800a2ac59ca2",
    "confirmsWithinBars": 0
   },
   "buy-sell-pressure": {
-   "values": "a88c3ac1c081fc78f8dddf500756e3a55700f61f409c954ac3fd24d7eb1886e4",
+   "values": "4bdcaf709c03f8f63a7c4a1fb1cc3fc57510fdc677d5000046e7b0542d37c35c",
    "confirmsWithinBars": 0
   },
   "cci-obv": {
-   "values": "dde99de5e0df4cb74b444ce5aa70c46da1f469d2e6582b5199b64813e7f52400",
+   "values": "f607105fe50906576d1a2ca12fb693a768342f6a3612f178019e92c4c26c481f",
    "confirmsWithinBars": 0
   },
   "cm-enhanced-ichimoku": {
-   "values": "7f3a266a1322cd3206ed59bedd736db1fae081d40178fd9b8848f819d90908ca",
+   "values": "9a6d20d0656d504b919950d0e450e5c5f47d5a75e61e39213ebbd1f5a00276ea",
    "confirmsWithinBars": 25
   },
   "cm-gann-swing": {
-   "values": "d39a9e4d9b4be7509614d2506e612301a2c955bdd0ac8bc76b9a965b667970e2",
+   "values": "1a06e02dc79c9f8f6d102bbffe21996e4ce032bf1a9b3bedf93a24d0fb5b789c",
    "confirmsWithinBars": 0
   },
   "cm-guppy-ema": {
-   "values": "c5c4b6594d91d6328866e05f8705c561c36ece83a8366b51c7e8eea2a9387ea6",
+   "values": "b44cead5433835a3265555f7a5a29fa02cf36efeca634c16552043ccaedd2156",
    "confirmsWithinBars": 0
   },
   "cm-laguerre-ppo": {
-   "values": "583e96e9396d8ad85e10eeaa21277578d5308216df5974c0abbfcc97349acd8a",
+   "values": "8667966a94f12ea7342ed398573a7a4aa3b47fa22c3ab4b5902fed505069b653",
    "confirmsWithinBars": 0
   },
   "cm-rsi-2-lower": {
-   "values": "d359035827f5043a17a9142da7129da8e68fad36780bc7cf25a9ac4414ea25f2",
+   "values": "382077c79ce27f0dc1b390501ce8503252e4b475ebb04ce43eb0b44f8456988f",
    "confirmsWithinBars": 0
   },
   "cm-rsi-2-upper": {
-   "values": "44697b92e97d7503b3fa387b78b6ae37008427a0833ba5f7db7765133759822e",
+   "values": "088f5b3ede719ebcb3e450ba0014f74d2fba08161c20f213a99830234ccd9db1",
    "confirmsWithinBars": 0
   },
   "cm-rsi-ema": {
-   "values": "3d127c33e775dc72117285f2f31b98d20702f9f2c10dfdc0bafae5fe84238bba",
+   "values": "40b66c3528f508b851e3e992dd2366bef791ddf7b9ecd54dd79ba30f52d1e22c",
    "confirmsWithinBars": 0
   },
   "cm-vix-fix-v3": {
-   "values": "b9f688828eb126bfdd25743d7fddc353da3bf13d00776fa802aad740e40f7002",
+   "values": "6711cff9069e55c92ff176e99a15ff9784a12e23a980376ed64a5450dccbbbfd",
    "confirmsWithinBars": 0
   },
   "cog-channel": {
-   "values": "61f94e7ced6d469cb7ad1e518eeaa6af2a5a55b7e7a4cae35f9279edfdd35e43",
+   "values": "e17726baab3cde734beb92a25c7f497da78cdc24860ba4f7eec9b4ce5985ee8f",
    "confirmsWithinBars": 0
   },
   "darvas-box": {
-   "values": "63bfe611c7ae1a32d59005e7ab5a47d962559a47e07dae9c26bd2d2ac7d06cd4",
+   "values": "1e8cd13490d380501f0d75fb7152b12835ec31f5dbf7ab1148fe0bd8cc41f2b6",
    "confirmsWithinBars": 0
   },
   "dmi-adx-levels": {
-   "values": "3364dc867657374c006c5240d195cf79424e565324244e5591541145c45f022c",
+   "values": "20cb570a9ed1660bdfdfb24cf6a19665c32468d59d10b1ff48e1976b8322410a",
    "confirmsWithinBars": 0
   },
   "donchian-custom": {
-   "values": "40405eb39c072a859e5b73248d6f16f20165d998aa5c92ed6af84a28c85d4c56",
+   "values": "c07b87f785758ca92af51f708be406a0210c28b4940ef0c7758ab2f75fc448d6",
    "confirmsWithinBars": 0
   },
   "easy-trend-colors": {
-   "values": "65f137c21796819174935d2ea1a85d0a02f3d754cf1cba82ef8f03bdcf6688ab",
+   "values": "0c193aae80902f3740b6fb3e1fe5c571f69d8ff7ff71d5b07b6aadd1b5b2cfff",
    "confirmsWithinBars": 0
   },
   "ema-enveloper": {
-   "values": "3c9eb8c8442ae1d524833b038bd9c53244ea876008f423b2555165b7667d7cdc",
+   "values": "54cdeb1666a6742495d76e71c4e2b12b9ad22ef26355551f0d05a938397fe88b",
    "confirmsWithinBars": 0
   },
   "ema-ma-crossover": {
-   "values": "f138e14d19136ced37da5c2b32ffe032fd96d2ca6e343e7e55b338ab7d786b86",
+   "values": "0637ed174a764e86cd9631978b16ab392c81fc26e42ef1ca756a196df6ffd798",
    "confirmsWithinBars": 0
   },
   "ema-multi": {
-   "values": "e08505a4b3ce8da307d0c0c4dfcec278f6fe36f9e0e295c887d1ede7086e8260",
+   "values": "9955479ae31514a86eeb4872e5b49948a2f7bb91edd76a8256d605e52e256390",
    "confirmsWithinBars": 0
   },
   "ema-ribbon": {
-   "values": "6db42ac2df8edce8a627691aa83d683de0c2f2c7b1af8976c46e2642db9bae16",
+   "values": "296b5a2dad2eca2492283d0c223e79ce9d49dae776487909abd652afb1136f23",
    "confirmsWithinBars": 0
   },
   "ema-supertrend": {
-   "values": "e741c9fb3fd5856f529ff5c20c6e9e0b407e29b0480393e410c840e147dff7ec",
+   "values": "115bb0c48c2e3acb06b1c713a18b86378c39d6d2a4a033fa4c6cd7684283689e",
    "confirmsWithinBars": 0
   },
   "ema-wave": {
-   "values": "d3211e86dcf2f909857d13ce0b407446eb1e0fe872d8f33ed747c6a0ab51fbff",
+   "values": "03553e82cd3b6ff91ef35dac069b76d80728d07b4bb28f4111d9db67b0b417bb",
    "confirmsWithinBars": 0
   },
   "evwma-envelope": {
-   "values": "47bf484919f99dbac7e4e40293911c44874cd117f1f14d8b92aa497871c6ea9b",
+   "values": "41e7abb8006f202e70414ee50c1802b1c83a3dfec217e3a23413424632ca264e",
    "confirmsWithinBars": 0
   },
   "faith-indicator": {
-   "values": "9b783e0d1ef6c9c903b50c626258061342f92e3a8b236453284621bac87b708e",
+   "values": "59398f3665cc738d803086d9e37c30ec094aa0437fc2f2633bf1193781cc456b",
    "confirmsWithinBars": 0
   },
   "fibonacci-levels": {
-   "values": "ff670eb9677e2ad604e01760e40e913e01d324f4181ccd83297132dfafe0fdf8",
+   "values": "7f453e3eb6de841860bf562a82dd3151930b5eaf8ce78fa66513d9ad2f442209",
    "confirmsWithinBars": 0
   },
   "fibonacci-zone": {
-   "values": "6ded825c20831087a241906744900fc513f296a4de18470f650d3068e393e765",
+   "values": "b0439260e378864945ee32c87e14cbf7927ae329e7be19c2ae578cc62ea04e6e",
    "confirmsWithinBars": 0
   },
   "forex-sessions": {
-   "values": "52e7509db7fa4492f459e8352eab453ffa14bf6359c4a1d625fac33edd9243b5",
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
    "confirmsWithinBars": 0
   },
   "fx-sniper-t3-cci": {
-   "values": "ffe381f486c963ce47ca87532bc3aef93519211eb3ee0bc6a37d9b80280f47c7",
+   "values": "8f6c483ee6c2e96d25a3e3a33eafc326bf62469eeec2f285561ee6802214bd47",
    "confirmsWithinBars": 0
   },
   "hawkeye-volume": {
-   "values": "52e7509db7fa4492f459e8352eab453ffa14bf6359c4a1d625fac33edd9243b5",
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
    "confirmsWithinBars": 0
   },
   "ichimoku-ema-bands": {
-   "values": "4e4aca201680ab0891e37f2e61326b74547580b9aaa18d3a68d4f0351511fc15",
+   "values": "073f2fa6ab70197580650c3f81419705260e5e6fa68b6f96e184b8ef515ce6be",
    "confirmsWithinBars": 0
   },
   "intraday-buy-sell": {
-   "values": "75b7a03fd216152fe9ee440b42969ff9a3462719590707cd71b89ffe53e44d0a",
+   "values": "3944388f1bba51dba0d59e1bd0ea1768cbb8c7dd52a1650b63f9fef306c0f65d",
    "confirmsWithinBars": 0
   },
   "intraday-ts-bb": {
-   "values": "b4a788cfb9534880a21e4bc26a5db430070d3b2494607eaf84e3dc067c9dac2c",
+   "values": "01ded61e9dc2e595f8a12977e2cad2b5ba686dd5eb81a0b36072db1b918c54b9",
    "confirmsWithinBars": 0
   },
   "leledc-levels": {
-   "values": "a426998de9eca0504f2727c1a8aa8c0cf88574461503f666b1e8705e5dfcf37d",
+   "values": "f17d5582cdfd898be2de638896eecf232a8fec023725c1ed716934aa2079f286",
    "confirmsWithinBars": 0
   },
   "ma-adx": {
-   "values": "9ce5b137befdb557053d8713e552da9384ba175eb6b8e8cef62adb068aa0a812",
+   "values": "9f0b00faed81e581f9d69c843f27e3fb13c3fdad30e6e721ae0e5bc249b65e52",
    "confirmsWithinBars": 0
   },
   "macdas": {
-   "values": "3b546551fc21dd09a75af8cc7a52fdfc42cbb1f3742ab18729f254062c49a777",
+   "values": "b188c54dc23862d412c5c7a30f3f55f599c5fd297d8f44d715b587089a458e04",
    "confirmsWithinBars": 0
   },
   "macd-bb": {
-   "values": "6a1fd37d9a6c5b9fde7813e041b71bcff79e0f012e66fdb6adb18f962b98ec29",
+   "values": "8232b4af8257dd56ff0629335905872aec1fa9eb845aa816973b4fcc48d89e7d",
    "confirmsWithinBars": 0
   },
   "macd-crossover": {
-   "values": "beec42921991e1ecb45c3c952c7e6e74145804787f9720f9ed3c02a7d1432da2",
+   "values": "0989621dda86b061ac532e6cc73e1ad357352cfb02049ed5a46bece2d38cabd3",
    "confirmsWithinBars": 0
   },
   "macd-dema": {
-   "values": "b89d3412edad954fc75076b53f29723446caf6230e4daef67d918c6bd63cc458",
+   "values": "36ee020bf7ca529b4e70241230a2b08a8da18e56589bce4c330a4d1c26f0ccf9",
    "confirmsWithinBars": 0
   },
   "macd-divergence": {
-   "values": "2def5eab26079afe01f15948dee444cb9c9877458d64f9e4ce1437039011f1d1",
+   "values": "81f56d5cb9570d4c2e3ee1baa9a6d6b04bfe27be78ece1a59381eb879b54c498",
    "confirmsWithinBars": 0
   },
   "macd-vxi": {
-   "values": "a22f466e25bebf5502957ed33d3ef2193422c6acaa712b52cc01cbaf42842765",
+   "values": "2ed0ea8a6ca89ed70cd7531c52a17d1b849aba575af7e01b9a2806370c9061ad",
    "confirmsWithinBars": 0
   },
   "ma-colored": {
-   "values": "4d5e23af11961cd84ccfd7cb0388bf82e1b2699a3eb45bca8e9311afa59e3135",
+   "values": "a419e3a6deb8188d0afb286ab26309cb1eee2b6156a5e86cc9271cbca2a03fb3",
    "confirmsWithinBars": 0
   },
   "ma-deviation-rate": {
-   "values": "7fda40d39fe64cba71877decdb3538c394d9ce8dac8250c8a0c66118a4fd5459",
+   "values": "3f4b9d5bd6bca2a894b189937a2b3141798939f386ad63d824a2b7397609c90c",
    "confirmsWithinBars": 0
   },
   "market-cipher-a": {
-   "values": "774d73bc31dd2807927f24ed9a80774fffbcf94f055826b5c4cd4206f6239533",
+   "values": "e95a3a506220ed68a6dfb87a214ec63652b61c255382e2dfc65229fefacf04c0",
    "confirmsWithinBars": 0
   },
   "market-cipher-b": {
-   "values": "56d21549e5c2a825896ba2931852aabb1d9b90986135dce9b5bf0a2885851d88",
+   "values": "8375ff61b0ea58bca95314cf964c72d1cf1a5218ddbb7213d12b9bac7654843c",
    "confirmsWithinBars": 0
   },
   "ma-shaded-fill": {
-   "values": "4f84aa86f5d31f8b49fd0399498370c7c3c9f934f8736e08cc00df6d374bc3bc",
+   "values": "0603872e9dcbc87628ba61a5e9a0b10954c78ed802eee899414a33e44f28f403",
    "confirmsWithinBars": 0
   },
   "mfi-rsi-bb": {
-   "values": "971f2370fea466dbb4be5cf616c9e766a2b7ecaeb9fa182656bb082a6b1a70e5",
+   "values": "508dfd8d77886f47d3ad742395acff9f8a4403d0fbc330988920ee399955b74f",
    "confirmsWithinBars": 0
   },
   "multiple-ma": {
-   "values": "4cb8384359d904ab995e5c891dd0ca5b2cef10e3f71038a7ad24f808e97b061f",
+   "values": "8968e49a7319ab91bb1ab2c1353abb036e163d0c0edf4ca5bee8adcefed714d4",
    "confirmsWithinBars": 0
   },
   "murreys-math-osc": {
-   "values": "ad2de744aca27399fee27cdfa3e8adba52010d47b2c0cc8275362c9dd64c7f6b",
+   "values": "5175c808e53a3d1d92b984605051bbcf2d6da538ea54df0c38a72a53775a496d",
    "confirmsWithinBars": 0
   },
   "normalized-qqe": {
-   "values": "ad3299448136d41c9b93709092ff7d233c090cf8ebfba7dbf0f5968152715511",
+   "values": "dd835196a370939d9cf4b76bf2b63188e1c486e6f68533590ecb57d037939956",
    "confirmsWithinBars": 0
   },
   "parallel-pivot-lines": {
-   "values": "117ee478ea3d1d0f934c5e3a87f3fb2323640d22b32fd8c877e4e93b42e0c1ee",
+   "values": "64e0ce215d4cea5e74ae1ad7fc372b5439f1d462c07eb6ff6b414988f1d1af04",
    "confirmsWithinBars": 28
   },
   "philakone-ema-swing": {
-   "values": "b1392bd9c125b51014532684367ad4e5f3ff4d489a41ea2f7161eb932c5883d0",
+   "values": "b6fb080f7d8a9a4a51288b39d4b0fe5155bd42ee21fd20edbf7d89b9fd633d0a",
    "confirmsWithinBars": 0
   },
   "pivot-point-supertrend": {
-   "values": "9786f49a461c977d6dc921497e1d82760afc997a99c04c9bf21176d077d333fa",
+   "values": "9208430991b476b71eb4fcb280df2e82653fa03ea11b505edcf36a712a0ec7c7",
    "confirmsWithinBars": 0
   },
   "ppo-alerts": {
-   "values": "c9fae2892192cda28cef161d6b99b3d742514aac9a4c3118fb8b3c38162deb21",
+   "values": "bb21cf9483d4bc875d5f8231efdc3caa2fc81aa086310a937b11274dc391e9bb",
    "confirmsWithinBars": 0
   },
   "ppo-divergence": {
-   "values": "b53a4e65fea93c9f172c9215003854f4b7e8678cac2230d9aa873f879a92a1ec",
+   "values": "fe73904f923859bdd9ea94d422c4897a7a0444ba91b033aec83e0ac5d5c554ad",
    "confirmsWithinBars": 0
   },
   "price-action-system": {
-   "values": "7ed5befcddfcd40591b2e4a06c983981033751c759d05ce4c1572473f88d1ba9",
+   "values": "a1ec383ed54e7f5fcc7d62802736285ac6aefbe28a2ffdbd9beb1504137bc17c",
    "confirmsWithinBars": 0
   },
   "qqe": {
-   "values": "0d9192bdecaee7da450a100978ad6dca00c28c7b1cf0258db1ed6dfe3988492c",
+   "values": "d534bd342b9ba8c5ad97d850e86d026a65c2d90be29c72530549213214e327f0",
    "confirmsWithinBars": 0
   },
   "rci-3lines": {
-   "values": "f740eee9e6fd2bd7798e22534da256a24d4f2114558c642317dc5ee64a5ab8a8",
+   "values": "6efd95eaa7daa663f85d14a2fdd24e4c82029ef070762dacec1327211d51c9e1",
    "confirmsWithinBars": 0
   },
   "redk-rss-wma": {
-   "values": "1703b5b32cf0bfffd41194cd68e36efb82edce54253bc7786c7605ce8da755c8",
+   "values": "a06cc80f99a367e393d1c7d08e063bf92ecd8f06bf1c22ff9c663a4bef34d6b1",
    "confirmsWithinBars": 0
   },
   "rsi-bands": {
-   "values": "96b5c79b2f510ad1250b723b48c065fa0b83edc4a8141730508bf046309a812c",
+   "values": "03ed7ca48fae737807964d41542e7bc8591d9cd6c5315f4dc145ff3a3bf123ff",
    "confirmsWithinBars": 0
   },
   "rsi-bb-dispersion": {
-   "values": "0de20c61f0c064efcfbd6f66f768dd1b188e202c991a8c5cb4c6f88e056b4f86",
+   "values": "16b1b339794d38df6b51cdcda8cdc3e17ea9fc42d8e6ef7d3b813c7630b435bb",
    "confirmsWithinBars": 0
   },
   "rsi-divergence": {
-   "values": "87208bace3f4f54e08415bad13084fc799b4f4741a723910640b736434aa4477",
+   "values": "24b706c8212369dcb4b52c2552a856413188e3de409b47480e86d98733f32bd1",
    "confirmsWithinBars": 0
   },
   "rsi-histoalert": {
-   "values": "d7f5aa6527affd81ee8619a2a150faa7f36be1c597b06e0bee53e5c1f0805340",
+   "values": "d9202bdfe785cc2edfa985f1769277e94f0f35db99c11ee7d277de1e74275a8e",
    "confirmsWithinBars": 0
   },
   "rsi-snabbel": {
-   "values": "e4f9e6ad826c8f0e2c6ed74629e651a9dd6d1f47c399c5a73517f52022cb9fc5",
+   "values": "dd6de828cb09e20fef453eb56eb2be281f9c002f3ae07c310c493db1c45095a7",
    "confirmsWithinBars": 0
   },
   "rsi-swing-signal": {
-   "values": "2fb5de5c6b6d7f5b7a5d848a62b619680019ca35520fc36a19fad1fae87bb21c",
+   "values": "d9870ff85b018f8e0601326d04cb3870a4e6fcf4d8271cdcbf0ae22a57c6051c",
    "confirmsWithinBars": 0
   },
   "rs-support-resistance": {
-   "values": "21322038bf98f426edee70ab0784bb504a60cb3f9066004a3bcb0d98e3dcf997",
+   "values": "cef7dd297d40127d3b6f861ef8ffdaf5bc5b6ddb6a5c9d9395eb63440dcc38a2",
    "confirmsWithinBars": 8
   },
   "sar-ema-macd": {
-   "values": "43e00aac323eeffe049a29f8931a32b0174110d090bc04ff0f84ec099abbc131",
+   "values": "38fb3c505fbc6c89fb3a0300eae38ca98564f85e89f54bf41389d0b155258705",
    "confirmsWithinBars": 0
   },
   "scalping-line": {
-   "values": "5dfbeed187f57122c2d9b33c7252af23c6459446e3f95ae222a73fb3eca89bc5",
+   "values": "1ec0a3843566d27dad1c1f9a713821b576d89526acd48f3ce93c1f1d16778f6d",
    "confirmsWithinBars": 0
   },
   "sell-buy-rates": {
-   "values": "6d60cfff61312a0b7666b99996341a07d81b0ede4158def392d515536e93090d",
+   "values": "4250e7d4403a98666023bcecd1159396dd5244690621da7250132436cc3ec471",
    "confirmsWithinBars": 0
   },
   "signal-ma": {
-   "values": "f2f4a57a20fc83392b5675318d7389617a10f16bba401c6086d747a43f3b2138",
+   "values": "5ce4e5d768abd1f8ab9d5c6b0ccc384f77cc722c4e244e9c583c18880f6014c5",
    "confirmsWithinBars": 0
   },
   "simple-moving-averages": {
-   "values": "6c498612531db1e14803016ae2f30cd573ebafb9b70474f52cc378471bdd7d47",
+   "values": "c5bf2582ce57f0fbcaac3f91adfcb05443d1463c36ac51c31d6bbd035f0bbfec",
    "confirmsWithinBars": 0
   },
   "smi-ucs": {
-   "values": "ac9f7426ca240d58b599c035eaf708ec288d067e258b5994095ba67910bf96dd",
+   "values": "3d38b195203988ee52c424d61d43817d789d5a4e50260d5279da4c44c90aaff4",
    "confirmsWithinBars": 0
   },
   "squeeze-momentum-v2": {
-   "values": "2b6797e8b30b9c9a6c0e02057148b5290455b5af9115685697697759583e46e1",
+   "values": "0cd57ea0c20717ecf6b7df4239826ecba0845ce0aa70b4de94c185d81ed2f132",
    "confirmsWithinBars": 0
   },
   "sr-levels-breaks": {
-   "values": "0bbef87aa6c8d0907c0b4e0ce9f7872fe729bd6ac7d193584600cfe263215cb2",
+   "values": "22873dc701d5ae728b07e75db9af094e8e0518b10f5cc1f830b9dc6fbc796ce9",
    "confirmsWithinBars": 8
   },
   "stoch-pop-1": {
-   "values": "7697683d02168fb53264b95202b64a0a3e33c318b125eac868102b31a118e254",
+   "values": "aa5fa9c49d438aea1a33ec9115453e062a8935de750bd3c00297a78f351a0470",
    "confirmsWithinBars": 0
   },
   "stoch-pop-2": {
-   "values": "1f83861baf6450b13a6392c9a60e6f3be64f77ddbe42f49008aa256cc59cd86f",
+   "values": "4c97b3e579c220456b82dc731414a8439007acd69d0045bb88b021950c2958a8",
    "confirmsWithinBars": 0
   },
   "stoch-vx3": {
-   "values": "32ef97feeabe0f7104c754a9387b72e3190f1944cc2168b743bf196c57635449",
+   "values": "58dfcb658df638dee1f4a27fdd6598ab124e50c269cea51a8841e56c688c737d",
    "confirmsWithinBars": 0
   },
   "super-smoothed-macd": {
-   "values": "5f0ae64a20be03b72e8246e95507a8199c860e73f595b4f152d877f0b333b923",
+   "values": "652910bd344a10bf642f9e814dbdd14a639289c897de8e169747c0c8f704b002",
    "confirmsWithinBars": 0
   },
   "supertrend-channels": {
-   "values": "27b1436a774cf657d3fe9742129d006ac00470ab96fc69d6ad1e15dbf504125e",
+   "values": "85a837ac69b499592046f5acc9ba70848b6891a6e66ea961fe5f67a5967c0e85",
    "confirmsWithinBars": 0
   },
   "swing-trade-signals": {
-   "values": "7883f4199b233bccebf391cae5cddf61b3560451ce6633d8eb69d1f219d131ad",
+   "values": "c9c84e7bba108085cd0137f86d7594bf77774091a82f9e8dc9f6c77b9383d6c3",
    "confirmsWithinBars": 0
   },
   "tdi-hlc-trix": {
-   "values": "331ac74a2aefa4c1a7627cad12cca2c54ec3c3cb60e0818513fd425788b11daa",
+   "values": "304134fafde05a79210f3bc54b423e1dd426eae9e8e4adc2feb80b6fcf9c62bc",
    "confirmsWithinBars": 0
   },
   "three-moving-averages": {
-   "values": "a15130fdc58309c4f577d2f1c89f87af37c660c165d7967c73b95b2e246888ee",
+   "values": "1754968b7b9e11dea1a1453505b08c6a54eb699b13c8000e8f60f6a5ad31f219",
    "confirmsWithinBars": 0
   },
   "tonyux-ema-scalper": {
-   "values": "d1b350af5d33b9e5dad5c03e37a8fb6c3f6f3ccf71d47a18395b5a04e2b3039f",
+   "values": "7487913e79c014c2832522691ef00437e3c9467ceeaa6f408918da4fa1c1d552",
    "confirmsWithinBars": 0
   },
   "top-bottom-candle": {
-   "values": "04ccbbd6029de38afdb056dac6b30a0eab8267d5c6b5080818b01ea142a53cd3",
+   "values": "408451776afe59b951b220be9e496ed048f3c95bbb59c7159da10e29615fb71a",
    "confirmsWithinBars": 0
   },
   "tops-bottoms": {
-   "values": "b18b954e795909a1224e2641890b650b3382a4e90fc980f0494e08e83ec6707a",
+   "values": "01f90ef44916c620fbca44a2cd4dffd4a88e78742171f1d34b3fafb4cb3b1b2f",
    "confirmsWithinBars": 0
   },
   "trama": {
-   "values": "c9bf1e785b4b7475423a609af3c9b22e57661228799b80f66234ad6342c3d295",
+   "values": "ae15ca9ba5cb3a91e584a46ebad6f63c1e3fa53f951edab6bbb6a72fdf118277",
    "confirmsWithinBars": 0
   },
   "trend-following-ma": {
-   "values": "14a36aae380d9883f7473fd1bc4fa5d82c2cc5c9472a0aeee1acd7aa894ac504",
+   "values": "32af400fe56d6c3b1b15b9e88ad77cc2a226f8c3c7faec5f139328fc83c6853b",
    "confirmsWithinBars": 0
   },
   "trend-trader": {
-   "values": "3e6e3844c295811dbd779749e53d37fb324ec306f122d1f88de69c8a1c6bda56",
+   "values": "25b48d089cd4bb885706eb40acdb2c12b0520ceba8fcf23cc5f63a7edd741b33",
    "confirmsWithinBars": 0
   },
   "triangular-momentum-osc": {
-   "values": "d2919005a1cc4de1e39e2c80b4b959f525513f4aa93fc4d269f10522aeca8981",
+   "values": "8154d4241734e7d57a3379badb73eac5864cac9cc525f227abcc5a13143a6ce8",
    "confirmsWithinBars": 0
   },
   "triple-ma-forecast": {
-   "values": "5f3b9ce99d9a760aa8cca86eda097bb1f47b2d1a0b6b6e49e41e793a396585f1",
+   "values": "e2ddd62e7eece4978f3cd5ebd1a85f139ba3277fd19017c0461e841abfe34754",
    "confirmsWithinBars": 0
   },
   "ttm-squeeze-pro": {
-   "values": "89d22dea748dfb23933719137a82b71d6d7d14718dc188ddb98f96c5831bb77d",
+   "values": "1fd974fce74a70ea30b493bf2c8ff29250e79ae8da43085b891c722bd0648271",
    "confirmsWithinBars": 0
   },
   "vdub-sniper": {
-   "values": "2d8a75b262213bee8ab2629c624937cf5a53cc823c247936439557f1ce93e00d",
+   "values": "84278189d8f31e9a9801a03c9ad7f30dc26d8c6bdb756b16fa3c9cf91b414bb4",
    "confirmsWithinBars": 0
   },
   "vdubus-binarypro": {
-   "values": "97a97078c779c4a7a32660db9998459641285c7b6456548486ba05fb5c6d3509",
+   "values": "64ca5ce74892c6830745cf3fe92f8462d22db041792998b9d745f0d033519178",
    "confirmsWithinBars": 0
   },
   "volume-colored-bars": {
-   "values": "52e7509db7fa4492f459e8352eab453ffa14bf6359c4a1d625fac33edd9243b5",
+   "values": "d5b182e8658e5d857198d138e2d28be9cccf47a3cdaa9a415bc332b21d57faba",
    "confirmsWithinBars": 0
   },
   "volume-flow-v3": {
-   "values": "e10342c3689e580bb24ff99da4180e5426e97e419aed4cbf6c6ae17dee8312ea",
+   "values": "40c12338815ebc5ae3dbf3541f733e43e61d43e001eb3e161f300e2d611428d1",
    "confirmsWithinBars": 0
   },
   "volume-linreg-trend": {
-   "values": "e6835aca59e13d9ecefd47c03bfc170d95ad48000a8b0b4362652601a3af6ac8",
+   "values": "7bb0b063d4eb79d4668f6c22cc0440258d398003ca63d862ac805df3aed11782",
    "confirmsWithinBars": 0
   },
   "vwmacd-szo": {
-   "values": "a7f5b18ecbe29c7a1badf7397a9411dead5b819931fb26d0d4ad6a3f07b8a8af",
+   "values": "dd1ce658afcc46e9f12563872e87ff4ec051994143628701c383b2eb67a06e96",
    "confirmsWithinBars": 0
   },
   "vw-macd-v2": {
-   "values": "2291e2aaf8a7347a72ab1588c6b72aa2ae56e79151f2ec7a4ece7f0fc9af4f8b",
+   "values": "bfc430e9f70c7718982452e333253d9decd16e1a1c01f2dc37ce2db78ab82208",
    "confirmsWithinBars": 0
   },
   "weis-wave-volume": {
-   "values": "f75756e20fe801108699105d1c3db14f3b8167358b76f28103bd1f0ab83b0959",
+   "values": "e53a24e2e9b053299a2154cdd7b8935c901487c2d99acfaff3f7d5d9b6347961",
    "confirmsWithinBars": 0
   },
   "williams-combo": {
-   "values": "3446a9b315c6340419c13742d322ba358c649e5ec5830981963c726aa387ae9c",
+   "values": "8233f0ffbaabcc9a03157d54601a6ab78fbfc10dd214bef2ea3594ac6e2acfb9",
    "confirmsWithinBars": 0
   },
   "zero-lag-ema": {
-   "values": "40a2c16540695b47591ee668f048e40476e5db9175c0ce37ea3cae039ca0c1ea",
+   "values": "d47cf4ed48e0bfef6d7726c085e9f3a030221d3e5715910966b120a2fa6192cf",
    "confirmsWithinBars": 0
   },
   "bjorgum-triple-ema": {
-   "values": "098025e3b41cb3889e51099d14f5fc7f2b6f88691d5b859658af599071eeeca0",
+   "values": "3cd59b9ecf8fa1fa90c5e8acd01aacc6ce75c2b538b6ea045d66f9df0ca4440c",
    "confirmsWithinBars": 0
   },
   "cci-stochastic": {
-   "values": "b0e410643fc2a3a02de99b4f47b70785fbb2b967c8dac3fa9ddb83fc23dea76a",
+   "values": "a7f5f46bf0e3e94ff302e43d676046f564ad329806678d6504da28589432778c",
    "confirmsWithinBars": 0
   },
   "gaussian-channel": {
-   "values": "f9e3ebd0d0177248cda816209f08a8dd2a8008d9a00c23a1c102649121b7d380",
+   "values": "572eb16dcdc20c54a2583bce1da5b83d46b12a9877fdc412a012e662e313d322",
    "confirmsWithinBars": 0
   },
   "ichimoku-oscillator": {
-   "values": "0afa80702c23388a0d58b7e2044ca044a5c065e542ec39003acdcf719b9315e8",
+   "values": "b62b19ef5bc18af7f780a2a08f9d7365c86d302c9a57b210ba1170df3aa8b88e",
    "confirmsWithinBars": 0
   },
   "ideal-bb-ma": {
-   "values": "3b18de29eb7b61c03aebc5e92d1a489b9d7a1971abcdc727b48e4cf65f748523",
+   "values": "6bd5f20cdfea8d88506e5e42c41118210e89b7e8d31cab052a9f6d5038b0f281",
    "confirmsWithinBars": 0
   },
   "lucid-sar": {
-   "values": "1ad8746e82dfde47353f646275b27da439c07c95216ef3f4443c9826c1060205",
+   "values": "86143da06f2343618e39c0893d23519cd79d99b6cf42c9139b9a1f2d26f11339",
    "confirmsWithinBars": 0
   },
   "madrid-ma-ribbon": {
-   "values": "f9b53b4f869c231c6a331cedcb789c33803591f443493eeed2740ac51e7d1d6d",
+   "values": "98f6a46e19d6c926f2fce7c18f71340c30a7e348898a265402cf67c1d2005ef8",
    "confirmsWithinBars": 0
   },
   "most-rsi": {
-   "values": "3cd00bfa1688d5e432facafc205f47bd03d404ea892c786f86c959b4e195c235",
+   "values": "bcfb76065bc23a7cde7fec9e8066ca5f1cda2e73fb38f333fe25b9749d0b03bb",
    "confirmsWithinBars": 0
   },
   "nrtr": {
-   "values": "44a949a5bd75c7c3f246bb4815342f48ea118317b6f53a066438143c6b059908",
+   "values": "91f825a175ec9b00ffed37f6158d5c31167f7fb97f0a726472f9a02b7ed1822e",
    "confirmsWithinBars": 0
   },
   "ott-bands": {
-   "values": "64eeb50d53e2c58b78e1f06458595e5ef89e52e5bc89d1125f344c46ed6113b6",
+   "values": "cf2a2373d895a9117bae02cd36876c3f7b4c170224fb2431d8b9fe197870926d",
    "confirmsWithinBars": 0
   },
   "otto": {
-   "values": "3d4c93f8b42b3489115585a2242f890785f98cc8a762b8bb78474e760c4d3d1d",
+   "values": "bdc0bffefd5d36c3dbb86d8ed6718452099ba08eb3e089ee43582754d89bb24a",
    "confirmsWithinBars": 0
   },
   "parabolic-rsi": {
-   "values": "6fea29328beeb6d97af9a4291ec7e8bc0d72128f323c79b0ee5b6e84b227db53",
+   "values": "f919c9e24817590b23782b2c0ef58a092d33c771d9fb82c18fe8c1b1d45a99a6",
    "confirmsWithinBars": 0
   },
   "pivot-hh-hl-lh-ll": {
-   "values": "fca842532f2ff5c9ef56a34e0ca755c4bd7a3d2940417db6dbec479f7f3be698",
+   "values": "d3bd095258c19dddb46cd3e016cec413c287bc3ba3be1f714efd385effe4dc78",
    "confirmsWithinBars": 0
   },
   "pmax-rsi-t3": {
-   "values": "5dcc53d3518ab4793a7b367b6d727fe87af38775bd077aca11390ec53ff9d789",
+   "values": "26a266f156a059445dde3c4e8131000ffd1c5a8b67005ded10e649b2ba9ecc16",
    "confirmsWithinBars": 0
   },
   "profit-maximizer": {
-   "values": "0aad628e7e0258c950ad380ccc529c466abb346ace1572d34203fa7ebd02898c",
+   "values": "f9f21d8ef1e661b429db9f335f64a49a1ba576a7c882130eea385859e47601e7",
    "confirmsWithinBars": 0
   },
   "range-filter-dw": {
-   "values": "4de6e26381ef84772a077d7649e6c2c60e576fc834869052ce52a468acc7bcbd",
+   "values": "4f94d2c84e90f53498bf64db6c175c3208baa2bdf08ab49fad2960abac837c2b",
    "confirmsWithinBars": 0
   },
   "redk-vader": {
-   "values": "43ac069e39e7525d010b3082fd2493074769afa0cfc6c7a0d79759b9c9246a73",
+   "values": "8da3f86e56bd011ebdca680c04e82d0b26371da2b287f60264fd3186d53406f4",
    "confirmsWithinBars": 0
   },
   "rsi-cyclic-smoothed": {
-   "values": "445f50d64e46d05c013e06d747f3268d847cec8cf253bb733aaeb7340065c93d",
+   "values": "9c1f50a2b892670a89033bb79f38d1bb5a086b92333b4679d141a96361c4f524",
    "confirmsWithinBars": 0
   },
   "supertrend-ladder": {
-   "values": "fdd8cf1d4ec7d5e277c84598ff5d22c07b6411fd9626c4e07ea20bc6f775fd6a",
+   "values": "ed66d1b22e4cd9e8c99014971dc911c4f8077eb9b4165a42d4688dd4551bb162",
    "confirmsWithinBars": 0
   },
   "t3-psar": {
-   "values": "c2f579f6b3f020e56f871f2ef2bc466b07c7c51ca564e6712a82ff330fafe215",
+   "values": "6dab9ff25e55192a665a1fcaed177a9065e1f4847ec3a27615b8254003449501",
    "confirmsWithinBars": 0
   },
   "zlma-trend-levels": {
-   "values": "d1f562683e05fb88b4d90f42625505f7a72ddc139923b61ee2c4298819333d37",
+   "values": "84596c5c32a0fbda26cc03fd5ee1b45366eed46acdd21bbf0f71e8dda5740714",
    "confirmsWithinBars": 0
   },
   "ai-trend-navigator": {
-   "values": "411d8544eca7a583e18386c9881215b62bf2c139a95cb249ce6a99fde5dc2f54",
+   "values": "30d115040354a6d8f48fb234b78a8804ce4b7234dd296421690f93a770f4f2c5",
    "confirmsWithinBars": 0
   },
   "ml-knn-strategy": {
-   "values": "a8499dd5407ababf796d0903516c80ea1afe9c36949114ff99eb62153321ab3c",
+   "values": "a1a068da5a46548a8479a0b8b70185e8be92e678335c172434bfe4cc89736eb7",
    "confirmsWithinBars": 0
   },
   "ml-momentum-index": {
-   "values": "f26063664f9257e109890b9e806daa4798b817117074dc770816f068102f26e1",
+   "values": "cd0fafb612b34b4a80e8cab582e4687a63315bdb71ab7e1d8ed060725d9b9189",
    "confirmsWithinBars": 0
   },
   "ml-moving-average": {
-   "values": "498c4dab60deb7dc882b04328cf9cd598f6c7bf151b1cbd9e5df382e280c17d7",
+   "values": "7333ac4f96f6f67177712c418623f9ff6852f8b69425b89e0d31329fdc741aae",
    "confirmsWithinBars": 0
   },
   "volume-supertrend-ai": {
-   "values": "f161668cc75a0b76145f8c8f601fdd8883be337290e2b5399f9b53a0e008678e",
+   "values": "00d259f42a60fe01344b7d6f2cef1776bf151af9f1f80a80057c510ae0eaa008",
    "confirmsWithinBars": 0
   },
   "trader-xo": {
-   "values": "eecceb2dd231dbe50945ce1f27ce8375b7aef17828a2aafe87dab41ca17585ca",
+   "values": "55523cca55c2600a6a9b2c42f1649b34f342976ddc31adf00d23394f4669a2ff",
    "confirmsWithinBars": 0
   },
   "adaptive-macd": {
-   "values": "ba513172ca45329ad0d03d7ff30cf186d25b6b6509c416d057e23069cfe5175a",
+   "values": "56a9855dc5df4a78c85f961b5151ecb150ac795de737425b1f2b57fd482ec6e6",
    "confirmsWithinBars": 0
   },
   "ultimate-rsi": {
-   "values": "45f6b5730c96277a7fa346cfb34fcf8d4d4578461213116111fa8b7165899ac8",
+   "values": "635824c4332e17a8d531bb6ffe17212d01d78f3176ea8e74553ed974d154fa02",
    "confirmsWithinBars": 0
   },
   "adaptive-trend-flow": {
-   "values": "9239cad31d43038a1fa09e41fbbdb924a27ac3639e571c6cab97db2524cb80fd",
+   "values": "0ddb80aa1c41ed03195ca1b217d5165fb89244d73873b49858c38918a1b6e81f",
    "confirmsWithinBars": 0
   },
   "adaptive-hull-ma": {
-   "values": "165e5f3e62a5fd8c5c32d8bd1795f85ca415c742c0bb68b51a3a61fc10d68d8b",
+   "values": "e6cf8be69d219f018c263708256aa4e844483583566069a5f3428ee0fdc78766",
    "confirmsWithinBars": 0
   },
   "weighted-ma-function": {
-   "values": "8b5ecd2f673c6d4d22780a5837a0eb2d4144eb32bfa562eab80b02024537113a",
+   "values": "64917f14674683c17ed3252842790ab6c8eb917102313cc703b106d3c17056df",
    "confirmsWithinBars": 0
   },
   "supertrend-cci": {
-   "values": "873a7a26264d04aaffa15154f5bb6c02a193376064aad3406a9d981ef009d7b6",
+   "values": "736e8ca67e44de395fbac8f79f2f57e9d9ba613992d090a73051f2b4e475dbdd",
    "confirmsWithinBars": 0
   },
   "consolidation-zones": {
-   "values": "1635d18120db956b2b6306621f882454eb8f693390a4f7d1a4327c589f53d5ef",
+   "values": "b742e93f98083de3682d381b62c39d729fa8e29c6830028d12fa8c813b6a0a64",
    "confirmsWithinBars": 0
   },
   "ma-converging": {
-   "values": "463fb2666b0385820f6e63c7d32c4d3c10d23bfdf52602e7f01f79d2bcaf99b2",
+   "values": "1bc2ec1a24df95d5e58b080560811e99a8efdd61f69869151ebe82d53a7187d1",
    "confirmsWithinBars": 0
   },
   "pivot-trailing-maxmin": {
-   "values": "fa754e0641250726512071886a3d717ad931be56478baa22fee7c6d32caf2e87",
+   "values": "84fc5beaa729a744e11f883d055ab20a605a7e52524d84b5a10df76e1c9c7ba8",
    "confirmsWithinBars": 8
   },
   "redk-tpx": {
-   "values": "7b6b51c61f7dd006f46d879e19039b07e386736223c719b93471d171064234d1",
+   "values": "66c58a47346c8436e9a6ef530a3dca5ad67aa48dd363bd6eae7de36b16173f5a",
    "confirmsWithinBars": 0
   },
   "auto-fibo-indicators": {
-   "values": "55b7af883bbd4f17807b4c7cf11e6a46e9e01219443e696a675e09d859d07bc7",
+   "values": "476d501bda5ae1f804dfd46e0856dda61f9576dd5002d08547cce71aec223838",
    "confirmsWithinBars": 0
   },
   "better-volume": {
-   "values": "4d84813277822c6c5ef11306562cc12b79242cc2e5ee3b0fa0c7a68b7e1bbf6e",
+   "values": "7a8716ad3d1099138e399d4babcce2b0c3c0f3e816c713ee8ba62b5cefc196b4",
    "confirmsWithinBars": 0
   },
   "volume-divergence": {
-   "values": "284ea6db3acd8a2da95dbb3253e4cc718038a05792764b5868c736ca3e3ee384",
+   "values": "08695b788de62506b2a7ad78b0fbaaa4be5ab81b9043a1682637f2dd3135c8ec",
    "confirmsWithinBars": 0
   },
   "volume-bar-breakout": {
-   "values": "07e3ba107466115a7e115fce09ece60e4a02565416a928fecde03559dbcb1254",
+   "values": "6a8ea3ed280bc2ae4ced117302b7f54a9ee7f4f041f9e99fae031616ed93a73d",
    "confirmsWithinBars": 0
   },
   "vumanchu-swing": {
-   "values": "17152471c85ff27538c7b7584e7b5e48c70618e67ac7f1e4a6b360b3fe4a5f39",
+   "values": "29d3d2c18f6e3259e0e223da5512a808ecbc2b4c8210f2c4d4a46575d7d09985",
    "confirmsWithinBars": 0
   },
   "hema-trend-levels": {
-   "values": "c804bcd9ee9d3bdd3365bafd89e2e0e4b75a397b82452128c3fd15dab1166c7f",
+   "values": "9dc214746541234662c1ea51c7a57084c19e203be20c292fe6d4d464a24ff1d7",
    "confirmsWithinBars": 0
   },
   "rsi-momentum-divergence": {
-   "values": "eb55e8e1b5a42d07d325e4906d52b60b6a6743d645b77e31b671c7f9fe909f0b",
+   "values": "b4ca390fbc81f8ac0d00535919e831270428044c616d524731414f50a695116e",
    "confirmsWithinBars": 0
   },
   "fvg-positioning-average": {
-   "values": "be2151b16c7434b7aef3d0ae7583f9d4155fe7622e4c5e5b671d16809ce143f5",
+   "values": "c0ed5635ddd04fcc473ca1a78961f575af9271e64d3c7e02bca17967e5d91b5f",
    "confirmsWithinBars": 0
   },
   "momentum-zigzag": {
-   "values": "333d0296976ff85f511b8b0359856a887f3f104b3a6916bd04679fa539641f57",
+   "values": "5ea7665d606f0b0029a05e259c82b800b977ae48e06b2bfa8c5a3814c35a493d",
    "confirmsWithinBars": 0
   },
   "intraday-volume-swings": {
-   "values": "b3da128bee5c3ec3223c22bdb076a5339a915aadbfa887012a008536face3d4e",
+   "values": "88c94a3ac3fc0112c174234d3f238b6821de9d5f829d115088eedb1c8c52cd88",
    "confirmsWithinBars": 0
   },
   "realtime-volume-bars": {
-   "values": "76f807878bfec798210d14b50e175803c2eb7ae7af45758d319670dbd715fb1b",
+   "values": "60a59689af08f321573806fc7de7d9ab56a38f45dd728b736064d4a4148a9536",
    "confirmsWithinBars": 0
   },
   "vwap-mvwap-ema-crossover": {
-   "values": "89c9dd5f3ac0efa3d730e1ce10e4980aa6c050859c3cc06f6beedaace8b1da84",
+   "values": "be0b05738e81a252a17a388210a890316dcae75dc31ecc69c540f412bc21b04a",
    "confirmsWithinBars": 0
   },
   "aroon-oscillator": {
-   "values": "530a0af07316572abf4753f5a91cddbfb8fbab22728605f86232c708c6425fbc",
+   "values": "3a6413c318e5a1bf4c1a4d6ce4a288396ebd1a9e93a9f9de0fcebe75178c3243",
    "confirmsWithinBars": 0
   },
   "nvi": {
-   "values": "d9fcfcc2b1ea28096455b3e45bfdb485f88f3149321020473eba6d7d7291384e",
+   "values": "43913ae168ae826aa3c85c42b8257ea52d1280d20cb6c28d808fcf83e933fa3f",
    "confirmsWithinBars": 0
   },
   "pvi": {
-   "values": "279f98e8e3d3b3401031bc68004afb025358d80cd04a2cf0cab446a2c0e418aa",
+   "values": "2457da31da61f4929992657cff3114dd57b2a7e9bd2d21b33cba082778c76695",
    "confirmsWithinBars": 0
   },
   "ulcer-index": {
-   "values": "37c584c265e1ac99276123430ef8d56ed5498ec3f798cbb28da7c5a42a3ef4e7",
+   "values": "614f2701a925e77024d73afa5d5b2c3d79d23b3849409067f7773fa94d2fd269",
    "confirmsWithinBars": 0
   },
   "volatility-stop": {
-   "values": "fa46a8a2a5892d6b3f3748006439cf6cee3ed6cba57adf20b2eac786f7e367e0",
+   "values": "42aec5c9deac1dc38f08c1ff5f4b0cc69c868db88839575f4c715b21f75a4596",
    "confirmsWithinBars": 0
   },
   "vwap": {
-   "values": "38640e3567b5a5c78cccf986a37ba5760716c1413fae442485aaf424ab785c82",
+   "values": "39441c52c2711e1ff33bba737cf2f529778363941b9055e4cc51d721a5165fd5",
    "confirmsWithinBars": 0
   },
   "up-down-volume": {
-   "values": "44967630452e915214fc180c9725738144a61048f69800162b759e1847bf33b9",
+   "values": "a3f8eaf92fc0a213b82d5d647d7800a4830e428a3da6600b638effc3a5d2b3c4",
    "confirmsWithinBars": 0
   }
  }

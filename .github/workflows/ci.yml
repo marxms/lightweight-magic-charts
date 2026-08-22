@@ -76,7 +76,7 @@ jobs:
   # ledger with a written reason (46 inert, 2 colour, 120 moving only a channel this package cannot
   # draw). Both directions are asserted, so the ledger cannot be padded or thinned unnoticed.
   #
-  # VENDOR DRIFT — proven exhaustively. 320 digests of computed VALUES, re-derived here and compared;
+  # VENDOR DRIFT — proven exhaustively. 310 digests of computed VALUES, re-derived here and compared;
   # a release that moves a reading by one part in a billion turns this red and names the indicator.
   # And since it is regenerating the digests that would launder such a move, a digest may only change
   # when `example/indicators/value-changes.json` says who changed it and why.
@@ -91,10 +91,20 @@ jobs:
   # this job and this job does not imply it.
   #
   # ITS OWN JOB, NOT PART OF `gate`, for the same reason `e2e` is its own: it loads a 1.05 MB
-  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 11.2 s on
-  # 2026-08-21 against `npm test`'s ~15 s over three Node versions — and none of what it measures
-  # varies by Node runtime, only by the vendor version, which `package.json` pins EXACTLY. Paying
-  # for it three times would prove the same number three times.
+  # third-party library and computes three hundred indicators over 1664 bars. MEASURED at 115.6 s on
+  # this runner against 11 s on the author's machine — a 10x gap that is the runner's, not the
+  # suite's, and the reason the timeout below has room in it.
+  #
+  # ONE NODE, AND THE REASON WAS WRONG UNTIL IT WAS FIXED. This comment used to say that none of what
+  # the job measures varies by Node runtime. It did: the digests were taken over raw doubles, and
+  # ECMAScript leaves `Math.exp`, `pow`, `log`, `log10`, `sin`, `cos`, `atan` and `acos`
+  # implementation-approximated — only `sqrt` is exact by IEEE 754 — so the SAME pinned vendor over
+  # the SAME fixture reported 31/33 on linux/amd64/Node 22 and 33/33 on macOS/arm64/Node 25, over a
+  # largest disagreement of 3.304e-16 relative. A single-Node job is what kept that invisible until
+  # a contributor on another machine hit it. `value-encoding.mjs` now quantises each reading against
+  # its own series before digesting — measured at 2^-36 of the series scale, no digest of the 310
+  # moves under a 1, 2, 4, 8, 16 or 64 ULP perturbation of those eight — so one Node is enough
+  # BECAUSE of that encoding rather than in spite of the question.
   #
   # It does NOT build. It reads `example/indicators/manifest.json` and the vendor directly; nothing
   # under `src/` is involved, and `test/boundary.spec.ts` is what keeps it that way.
