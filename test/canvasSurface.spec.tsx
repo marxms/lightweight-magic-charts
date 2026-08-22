@@ -352,6 +352,58 @@ describe('the canvas surface region', () => {
   });
 
   /**
+   * THE CONJUNCTION ITSELF — both halves present at once, neither discarded.
+   *
+   * Dropping `fielded` whenever the host supplies its own array survived all 1524 unit tests and
+   * died in exactly one e2e scene (`scripts/e2e-demo.mjs:516`), and only by accident: that scene
+   * reaches the conjunction because `example/App.tsx:76` always hands over a non-empty
+   * `studies.overlays` while `:143` switches the density on, so the demo happens to sit permanently
+   * in it. Both dedicated suites scope themselves to one side on purpose —
+   * `test/workspaceOverlays.spec.tsx:60` with `showDensity: false`, `test/overlayFields.spec.tsx:58`
+   * with no host array at all — so nothing asserted the two TOGETHER.
+   *
+   * The two single-sided renders are the controls that make 3 mean 2 + 1 rather than a coincidence:
+   * discard the fields and the count falls to the host's 1, discard the host's and it falls to the
+   * fields' 2.
+   */
+  it('keeps BOTH the package fields and the host overlays when the two arrive together', async () => {
+    const order: string[] = [];
+    const { port } = recordingPort(order);
+
+    const fieldsOnly = fakeEngine();
+    const first = render(<Harness port={port} engine={fieldsOnly.engine} showDensity showProfile />);
+    await settle();
+    expect(fieldsOnly.series[0].attached).toHaveLength(2);
+    first.unmount();
+
+    const hostOnly = fakeEngine();
+    const alone = new HostOverlay([], 'host');
+    const second = render(<Harness port={port} engine={hostOnly.engine} overlays={[alone]} />);
+    await settle();
+    expect(hostOnly.series[0].attached).toHaveLength(1);
+    second.unmount();
+
+    const both = fakeEngine();
+    const told: string[] = [];
+    const own = new HostOverlay(told, 'host');
+    render(<Harness port={port} engine={both.engine} showDensity showProfile overlays={[own]} />);
+    await settle();
+
+    const attached = both.series[0].attached as unknown as readonly OverlayPrimitive[];
+    expect(attached).toHaveLength(3);
+    // AND THE THREE ARE THE TWO PLUS THE ONE: the host's overlay is among them, and the other two
+    // are not it — so neither side was swallowed by the other.
+    const hostAt: number[] = [];
+    attached.forEach((primitive, at) => {
+      const before = told.length;
+      primitive.detached();
+      if (told.length > before) hostAt.push(at);
+    });
+    expect(hostAt).toHaveLength(1);
+    expect(told).toEqual(['host']);
+  });
+
+  /**
    * EDGE CASE spec.md — the package's fields are composed BEFORE the host's own overlays.
    *
    * The z-order tie case (`test/overlayBridge.spec.ts`) fixes only that an order, once chosen,
