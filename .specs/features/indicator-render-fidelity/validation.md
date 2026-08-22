@@ -4,6 +4,7 @@
 **Spec**: `.specs/features/indicator-render-fidelity/spec.md`
 **This pass**: `b2c0082..a57dbb3` — 8 commits, tasks T18–T24, branch `feat/indicator-library-adoption`
 **Cumulative**: `0480c76..a57dbb3` — 26 commits, 24 tasks
+**Report committed at**: `773481d` — this report's own commit, `.specs/` only. `git diff a57dbb3..773481d -- src/ test/ scripts/ example/ conformance/ package.json size-budget.json .github/` is **empty**, and every gate below was re-run at `773481d` with identical results (1478/1478 · 96/96 · 33/33 · 104853/104853 · `--check` OK, 310 offered). A validation report cannot cover the commit that carries it; this line closes that gap by measurement.
 **Verifier**: independent sub-agent, second pass (author ≠ verifier). Coverage re-derived from the
 spec and the diff, evidence-or-zero. Nothing was inherited from `tasks.md` or from the first pass's
 report — every one of the four failing attacks was rebuilt from scratch and re-run in both
