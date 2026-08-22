@@ -37,8 +37,8 @@ export interface CanvasSurfaceProps {
   readonly alerts?: SurfaceAlerts;
   /** Which market, from which port, how deep. */
   readonly lane: CandleLane;
-  /** The fields drawn behind the price action, minus the scale this region does not carry yet. */
-  readonly fields?: Omit<OverlayFields, 'bars' | 'scale'>;
+  /** The fields drawn behind the price action. Their data is adapted by the host. */
+  readonly fields?: Omit<OverlayFields, 'bars'>;
   /** How close a pointer has to come, in SCREEN pixels, before the magnet takes it. Absent is 8.
    * The MODE is not here: it is session state the library also writes, so it travels by context.
    * See docs/explanation/drawing.md#the-magnet-is-a-rule-not-a-placement */
@@ -47,7 +47,7 @@ export interface CanvasSurfaceProps {
   readonly onLane?: (state: CandleLaneState) => void;
 }
 
-const NO_FIELDS: Omit<OverlayFields, 'bars' | 'scale'> = {};
+const NO_FIELDS: Omit<OverlayFields, 'bars'> = {};
 
 export const CanvasSurface = memo(function CanvasSurface({
   engine,
@@ -64,8 +64,10 @@ export const CanvasSurface = memo(function CanvasSurface({
 }: CanvasSurfaceProps): ReactElement {
   const drawing = useDrawingRail();
   const state = useCandleLane(lane);
-  const { density, tuning, showDensity, showProfile } = fields;
-  const overlays = useOverlayFields({ bars: state.bars, density, tuning, showDensity, showProfile });
+  const { density, scale, tuning, showDensity, showProfile } = fields;
+  const overlays = useOverlayFields({
+    bars: state.bars, density, scale, tuning, showDensity, showProfile,
+  });
 
   // By reference: a host writing the report inline hands over a new function on every render.
   const told = useRef(onLane);

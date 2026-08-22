@@ -149,9 +149,15 @@ const SYMBOLS_AT_CUTOVER = 13;
  * called `toDensityColumns` with one argument, so the mode shipped, could not be asked for, and no
  * gate saw it. The bytes are the argument and the effect dependency that re-attacks the columns when
  * only the scale moves. The smallest item of the phase, and the one that makes the rest reachable.
+ * RE-PINNED 2026-08-21, entry 106257 -> 106294 (+37 B) and ChartWorkspace 96088 -> 96125 (+37 B):
+ * the same phase, the seam — `WorkspaceDataSource` gains `densityScale` and the drop-in can finally
+ * ask for the mode. NESTED in the group that already carries the slices, so the composed root still
+ * declares ten top-level props and `propCount` does not move; the bytes are the field's two hops,
+ * through `CanvasSurface` and into the hook. This closes the phase: entry 104994 -> 106294 in all,
+ * 9335 B under the ceiling the phase raised once.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 106257,
+  '*': 106294,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -164,7 +170,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 23840,
-  ChartWorkspace: 96088,
+  ChartWorkspace: 96125,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */
