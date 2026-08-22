@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 31,
+  "next_id": 33,
   "lessons": [
     {
       "id": "L-001",
@@ -546,6 +546,42 @@
       ],
       "created": "2026-08-22T04:55:43Z",
       "last_seen": "2026-08-22T04:55:43Z"
+    },
+    {
+      "id": "L-031",
+      "key": "surviving_mutant::a refusal rule that lives inside a build script is unguarded unless a test runs the script unit testing the pure predicate proves the rule works never that the script still calls it",
+      "text": "A refusal rule that lives inside a build script is unguarded unless a test runs the script: unit-testing the pure predicate proves the rule works, never that the script still calls it.",
+      "signal": "surviving_mutant",
+      "scope": "scripts/,build-time ledgers",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "scripts/build-indicator-manifest.mjs:345 (mutant G4f: guard call site deleted, npm test 1478/1478, proof 33/33, --check OK) (scripts/,build-time ledgers)"
+      ],
+      "created": "2026-08-22T06:23:18Z",
+      "last_seen": "2026-08-22T06:23:18Z"
+    },
+    {
+      "id": "L-032",
+      "key": "spec_deviation::before deleting a guard as subsumed state the caller precondition the survivor now depends on and test it set has uses samevaluezero so membership subsumes a finiteness check only while the set itself is finite",
+      "text": "Before deleting a guard as subsumed, state the caller precondition the survivor now depends on and test it: Set.has uses SameValueZero, so membership subsumes a finiteness check only while the set itself is finite.",
+      "signal": "spec_deviation",
+      "scope": "example/,narrowing",
+      "status": "candidate",
+      "features": [
+        "indicator-render-fidelity"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "example/studyMarks.ts:60 (Number.isFinite removed as subsumed by Set membership) (example/,narrowing)"
+      ],
+      "created": "2026-08-22T06:23:18Z",
+      "last_seen": "2026-08-22T06:23:18Z"
     }
   ]
 }

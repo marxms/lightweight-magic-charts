@@ -194,6 +194,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: spec.md:40 vs measured vendor result for ichimoku (spec/measurements)
 - last seen: 2026-08-22T04:55:43Z
 
+### L-031 - A refusal rule that lives inside a build script is unguarded unless a test runs the script: unit-testing the pure predicate proves the rule works, never that the script still calls it.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `scripts/,build-time ledgers` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: scripts/build-indicator-manifest.mjs:345 (mutant G4f: guard call site deleted, npm test 1478/1478, proof 33/33, --check OK) (scripts/,build-time ledgers)
+- last seen: 2026-08-22T06:23:18Z
+
+### L-032 - Before deleting a guard as subsumed, state the caller precondition the survivor now depends on and test it: Set.has uses SameValueZero, so membership subsumes a finiteness check only while the set itself is finite.
+- signal: `spec_deviation` · recurrence: 1 feature(s) · scope: `example/,narrowing` · harmful: 0
+- features: indicator-render-fidelity
+- evidence: example/studyMarks.ts:60 (Number.isFinite removed as subsumed by Set membership) (example/,narrowing)
+- last seen: 2026-08-22T06:23:18Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.
