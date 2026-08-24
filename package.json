@@ -75,7 +75,7 @@
     "@types/react-dom": "^19.2.3",
     "esbuild": "0.25.12",
     "jest": "^29.5.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest-environment-jsdom": "^30.4.1",
     "lightweight-charts": "^5.2.0",
     "lightweight-charts-drawing": "^0.1.1",
     "lightweight-charts-indicators": "0.5.0",
