@@ -92,6 +92,11 @@ const onlyActive = (
 const asFiniteNumber = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
+/** TRI-STATE: a stored boolean wins, anything else is silence and takes the policy's default.
+ * See docs/explanation/tabs.md#the-coercion-gate */
+const asBoolean = (value: unknown, fallback: boolean): boolean =>
+  typeof value === 'boolean' ? value : fallback;
+
 /** Cells reconciled against the SERVED catalogue, never empty.
  * See docs/explanation/tabs.md#grid-cells-and-what-is-served */
 export function reconcileGridCells(
@@ -172,9 +177,9 @@ export function coerceWorkspaceSetup(raw: unknown, policy: WorkspaceSetupPolicy)
       gamma: asFiniteNumber(density.gamma, policy.density.gamma),
       ...(density.floorMode === 'absolute' ? { floorMode: 'absolute' as const } : {}),
     }),
-    showDensity: item.showDensity === true,
-    showProfile: item.showProfile === true,
-    autoFit: item.autoFit === true,
+    showDensity: asBoolean(item.showDensity, policy.showDensity),
+    showProfile: asBoolean(item.showProfile, policy.showProfile),
+    autoFit: asBoolean(item.autoFit, policy.autoFit),
     // NOTE WHAT IS ABSENT: no field naming a market. See docs/explanation/tabs.md#the-coercion-gate
     indicators,
     seriesStyles,

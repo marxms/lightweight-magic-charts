@@ -4,6 +4,29 @@ All notable changes to this package are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 — 2026-08-23
+
+A switch the host's policy declares ON now reaches a tab that has been stored once. No exported
+signature changed, and no format version was added; what changed is how a restored payload is read.
+
+### Changed
+
+- **`coerceWorkspaceSetup` reads `showDensity`, `showProfile` and `autoFit` as TRI-STATE.** A stored
+  boolean wins, true or false alike. Anything else — the field absent, or a payload carrying a
+  string — is silence, and takes `WorkspaceSetupPolicy`'s value for that field. It was `=== true`
+  before, uniformly, and that rule gave one value to two different questions: "the payload says off"
+  and "the payload says nothing" both arrived as false. A product whose policy default is ON could
+  therefore never reach a tab that had been stored — the first save wrote the false the rule had just
+  invented, and every load after read it back as a deliberate choice.
+
+  **What a host sees.** With a policy field at `false`, nothing changes: silence took `false` before
+  and takes `false` now. With a policy field at `true`, stored tabs that never mentioned it come back
+  ON, which is the point of declaring it. A host that wants a stored tab to stay OFF against an ON
+  policy must write the `false` explicitly, and from this release a written `false` is preserved.
+
+  `defaultWorkspaceSetup` already read the policy for all three fields; the seeded path and the
+  restored path now answer the same thing.
+
 ## 0.3.2 — 2026-08-22
 
 The host can now adopt a third-party indicator catalogue, and the chart draws every channel that

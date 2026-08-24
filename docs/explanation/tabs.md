@@ -133,8 +133,16 @@ The same rule reduces a saved `timeframe` to `null` when the current catalogue c
 
 `coerceWorkspaceSetup` is the gate every payload crosses, from a store or from a picked file.
 
-`=== true` on the three switches, uniformly: an old payload without the field, or a hostile one
-carrying a string, never turns anything on by accident, and it costs no new format version.
+The three switches are TRI-STATE, uniformly: a stored boolean wins, true or false alike, and
+anything else — the field absent, or a hostile payload carrying a string — is silence and takes the
+policy's default.
+
+It was `=== true` before, and that rule answered two different questions with one value. "The payload
+says off" and "the payload says nothing" both arrived as false, so a product whose default is ON
+could never reach a tab that had been stored once: the first save wrote the false the rule had just
+invented, and every load after read it back as a deliberate choice. Reading the TYPE separates the
+two, still keeps a hostile string from turning anything on by accident, and costs no new format
+version.
 
 NOTE WHAT IS ABSENT: no field naming a market. A tab describes CONFIGURATION, and the market it is
 applied to belongs to the host — a tab that carried one would move the market on switch.

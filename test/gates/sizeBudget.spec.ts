@@ -298,9 +298,16 @@ const SYMBOLS_AT_CUTOVER = 13;
  * ancestor's 23840. `PROVISIONAL_ENTRY_LIMIT` stays at master's 115629 — the absolute-density-scale
  * phase raised it once under AD-012 and this branch never lifted the ceiling at all — so the entry
  * lands 9190 B under it.
+ * RE-PINNED 2026-08-23, entry 106439 -> 106508 (+69 B) and ChartWorkspace 96012 -> 96081 (+69 B):
+ * the three switches the policy owns became tri-state. `=== true` read "the payload says off" and
+ * "the payload says nothing" as one value, so a product whose default is ON could not reach a tab
+ * that had been stored once — the first save wrote the false the rule invented. Two shapes were
+ * measured one at a time: the tri-state written out at each of the three sites, +115 B, and the
+ * named `asBoolean` beside the `asFiniteNumber` already in the file, +69 B, which is what shipped.
+ * `PROVISIONAL_ENTRY_LIMIT` is untouched and the entry sits 9121 B under it.
  */
 const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
-  '*': 106439,
+  '*': 106508,
   utcSeconds: 36,
   DEFAULT_WORKSPACE_THEME: 383,
   formatterFor: 449,
@@ -313,7 +320,7 @@ const MEASURED_AT_PIN: Readonly<Record<string, number>> = {
   openScope: 3974,
   CONFORMANCE_CASES: 12505,
   ChartSurface: 24138,
-  ChartWorkspace: 96012,
+  ChartWorkspace: 96081,
 };
 
 /** The same probe, invoked from somewhere that is NOT the library root. */

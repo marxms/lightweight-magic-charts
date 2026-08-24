@@ -26,6 +26,14 @@ import type { PaneCatalogueEntry } from '../src/pane/budget';
  * The pane ids are neutral (`alpha`/`beta`/`gamma`) because nothing in this arithmetic reads an id
  * for anything other than identity — and that is what keeps the promise that a business name does
  * not cross this boundary.
+ *
+ * ── WHAT VIS-01 CHANGED, AND WHY THE RECORD DID NOT MOVE WITH IT ──
+ *
+ * The record was captured from code that no longer exists, and that is its entire value: it is the
+ * only evidence the move was faithful. VIS-01 reverses ONE of the rules it recorded — a switch the
+ * policy owns is now tri-state — so re-recording would erase the evidence to hide the change. The
+ * file stays byte for byte as taken; the divergence is re-derived below from the requirement and
+ * asserted by name, so what changed is readable instead of absorbed.
  */
 
 const FIXTURE = JSON.parse(
@@ -117,6 +125,21 @@ const GRID: ReadonlyArray<readonly [string, unknown, readonly string[]]> = [
   ['default not served, first served', ['3d'], ['1h', '4h']],
 ];
 
+/**
+ * The record with the one field VIS-01 moved re-derived from the raw payload.
+ *
+ * The rule is written HERE, from the requirement, and not read from the module under test: an
+ * expectation that asks the implementation what it does proves nothing about what it should do.
+ */
+const recordUnderPolicySwitches = (raw: unknown, recorded: WorkspaceSetup): WorkspaceSetup => {
+  if (raw === null || typeof raw !== 'object') return recorded;
+  const saved = (raw as Record<string, unknown>).showDensity;
+  return { ...recorded, showDensity: typeof saved === 'boolean' ? saved : POLICY.showDensity };
+};
+
+/** The corpus cases the record and the coercion still agree on, to the byte. */
+const AGREED_WITH_RECORD = ['null', 'not an object', 'showDensity explicitly false'];
+
 describe('LMC-22 — parity of the tab setup', () => {
   it('the corpus and the record have the same size and the same names', () => {
     expect(SETUPS.map(([name]) => name)).toEqual(FIXTURE.setups.map(([name]) => name));
@@ -124,8 +147,34 @@ describe('LMC-22 — parity of the tab setup', () => {
     expect(SETUPS.length).toBeGreaterThanOrEqual(30);
   });
 
-  it.each(SETUPS.map(([name], at) => [name, at] as const))('coerces the same as before: %s', (_n, at) => {
-    expect(coerceWorkspaceSetup(SETUPS[at][1], POLICY)).toEqual(FIXTURE.setups[at][1]);
+  it.each(SETUPS.map(([name], at) => [name, at] as const))(
+    'coerces the same as before, but for the switch VIS-01 moved: %s',
+    (_n, at) => {
+      expect(coerceWorkspaceSetup(SETUPS[at][1], POLICY)).toEqual(
+        recordUnderPolicySwitches(SETUPS[at][1], FIXTURE.setups[at][1]),
+      );
+    },
+  );
+
+  it('the record and the coercion differ on ONE field, and agree everywhere else', () => {
+    // Without this, "parity except for a re-derivation" is a hole of unknown size: the per-case
+    // comparison above would swallow a second changed field as long as the derivation covered it.
+    // The union of differing field names is the measurement that closes it.
+    const differing = (at: number): string[] => {
+      const now = coerceWorkspaceSetup(SETUPS[at][1], POLICY) as unknown as Record<string, unknown>;
+      const before = FIXTURE.setups[at][1] as unknown as Record<string, unknown>;
+      return Object.keys(before).filter(
+        (key) => JSON.stringify(now[key]) !== JSON.stringify(before[key]),
+      );
+    };
+    expect([...new Set(SETUPS.flatMap((_case, at) => differing(at)))]).toEqual(['showDensity']);
+
+    // And WHICH cases moved, by name. A payload that never mentions the field, or mentions it with
+    // something that is not a boolean, now takes the policy's ON; only these three still match.
+    expect(SETUPS.filter((_c, at) => differing(at).length === 0).map(([name]) => name)).toEqual(
+      AGREED_WITH_RECORD,
+    );
+    expect(SETUPS.length - AGREED_WITH_RECORD.length).toBe(28);
   });
 
   it.each(GRID.map(([name], at) => [name, at] as const))(
@@ -143,10 +192,11 @@ describe('LMC-22 — parity of the tab setup', () => {
     // rules easiest to "fix" by mistake, and each one is seen breaking.
     const at = (name: string): number => SETUPS.findIndex(([n]) => n === name);
 
-    // 1. The switches' default: `=== true` over an empty object gives FALSE, and not the product
-    //    default's `true`. Swapping it for `?? policy.showDensity` looks like a fix and is a
-    //    regression.
+    // 1. The switch VIS-01 moved, with BOTH sides pinned. The record answers false for a payload
+    //    that never mentioned the field; the coercion now answers the policy's true. Pinning one
+    //    side only is how a reverted rule comes back green — the record would still read false.
     expect(FIXTURE.setups[at('empty object')][1].showDensity).toBe(false);
+    expect(coerceWorkspaceSetup({}, POLICY).showDensity).toBe(true);
     expect(coerceWorkspaceSetup(null, POLICY).showDensity).toBe(true);
 
     // 2. The cell ceiling cuts from the END.
@@ -159,6 +209,83 @@ describe('LMC-22 — parity of the tab setup', () => {
 
     // 4. A non-numeric value in the density falls back to the default, not to zero.
     expect(FIXTURE.setups[at('density not an object')][1].density).toEqual(DEFAULT_DENSITY_TUNING);
+  });
+});
+
+/**
+ * VIS-01 — a switch the policy owns is TRI-STATE, on all three of them.
+ *
+ * `=== true` answered two different questions with one value: "the payload says off" and "the
+ * payload says nothing" both arrived as false, so a product whose default is ON could never reach a
+ * tab that had been stored once. Reading the TYPE separates them.
+ *
+ * The policy is swept over both values on every clause. A single-valued policy cannot tell "took
+ * the policy" from "returned a constant that happens to match it".
+ */
+const SWITCHES = ['showDensity', 'showProfile', 'autoFit'] as const;
+
+const policyWithSwitches = (value: boolean): WorkspaceSetupPolicy => ({
+  ...POLICY,
+  showDensity: value,
+  showProfile: value,
+  autoFit: value,
+});
+
+describe('VIS-01 — the switches the policy owns are tri-state', () => {
+  it.each(SWITCHES)('%s: absent from a stored payload falls to the policy', (field) => {
+    expect(coerceWorkspaceSetup({}, policyWithSwitches(true))[field]).toBe(true);
+    expect(coerceWorkspaceSetup({}, policyWithSwitches(false))[field]).toBe(false);
+  });
+
+  it.each(SWITCHES)('%s: an explicit boolean wins over the policy, either way', (field) => {
+    expect(coerceWorkspaceSetup({ [field]: false }, policyWithSwitches(true))[field]).toBe(false);
+    expect(coerceWorkspaceSetup({ [field]: true }, policyWithSwitches(false))[field]).toBe(true);
+    // The pair the old rule could not express: an explicit false against an ON policy. Under
+    // `=== true` it read the same as silence, which is why silence could never mean ON.
+    expect(coerceWorkspaceSetup({ [field]: true }, policyWithSwitches(true))[field]).toBe(true);
+    expect(coerceWorkspaceSetup({ [field]: false }, policyWithSwitches(false))[field]).toBe(false);
+  });
+
+  it.each(SWITCHES)('%s: what is not a boolean falls to the policy, it is not coerced', (field) => {
+    for (const hostile of ['yes', 'false', 1, 0, null, [], {}]) {
+      expect(coerceWorkspaceSetup({ [field]: hostile }, policyWithSwitches(true))[field]).toBe(true);
+      expect(coerceWorkspaceSetup({ [field]: hostile }, policyWithSwitches(false))[field]).toBe(
+        false,
+      );
+    }
+  });
+
+  it.each(SWITCHES)('%s: the seed and a stored payload without the field agree', (field) => {
+    // The three construction paths answer the same thing, which is what stops a tab from being
+    // born different from how it is restored.
+    for (const value of [true, false]) {
+      const policy = policyWithSwitches(value);
+      expect(defaultWorkspaceSetup(policy)[field]).toBe(value);
+      expect(coerceWorkspaceSetup(null, policy)[field]).toBe(value);
+      expect(coerceWorkspaceSetup({}, policy)[field]).toBe(value);
+      expect(
+        seedWorkspaceTabs(undefined, policy, (index) => `Tab ${index + 1}`).tabs[0].setup[field],
+      ).toBe(value);
+    }
+  });
+
+  it('the three are read INDEPENDENTLY — one field does not decide another', () => {
+    // Every clause above sweeps the policy with all three switches on the SAME value, which is what
+    // makes it a sweep and also what makes it blind to a cross-wiring. These two payloads give the
+    // three fields different answers, so a switch reading a neighbour's saved value or a
+    // neighbour's policy field lands on the wrong one.
+    const mixed = { ...POLICY, showDensity: true, showProfile: false, autoFit: true };
+
+    const saved = coerceWorkspaceSetup({ showDensity: false, autoFit: false }, mixed);
+    expect(saved.showDensity).toBe(false); // explicit false beats an ON policy
+    expect(saved.showProfile).toBe(false); // absent takes its OWN policy, which is OFF
+    expect(saved.autoFit).toBe(false); // explicit false beats an ON policy
+
+    // And the fallback path alone, where a cross-wired POLICY field is the only thing that shows.
+    const silent = coerceWorkspaceSetup({}, mixed);
+    expect(silent.showDensity).toBe(true);
+    expect(silent.showProfile).toBe(false);
+    expect(silent.autoFit).toBe(true);
   });
 });
 
