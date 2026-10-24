@@ -1,0 +1,6 @@
+interface:
+  display_name: "Lightweight Magic Charts"
+  short_description: "Repo-specific patterns and workflows for lightweight-magic-charts"
+  default_prompt: "Use the lightweight-magic-charts repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
